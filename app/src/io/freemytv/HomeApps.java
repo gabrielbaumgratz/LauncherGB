@@ -316,7 +316,7 @@ final class HomeApps {
      * in the TV's settings is used as the label; without one, the name the device reports over HDMI-CEC ("PlayStation 5").
      * The icon follows what that name says the device is (see deviceSymbol).
      */
-    private static List<Item> inputs(Context c, boolean all) {
+    static List<Item> inputs(Context c, boolean all) {
         List<Item> out = new ArrayList<>();
         TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
         if (tim == null) return out;
@@ -429,6 +429,14 @@ final class HomeApps {
     private static void openControlCenter(final Activity a) {
         final Intent intent = new Intent().setComponent(new ComponentName(a, ControlCenterActivity.class))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (a instanceof HomeActivity) {
+            android.graphics.Bitmap shot = ((HomeActivity) a).snapshot();
+            if (shot != null) {
+                ControlCenterActivity.backdrop = shot;
+                a.startActivity(intent);
+                return;
+            }
+        }
         final android.graphics.Bitmap shot = android.graphics.Bitmap.createBitmap(214, 120, android.graphics.Bitmap.Config.ARGB_8888);
         try {
             android.view.PixelCopy.request(a.getWindow(), shot, new android.view.PixelCopy.OnPixelCopyFinishedListener() {
@@ -504,9 +512,16 @@ final class HomeApps {
      */
     static Intent liveTv(Context c) {
         PackageManager pm = c.getPackageManager();
-        // The live TV app the person chose to use instead of the TV's own (Uni TV, an IPTV app), when it is installed.
-        Intent preferred = launchIntent(pm, "com.global.unitviptv");
-        if (preferred != null) return preferred;
+        String target = Prefs.liveTvAction();
+        if (target != null && target.startsWith("app:")) {
+            Intent app = launchIntent(pm, target.substring("app:".length()));
+            if (app != null) return app;
+        } else if (target != null && target.startsWith("input:")) {
+            return new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(target.substring("input:".length())));
+        } else if (target != null && !target.isEmpty() && !target.equals("tuner")) {
+            Intent app = launchIntent(pm, target);
+            if (app != null) return app;
+        }
         // MediaTek OneWorld TV Center (KTC/NextStar) has one input per tuner mode (antenna, cable, satellite): tuning one
         // switches the TV to that mode and hides the other channel lists, so it opens as it is, on its own last channel.
         Intent oneWorld = launchIntent(pm, "com.mediatek.tv.oneworld.tvcenter");

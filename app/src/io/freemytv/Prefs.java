@@ -234,6 +234,9 @@ final class Prefs {
         version++;
     }
 
+    static String liveTvAction() { return sp().getString("liveTvAction", "tuner"); }
+    static void setLiveTvAction(String action) { put("liveTvAction", action); }
+
     // MARK: - Shelf
 
     /** Packages on the home shelf, in order; null until the user edits it (then the built-in list applies). */
@@ -294,6 +297,9 @@ final class Prefs {
     // MARK: - Games widget (Sports) and Bluetooth names
 
     static boolean sportsOn() { return demo() || sp().getBoolean("sportsOn", false); }
+
+    static int sportsPriority() { return sp().getInt("sportsPriority", 0); }
+    static void setSportsPriority(int priority) { sp().edit().putInt("sportsPriority", priority).apply(); version++; }
 
     /** How many of the top of the ranking the tennis championships show ("atp", "wta"): ten, unless set (adb only). */
     static int tennisTop(String tour) { return sp().getInt("tennisTop_" + tour, 10); }

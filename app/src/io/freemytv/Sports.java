@@ -135,6 +135,12 @@ final class Sports {
 
     void setListener(Listener l) { listener = l; }
 
+    synchronized void refresh() {
+        fetchedAt = 0;
+        fetchedFor = "";
+        refreshIfStale();
+    }
+
     /** Fetches again when the list is older than 3 hours or the choice changed (in the background; the listener hears). */
     synchronized void refreshIfStale() {
         if (!Prefs.sportsOn()) return;
@@ -267,17 +273,52 @@ final class Sports {
             boolean followed = Prefs.sportsLeagues().contains("tennis/" + tour);
             tennis(out, seen, tour, now, followed ? Prefs.tennisTop(tour) : 0, players);
         }
-        Collections.sort(out, new Comparator<Game>() {
-            @Override public int compare(Game a, Game b) { return Long.compare(a.when, b.when); }
-        });
         List<Game> upcoming = new ArrayList<>();
         for (Game g : out) if (g.when >= now - 3 * 3600_000L) upcoming.add(g);
+        final int priority = Prefs.sportsPriority();
+        final List<String[]> teamsList = Prefs.sportsTeams();
+        final List<String> leaguesList = Prefs.sportsLeagues();
+        Collections.sort(upcoming, new Comparator<Game>() {
+            @Override public int compare(Game a, Game b) {
+                if (a.live != b.live) return a.live ? -1 : 1;
+                if (priority == 0) {
+                    if (a.mine != b.mine) return a.mine ? -1 : 1;
+                    if (a.mine) {
+                        int ia = teamIndex(a, teamsList);
+                        int ib = teamIndex(b, teamsList);
+                        if (ia != ib) return Integer.compare(ia, ib);
+                    }
+                } else if (priority == 1) {
+                    boolean aLeague = isFollowedLeague(a, leaguesList);
+                    boolean bLeague = isFollowedLeague(b, leaguesList);
+                    if (aLeague != bLeague) return aLeague ? -1 : 1;
+                }
+                return Long.compare(a.when, b.when);
+            }
+        });
         List<Game> keep = new ArrayList<>();
-        for (Game g : upcoming) if (g.live) keep.add(g);
-        int mine = 0;
-        for (Game g : upcoming) if (g.mine && !keep.contains(g) && mine < Math.max(1, Prefs.sportsTeams().size())) { keep.add(g); mine++; }
-        for (Game g : upcoming) if (!keep.contains(g) && keep.size() < KEEP) keep.add(g);
+        for (Game g : upcoming) {
+            if (keep.size() < KEEP) keep.add(g);
+        }
         return keep;
+    }
+
+    private static int teamIndex(Game g, List<String[]> teams) {
+        if (g.match == null) return 999;
+        for (int i = 0; i < teams.size(); i++) {
+            String name = teams.get(i)[3];
+            if (!name.isEmpty() && g.match.contains(name)) return i;
+        }
+        return 999;
+    }
+
+    private static boolean isFollowedLeague(Game g, List<String> leagues) {
+        if (g.tag == null) return false;
+        for (String l : leagues) {
+            String lname = leagueName(l);
+            if (!lname.isEmpty() && g.tag.equalsIgnoreCase(lname)) return true;
+        }
+        return false;
     }
 
     private void team(List<Game> out, Set<String> seen, String sport, String league, String id, String name) {

@@ -363,7 +363,7 @@ public class ControlCenterActivity extends Activity {
                 add(THEME, Ui.tr("Theme"), theme.equals("dark") ? Ui.tr("Dark") : theme.equals("light") ? Ui.tr("Light") : Ui.tr("Automatic"),
                         theme.equals("auto") ? "partly_cloudy_day" : dark ? "clear_night" : "sunny");
             }
-            if (Prefs.ccShown("recs")) add(RECS, Ui.tr("Picks"), Prefs.recommendations() ? Ui.tr("On") : Ui.tr("Off"), "play");
+            if (Prefs.ccShown("recs")) add(RECS, Ui.tr("Recommendations"), Prefs.recommendations() ? Ui.tr("On") : Ui.tr("Off"), "play");
             if (btOpen && Prefs.ccShown("bluetooth")) {
                 for (BluetoothAudio.DeviceInfo d : devices) {
                     Control row = add(DEVICE, d.name, d.isConnected ? Ui.tr("Connected") : "", "speaker");
@@ -484,7 +484,9 @@ public class ControlCenterActivity extends Activity {
             float r = 28 * dp;
             fill.setShader(null);
             if (!glass(c, panel, r, dark ? 0xFF1C1C20 : 0xFFF6F6FA, Prefs.frost(dark ? 0.62f : 0.68f), 26 * dp, 18 * dp, dark ? 0.9f : 0.7f)) {
-                fill.setColor(dark ? 0xE41E1E22 : 0xE8F4F4F8);
+                int base = dark ? 0x1E1E22 : 0xF4F4F8;
+                int alpha = (int) (Prefs.frost(dark ? 0.78f : 0.85f) * 255);
+                fill.setColor((alpha << 24) | base);
                 c.drawRoundRect(panel, r, r, fill);
             }
             rim(c, panel, r, dark ? 0x99FFFFFF : 0xCCFFFFFF, dark ? 0x28FFFFFF : 0x33FFFFFF, 1.2f * dp);
@@ -527,6 +529,9 @@ public class ControlCenterActivity extends Activity {
             if (flat) {
                 c.drawRoundRect(r, rad, rad, fill);
             } else if (!glass(c, r, rad, dark ? 0xFF34343A : 0xFFFFFFFF, Prefs.frost(dark ? 0.52f : 0.6f), 9 * dp, 7 * dp, dark ? 0.8f : 0.6f)) {
+                int base = dark ? 0x2C2C32 : 0xEAEAEF;
+                int alpha = (int) (Prefs.frost(dark ? 0.60f : 0.72f) * 255);
+                fill.setColor((alpha << 24) | base);
                 c.drawRoundRect(r, rad, rad, fill);
             }
             fill.clearShadowLayer();

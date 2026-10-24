@@ -58,6 +58,19 @@ public class HomeActivity extends Activity {
         super.onPause();
     }
 
+    android.graphics.Bitmap snapshot() {
+        if (home == null || home.getWidth() <= 0 || home.getHeight() <= 0) return null;
+        try {
+            android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(320, 180, android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas c = new android.graphics.Canvas(b);
+            c.scale(320f / home.getWidth(), 180f / home.getHeight());
+            home.draw(c);
+            return b;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Home button pressed on the home screen: back to the entry state (focus on the first app, sheet closed). */
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);

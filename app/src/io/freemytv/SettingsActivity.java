@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,6 +31,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -478,7 +481,7 @@ public class SettingsActivity extends Activity {
                     String busyText = busyText(), error = state.optString("error");
                     boolean allow = busy() && busyText.equals(Ui.tr("Accept “Allow USB debugging?” on the TV (tick “Always allow”)."));
                     note(allow ? Ui.tr("On the TV: tick “Always allow” and press OK.") : !busy() ? error : "");
-                    link(Ui.tr("Update launcher"), () -> updateStatus.isEmpty() ? (freeActive() ? Ui.tr("Protected") : "") : updateStatus, this::openUpdate);
+                    link(Ui.tr("Update launcher"), () -> updateStatus, this::openUpdate);
                     header(Ui.tr("Personal"));
                     value(Ui.tr("Your name"), () -> Prefs.userName().isEmpty() ? Ui.tr("Not set") : Prefs.userName(), this::askName);
                     value(Ui.tr("Language"), () -> {
@@ -515,10 +518,16 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Layout"));
                     link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
                     link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
+                    link(Ui.tr("Live TV shortcut"), this::liveTvSummary, this::openLiveTvPicker);
                     header(Ui.tr("Content"));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
                     toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
                         Prefs.setRecommendations(!Prefs.recommendations());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    toggle(Ui.tr("Sports"), Prefs::sportsOn, () -> {
+                        Prefs.setSportsOn(!Prefs.sportsOn());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
@@ -572,10 +581,23 @@ public class SettingsActivity extends Activity {
                     toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
 
+                    header(Ui.tr("Display priority"));
+                    value(Ui.tr("Priority"), () -> {
+                        int p = Prefs.sportsPriority();
+                        return p == 0 ? Ui.tr("My teams first") : p == 1 ? Ui.tr("Championships first") : Ui.tr("Chronological");
+                    }, () -> {
+                        Prefs.setSportsPriority((Prefs.sportsPriority() + 1) % 3);
+                        Sports.get(c).refresh();
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+
                     header(Ui.tr("My teams and athletes"));
                     List<String[]> allTeams = Prefs.sportsTeams();
-                    for (String[] team : allTeams) {
-                        link(team[3], () -> Sports.sportName(team[0]), () -> openTeam(team));
+                    for (int i = 0; i < allTeams.size(); i++) {
+                        String[] team = allTeams.get(i);
+                        final int pos = i;
+                        link(team[3], () -> (pos == 0 && allTeams.size() > 1 ? Ui.tr("Priority") + " · " : "") + Sports.sportName(team[0]), () -> openTeam(team));
                     }
                     link(Ui.tr("Add a team or athlete"), () -> !teamStatus.isEmpty() ? teamStatus : "", () -> askTeam(null));
                     if (allTeams.isEmpty()) {
@@ -675,7 +697,7 @@ public class SettingsActivity extends Activity {
                 default: {
                     header("GB Home TV");
                     info(Ui.tr("Version"), () -> versionName(c).replace("GB Home TV ", ""));
-                    link(Ui.tr("Update launcher"), () -> updateStatus.isEmpty() ? (freeActive() ? Ui.tr("Protected") : "") : updateStatus, this::openUpdate);
+                    link(Ui.tr("Update launcher"), () -> updateStatus, this::openUpdate);
                     header(Ui.tr("Comparison"));
                     JSONObject metrics = state.optJSONObject("metrics");
                     JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
@@ -734,6 +756,9 @@ public class SettingsActivity extends Activity {
 
         private String updateStatus = "";
         private String githubUpdateStatus = "";
+        private String githubApkUrl = "";
+        private boolean githubDownloading;
+        private String githubInstallStatus = "";
 
         private void openUpdate() {
             openDetail(Ui.tr("Update launcher"), () -> {
@@ -748,9 +773,68 @@ public class SettingsActivity extends Activity {
 
                 header(Ui.tr("Online updates"));
                 link(Ui.tr("Check GitHub"), () -> githubUpdateStatus.isEmpty() ? Ui.tr("Check") : githubUpdateStatus, this::checkGithubUpdates);
+                if (!githubApkUrl.isEmpty()) {
+                    link(Ui.tr("Install update"), () -> githubDownloading ? Ui.tr("Downloading…") : githubInstallStatus, this::downloadAndInstallGithubRelease);
+                }
                 info(Ui.tr("Repository"), () -> "github.com/gabrielbaumgratz/LauncherGB");
                 note(Ui.tr("Checks for newer releases and updates on GitHub."));
             });
+        }
+
+        private void downloadAndInstallGithubRelease() {
+            if (githubDownloading || githubApkUrl.isEmpty()) return;
+            githubDownloading = true;
+            githubInstallStatus = Ui.tr("Downloading…");
+            invalidate();
+            new Thread(() -> {
+                File apkFile = new File(activity.getCacheDir(), "update.apk");
+                try {
+                    HttpURLConnection conn = (HttpURLConnection) new URL(githubApkUrl).openConnection();
+                    conn.setRequestProperty("User-Agent", "GBHomeTV");
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setConnectTimeout(15000);
+                    conn.setReadTimeout(30000);
+                    if (conn.getResponseCode() == 200) {
+                        try (InputStream in = conn.getInputStream();
+                             FileOutputStream out = new FileOutputStream(apkFile)) {
+                            byte[] buf = new byte[8192];
+                            int len;
+                            while ((len = in.read(buf)) != -1) {
+                                out.write(buf, 0, len);
+                            }
+                        }
+                        activity.runOnUiThread(() -> {
+                            githubDownloading = false;
+                            githubInstallStatus = Ui.tr("Ready to install");
+                            invalidate();
+                            try {
+                                Uri uri = Uri.parse("content://io.freemytv.update/update.apk");
+                                Intent install = new Intent(Intent.ACTION_VIEW);
+                                install.setDataAndType(uri, "application/vnd.android.package-archive");
+                                install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                activity.startActivity(install);
+                            } catch (Exception ex) {
+                                Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+                                install.setData(Uri.fromFile(apkFile));
+                                install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                activity.startActivity(install);
+                            }
+                        });
+                    } else {
+                        activity.runOnUiThread(() -> {
+                            githubDownloading = false;
+                            githubInstallStatus = Ui.tr("Download failed");
+                            invalidate();
+                        });
+                    }
+                } catch (Exception e) {
+                    activity.runOnUiThread(() -> {
+                        githubDownloading = false;
+                        githubInstallStatus = Ui.tr("Download failed");
+                        invalidate();
+                    });
+                }
+            }).start();
         }
 
         private void runCheckAndUpdate() {
@@ -794,8 +878,24 @@ public class SettingsActivity extends Activity {
                         while ((r = in.read(buf)) != -1) out.write(buf, 0, r);
                         JSONObject rel = new JSONObject(out.toString("UTF-8"));
                         String tag = rel.optString("tag_name", "");
+                        String apkUrl = "";
+                        JSONArray assets = rel.optJSONArray("assets");
+                        for (int i = 0; assets != null && i < assets.length(); i++) {
+                            JSONObject a = assets.optJSONObject(i);
+                            if (a != null && a.optString("name", "").endsWith(".apk")) {
+                                apkUrl = a.optString("browser_download_url", "");
+                                break;
+                            }
+                        }
+                        final String finalApkUrl = apkUrl;
                         activity.runOnUiThread(() -> {
-                            githubUpdateStatus = tag.isEmpty() ? Ui.tr("Up to date") : tag;
+                            githubApkUrl = finalApkUrl;
+                            String current = versionName(activity).replace("GB Home TV ", "").trim();
+                            if (!tag.isEmpty() && !tag.equals(current) && !tag.equals("v" + current)) {
+                                githubUpdateStatus = Ui.trf("New: {v}", "v", tag);
+                            } else {
+                                githubUpdateStatus = Ui.tr("Up to date");
+                            }
                             invalidate();
                         });
                     } else {
@@ -908,6 +1008,23 @@ public class SettingsActivity extends Activity {
                     info(Ui.tr("Circuit"), () -> Sports.leagueName(team[0] + "/" + team[1]));
                 }
                 header(Sports.individual(team[0]) ? Ui.tr("Athlete") : Ui.tr("Team"));
+                if (Prefs.sportsTeams().size() > 1 && !Prefs.sportsTeams().get(0)[2].equals(team[2])) {
+                    link(Ui.tr("Move to top (Priority)"), () -> "", () -> {
+                        List<String[]> list = Prefs.sportsTeams();
+                        for (int i = list.size() - 1; i >= 0; i--) {
+                            if (list.get(i)[2].equals(team[2]) && list.get(i)[0].equals(team[0])) {
+                                String[] item = list.remove(i);
+                                list.add(0, item);
+                                break;
+                            }
+                        }
+                        Prefs.setSportsTeams(list);
+                        Sports.get(getContext()).refresh();
+                        HomeData.get(getContext()).settingsChanged();
+                        HomeActivity.refreshNow();
+                        closeDetail();
+                    });
+                }
                 link(Ui.tr("Stop following"), () -> "", () -> {
                     List<String[]> teams = Prefs.sportsTeams();
                     for (int i = teams.size() - 1; i >= 0; i--) if (teams.get(i)[2].equals(team[2]) && teams.get(i)[0].equals(team[0])) teams.remove(i);
@@ -1874,6 +1991,69 @@ public class SettingsActivity extends Activity {
         private List<HomeApps.Item> inputChoices() {
             if (inputChoices == null) inputChoices = HomeApps.inputChoices(getContext());
             return inputChoices;
+        }
+
+        private String liveTvSummary() {
+            String act = Prefs.liveTvAction();
+            if (act == null || act.isEmpty() || act.equals("tuner")) return Ui.tr("TV Tuner");
+            if (act.startsWith("input:")) {
+                String inputId = act.substring("input:".length());
+                for (HomeApps.Item it : HomeApps.inputs(getContext(), true)) {
+                    if (it.inputId != null && it.inputId.equals(inputId)) return it.label;
+                }
+                return inputId;
+            }
+            if (act.startsWith("app:")) {
+                String pkg = act.substring("app:".length());
+                if (appPkgs.isEmpty()) loadApps();
+                int idx = appPkgs.indexOf(pkg);
+                return idx >= 0 ? appLabels.get(idx) : pkg;
+            }
+            if (appPkgs.isEmpty()) loadApps();
+            int idx = appPkgs.indexOf(act);
+            return idx >= 0 ? appLabels.get(idx) : act;
+        }
+
+        private void openLiveTvPicker() {
+            if (appPkgs.isEmpty()) loadApps();
+            openDetail(Ui.tr("Live TV shortcut"), () -> {
+                note(Ui.tr("Choose whether Live TV opens the TV antenna, an HDMI input, or an installed app."));
+                header(Ui.tr("Source"));
+                link(Ui.tr("TV Tuner"), () -> Prefs.liveTvAction().equals("tuner") ? Ui.tr("Selected") : "", () -> {
+                    Prefs.setLiveTvAction("tuner");
+                    HomeData.get(getContext()).settingsChanged();
+                    HomeActivity.refreshNow();
+                    closeDetail();
+                });
+                List<HomeApps.Item> inputs = HomeApps.inputs(getContext(), true);
+                if (!inputs.isEmpty()) {
+                    header(Ui.tr("HDMI Inputs"));
+                    for (HomeApps.Item in : inputs) {
+                        String key = "input:" + in.inputId;
+                        link(in.label, () -> Prefs.liveTvAction().equals(key) ? Ui.tr("Selected") : "", () -> {
+                            Prefs.setLiveTvAction(key);
+                            HomeData.get(getContext()).settingsChanged();
+                            HomeActivity.refreshNow();
+                            closeDetail();
+                        });
+                    }
+                }
+                if (!appPkgs.isEmpty()) {
+                    header(Ui.tr("Installed Apps"));
+                    for (int i = 0; i < appPkgs.size(); i++) {
+                        String pkg = appPkgs.get(i);
+                        if (pkg.isEmpty() || pkg.startsWith("action:")) continue;
+                        String label = appLabels.get(i);
+                        String key = "app:" + pkg;
+                        link(label, () -> (Prefs.liveTvAction().equals(key) || Prefs.liveTvAction().equals(pkg)) ? Ui.tr("Selected") : "", () -> {
+                            Prefs.setLiveTvAction(key);
+                            HomeData.get(getContext()).settingsChanged();
+                            HomeActivity.refreshNow();
+                            closeDetail();
+                        });
+                    }
+                }
+            });
         }
 
         /** Paired headphones that can go on the home screen's shortcuts. */

@@ -6,6 +6,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- After the TV boots (and after a TV update), checks that Free My TV mode is still as you left it. -->
@@ -175,5 +176,11 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <provider
+            android:name=".UpdateProvider"
+            android:authorities="io.freemytv.update"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>
