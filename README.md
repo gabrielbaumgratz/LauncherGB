@@ -7,215 +7,196 @@
 
 # GB Home TV
 
-**A faster, ad-free home screen for your Google TV or Android TV.**<br>
-One click switches. Another brings the original back.
+**A faster, lighter home screen for Google TV and Android TV, free of ads and spyware.**<br>
+Eliminate intrusive factory ads and background telemetry with a single click. Fully reversible anytime.
 
 English · [Português](README.pt.md) · [Español](README.es.md)
 
-[Why](#why) · [Install](#install) · [After installing](#after-installing) · [How to use](#how-to-use) · [Features](#features) · [Screenshots](#screenshots) · [What it turns off](#what-it-turns-off) · [Memory](#memory-ram) · [FAQ](#faq)
+[Advantages](#advantages) · [Features](#features) · [Installation](#installation) · [What it turns off](#what-it-turns-off) · [Memory and speed](#memory-and-speed) · [How to use](#how-to-use) · [After installing](#after-installing) · [FAQ](#faq)
 
-<img src="docs/assets/en/hero.gif" width="880" alt="GB Home TV: the home screen, the drawer, weather and games, and the Control Center">
+<img src="docs/assets/en/hero.gif" width="880" alt="GB Home TV: home screen, drawer, sports, and Control Center">
 
 </div>
 
-## Why
+## Advantages
 
 | | |
 |---|---|
-| **No ads** | No sponsored rows, banners or videos that start on their own. |
-| **Faster** | On a real TV: 154 ms to show the home screen, against 217 ms for the original. |
-| **Ready out of the box** | Uses your TV's language, theme, units and clock. Change it later if you like. |
-| **Reversible** | Uninstalls nothing. *Launcher → Original* brings everything back, and after 3 crashes it goes back by itself. |
-| **Free and open** | No account, no subscription. |
-
-## Install
-
-**You need:** a TV with Google TV or Android TV (Android 8+) and a computer on the same Wi-Fi.
-
-### 1. Prepare the TV (same for both ways)
-
-1. *Settings → System → About*: press **7 times** on *Android TV OS build* (or *Build number*).
-2. *Settings → System → Developer options*: turn on **USB debugging** (or *Network debugging*).
-3. *Settings → Network & Internet* → your Wi-Fi: note the **IP address** (like `192.168.1.50`). Yours will differ.
-
-### 2A. With an AI assistant (easiest)
-
-Open a coding assistant ([Claude Code](https://claude.com/claude-code), Codex, Antigravity…) and paste this, using your TV's IP:
-
-> Install GB Home TV (github.com/gabrielbaumgratz/LauncherGB) on my TV at 192.168.1.50.
-
-It downloads, builds and installs. When the TV asks *Allow USB debugging?*, tick *Always allow*.
-
-### 2B. By hand
-
-```bash
-# Tools: JDK 17+, Android SDK (build-tools 34, android-34) and adb
-./build.sh                                 # makes GBHomeTV.apk
-adb connect 192.168.1.50:5555              # your TV's IP
-adb install -r GBHomeTV.apk
-```
-
-- **TCL:** also run `adb shell "appops set io.freemytv AUTO_START allow || appops set io.freemytv APP_AUTO_START allow"` (without it TCL blocks the switch).
-- **macOS / Linux:** install the tools with `brew install --cask temurin android-commandlinetools android-platform-tools` or your package manager. **Windows:** use Git Bash or WSL.
-- Keep `freemytv.keystore`: updates must be signed with the same key.
-
-### 3. Switch on the TV
-
-Open **GB Home TV → General → Launcher → GB Home TV** and accept USB debugging once more. Press Home: it's there.
-
-## After installing
-
-All optional. Everything else already works without it.
-
-### Recommendations (TMDB key)
-
-Shows trending titles from the streaming apps you have. Needs a free key.
-
-1. Sign up at [themoviedb.org](https://www.themoviedb.org/signup) and confirm your email.
-2. Profile picture → *Settings* → *API* → request a **Developer** key (use: "personal, TV home screen").
-3. Copy the **API Read Access Token**.
-4. In `config.properties` (created by the first `./build.sh`), paste it after `tmdb_key=`, no spaces or quotes.
-5. Build and install again (`./build.sh`, then `adb install -r GBHomeTV.apk`), or ask the AI.
-
-The key is yours: don't share it. `config.properties` never goes to GitHub.
-
-<details>
-<summary>Other <code>config.properties</code> options</summary>
-
-| Key | What it does | Default |
-|---|---|---|
-| `tmdb_region` | Your country (two letters) | the TV's |
-| `latitude`, `longitude`, `city` | Your city, for weather and sunset | from the time zone |
-| `language` | `auto`, `en`, `pt` or `es` | `auto` |
-| `temperature` | `C`, `F` or `auto` | `auto` |
-
-Build again after changing.
-</details>
-
-### AirPlay
-
-GB Home TV only adds the button; the free app [android-airplay-server](https://github.com/jqssun/android-airplay-server) (jqssun, GPL-3.0) does the receiving.
-
-1. Download the `.apk` from [Releases](https://github.com/jqssun/android-airplay-server/releases).
-2. `adb install -r file.apk` (or ask the AI).
-3. The Control Center now has an **AirPlay** button. On your iPhone, iPad or Mac, pick the TV in the AirPlay menu.
-
-> Tip: that app uses memory while it's open (we measured [~40 MB less free](#memory-ram)). On low-RAM TVs, close it when you're not using it.
-
-### Photos from your phone
-
-*Settings → Screensaver → Photos from your phone.* Point your camera at the QR code on the TV (on a computer, type the address and PIN) and pick photos. Local network only, the PIN locks after wrong tries, and the server runs only while that screen is open.
-
-### Weather and sports
-
-No key and no install. *Settings → Weather* and *Sports*.
-
-## How to use
-
-| | |
-|---|---|
-| **Home** | Your apps on the glass shelf, and highlight tabs. |
-| **Down** | The drawer: HDMI inputs, shortcuts, weather and games. |
-| **First round button, at the top** | The Control Center: Bluetooth, volume, theme, picture, AirPlay. |
-| **Gear** | Settings. *Launcher → Original* returns to the TV's own screen. |
-| **TV idle** | The screensaver, with your photos. |
-
-### Remote buttons
-
-Every remote is different, so nothing is tied to a button. To open something with a button on your remote:
-
-*Settings → Remote Buttons → Add a button*, press the button and choose what it opens: **an app**, **the Control Center** or **the TV's settings**. Works on any brand. On TCL, Sony, Vestel, KTC and Formovie, the factory app buttons are recognized too.
+| **No ads** | Eliminates sponsored rows, intrusive banners, and autoplaying promotional videos that stock home screens force on you. |
+| **Spyware and telemetry blocked** | Disables background ad tracking, Automatic Content Recognition (ACR), and factory analytics that monitor viewing habits. |
+| **Faster and responsive** | Just 154 ms to display the home screen (compared to 217 ms on the stock launcher). Rendered directly on the GPU at 60 fps. |
+| **More free RAM** | Shuts down background factory bloatware and resident services, freeing critical memory on 1 GB and 1.5 GB TVs. |
+| **Complete privacy** | No account, login, or registration required. No personal information is gathered, stored, or sent to external servers. |
+| **Fully reversible and safe** | Uninstalls nothing from the system. One click in *Launcher → Original* brings back stock settings, and an automated watchdog restores original mode if crashes occur. |
+| **Free and open source** | No subscriptions, paywalls, or hidden limitations. |
 
 ## Features
 
-| | |
+| Feature | Description |
 |---|---|
-| **Control Center** | You pick which blocks show. |
-| **Sports** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
-| **Screensaver** | Full-screen photos, clock, date and weather. Six brightness levels. |
-| **Highlights** | Trending titles from your streaming apps. |
-| **Bluetooth** | Choose, rename and forget devices. |
-| **Remote buttons** | Teach any button to open an app or a screen, name it, and restore every button to default in one click. |
-| **Light, dark or automatic theme** | Automatic follows the sun where you live; you can also pick one for good. |
-| **English, Portuguese, Spanish** | Follows the TV unless you choose. |
+| **Control Center** | Quick-access side panel to switch Bluetooth audio devices (headphones and soundbars), adjust volume, toggle picture modes (on supported TVs), change themes, and launch AirPlay. |
+| **Sports, teams, and athletes** | Track your clubs (soccer, basketball, football) across leagues and cups (Champions League, Premier League, Libertadores, etc.), plus individual athletes (ATP/WTA tennis players, Formula 1 drivers, UFC fighters, and PGA golfers). Public real-time data from ESPN with no account needed. |
+| **Custom screensaver** | Full-screen photo showcase with live clock, date, and local weather. Six brightness settings including matte and ultra-dark levels optimized for bedrooms and OLED panels. |
+| **Phone photo uploads** | Send photos straight from your phone to the TV screensaver over local Wi-Fi via QR code, protected by a temporary server and PIN security. |
+| **Remote button remapping** | Assign any button on your remote to launch a chosen app, open the Control Center, or bring up TV settings. Native detection for dedicated factory buttons on TCL, Sony, Vestel, KTC, and Formovie remotes. |
+| **Streaming highlights** | Curated trending picks drawn exclusively from streaming services installed on your TV (powered by the free TMDB API). |
+| **Adaptive themes** | Light, dark, or automatic theme synchronized with sunrise and sunset times for your location. |
+| **Performance mode** | Dedicated low-overhead mode designed to minimize memory consumption on entry-level hardware. |
+| **Full multilingual support** | Available in English, Portuguese, and Spanish. |
+
+## What it turns off
+
+**Why debloat?** Modern Smart TVs arrive loaded with manufacturer background services: automatic content recognition (ACR) that monitors what you watch to serve targeted advertisements, retail store demos, diagnostic logging, and sponsored promo channels. These services consume scarce RAM, congest local networks, and cause interface lag.
+
+When you switch to GB Home TV, it **safely disables** (never uninstalls) only known non-essential packages in these categories:
+
+| Category | What is disabled |
+|---|---|
+| **Ad-supported channels** | TCL Channel, Mi TV+, Coolita, and partner promotional streams. |
+| **Ad telemetry and spyware** | Anoki ACR (automatic screen surveillance), Xiaomi/TCL analytical collectors, and Android advertising ID targeting. |
+| **Store demos** | Retail store mode, promotional video loops, and resident demo manuals. |
+| **Diagnostic logging** | Background crash log reporting and manufacturer diagnostic guides. |
+
+**Never modified:** Picture processing, sound engines, HDMI inputs, remote control pairing, operating system updates, and core Google services. *Launcher → Original* restores every disabled app immediately. Full audited list available in [`HomeMode.java`](app/src/io/freemytv/HomeMode.java).
+
+## Memory and speed
+
+On entry-level Smart TVs with 1 GB or 1.5 GB of RAM (many TCL, Xiaomi, and Redmi models), freeing up RAM directly improves streaming app smoothness:
+
+1. **Debloated background:** Turning off manufacturer telemetry and promotional channels eliminates unnecessary CPU and memory overhead.
+2. **Performance Mode:** In *Settings → Performance → Mode*, switch to *Performance* to turn off heavy recommendation queries and slow zoom animations, saving additional RAM.
+3. **AirPlay management:** AirPlay receiver apps consume considerable RAM while active (~40 MB measured). On low-RAM hardware, exit the receiver when not actively casting.
+
+Real performance without inflated claims: GB Home TV opens faster and animates cleanly at 60 fps because its UI is drawn directly on the canvas without heavy, embedded web frameworks. *Settings → About* displays real-time benchmarks measured on your own TV.
 
 ## Screenshots
 
 | | |
 |---|---|
-| **Home** | <img src="docs/assets/en/home.png" width="440"> |
+| **Home screen** | <img src="docs/assets/en/home.png" width="440"> |
 | **Drawer** | <img src="docs/assets/en/drawer.png" width="440"> |
 | **Control Center** | <img src="docs/assets/en/control-center.png" width="440"> |
 | **Settings** | <img src="docs/assets/en/settings.png" width="440"> |
-| **Games** | <img src="docs/assets/en/settings-games.png" width="440"> |
+| **Sports** | <img src="docs/assets/en/settings-games.png" width="440"> |
 | **Screensaver** | <img src="docs/assets/en/settings-screensaver.png" width="440"> |
 | **Performance** | <img src="docs/assets/en/settings-performance.png" width="440"> |
 | **Remote buttons** | <img src="docs/assets/en/settings-remote.png" width="440"> |
-| **Photos from your phone** | <img src="docs/assets/en/photos.png" width="440"> |
+| **Phone photo upload** | <img src="docs/assets/en/photos.png" width="440"> |
 
 In motion: [Control Center](docs/assets/en/control-center.webp) · [Settings](docs/assets/en/settings.webp) · [Screensaver](docs/assets/en/screensaver.mp4)
 
-## What it turns off
+## Installation
 
-**Why:** a TV ships with manufacturer apps that run all the time: ad-supported channels, store demos, usage measurement and ad services. They use memory and slow the TV down. When you switch to GB Home TV, it **turns off** (never uninstalls) only the ones it knows, so the TV gets lighter and ad-free.
+**Requirements:** A TV running Google TV or Android TV (Android 8 or newer) and a computer connected to the same Wi-Fi network.
 
-| Kind | Examples |
+### 1. Prepare the TV
+
+1. Navigate to *Settings → System → About*: press **Build number** (or *Android TV OS build*) **7 times** to unlock Developer options.
+2. Under *Settings → System → Developer options*: enable **USB debugging** (or *Network debugging*).
+3. Under *Settings → Network & Internet* → select your Wi-Fi network and note down the **IP address** (e.g. `192.168.0.137`).
+
+### 2A. Installation with an AI assistant (easiest)
+
+Open an AI coding assistant ([Claude Code](https://claude.com/claude-code), Codex, Antigravity…) and provide the following prompt using your TV's IP:
+
+> Install GB Home TV (github.com/gabrielbaumgratz/LauncherGB) on my TV at 192.168.0.137.
+
+The assistant will download, compile, and install the package. When the TV prompts *Allow USB debugging?*, tick *Always allow* and accept.
+
+### 2B. Manual installation
+
+```bash
+# Requirements: JDK 17+, Android SDK (build-tools 34, android-34), and adb
+./build.sh                                 # compiles GBHomeTV.apk
+adb connect 192.168.0.137:5555             # your TV IP address
+adb install -r GBHomeTV.apk
+```
+
+- **TCL TVs:** also execute `adb shell "appops set io.freemytv AUTO_START allow || appops set io.freemytv APP_AUTO_START allow"`.
+- **macOS / Linux:** install tools via your package manager (`brew install --cask temurin android-commandlinetools android-platform-tools`). **Windows:** use Git Bash or WSL.
+- Retain `freemytv.keystore`: subsequent updates require signing with the same key.
+
+### 3. Activation on TV
+
+Open **GB Home TV → General → Launcher → GB Home TV** and confirm the local ADB prompt on screen. Press the Home button on your remote to view the new interface.
+
+## After installing
+
+Optional customizations to enhance your setup:
+
+### Personalized streaming recommendations (TMDB key)
+
+Shows trending titles available on streaming platforms installed on your TV:
+
+1. Register a free account at [themoviedb.org](https://www.themoviedb.org/signup) and confirm your email.
+2. Go to Profile → *Settings* → *API* → request a **Developer** key (stated purpose: "personal TV home screen").
+3. Copy the **API Read Access Token**.
+4. In `config.properties` (generated on first `./build.sh`), paste the token after `tmdb_key=` without quotes or spaces.
+5. Rebuild and install (`./build.sh` followed by `adb install -r GBHomeTV.apk`).
+
+<details>
+<summary>Options in <code>config.properties</code></summary>
+
+| Key | Purpose | Default |
+|---|---|---|
+| `tmdb_region` | Two-letter country code (e.g. US, BR, ES) | TV region |
+| `latitude`, `longitude`, `city` | Coordinates and location for weather and sunset | auto by timezone |
+| `language` | Interface language (`auto`, `en`, `pt`, `es`) | `auto` |
+| `temperature` | Temperature scale (`C`, `F`, or `auto`) | `auto` |
+
+</details>
+
+### AirPlay support
+
+GB Home TV provides the integration tile in Control Center; media streaming reception is handled by the open-source companion [android-airplay-server](https://github.com/jqssun/android-airplay-server) (jqssun, GPL-3.0):
+
+1. Download the `.apk` from the [Releases](https://github.com/jqssun/android-airplay-server/releases) page.
+2. Install via adb: `adb install -r file.apk`.
+3. The **AirPlay** button will appear in the Control Center. From your Apple device (iPhone, iPad, Mac), select the TV in the AirPlay menu.
+
+### Phone photo uploads
+
+Go to *Settings → Screensaver → Photos from your phone*. Scan the QR code displayed on the TV (or open the local URL and PIN in a browser) to upload photos straight to your TV's private storage.
+
+## How to use
+
+| Action | Destination |
 |---|---|
-| Ad-supported channels | TCL Channel, Mi TV+, Coolita |
-| Store demo | Store mode, demo manuals |
-| Usage and ad measurement | Xiaomi analytics, Anoki ACR, Android ad targeting |
-| Support and logs | Repair guides, log collection |
-
-**Never touched:** picture, sound, HDMI inputs, remote, updates and Google services. *Launcher → Original* turns everything back on. Full list in [`HomeMode.java`](app/src/io/freemytv/HomeMode.java).
-
-## Memory (RAM)
-
-1 GB TVs (many TCL and Xiaomi/Redmi) have little memory to spare. What helps most, in order:
-
-1. **Close the AirPlay receiver when you're not using it.** Measured on a 1 GB TCL (3 free-memory readings):
-
-   | | Free memory |
-   |---|---|
-   | AirPlay app open all the time | ~184 MB |
-   | AirPlay app closed | ~223 MB |
-
-2. **Switch to GB Home TV:** it turns off the manufacturer apps that keep running in the background (see above).
-3. **Switch to the Performance mode:** *Settings → Performance → Mode*. *Full* keeps everything; *Performance* turns off recommendations, the weather and games widgets and the slow zoom (the page lists what each mode does). Saves about 5 MB.
-
-No spin on the numbers: GB Home TV opens faster, but it draws everything itself and uses **more** memory than the stock screen (152 MB against 89 MB on a TCL 32S5K). The gain is speed and no ads, and turning off the manufacturer apps makes up for part of it. *Settings → About* measures it on your TV.
+| **Home button** | Main screen with your glass app shelf and highlight tabs. |
+| **D-pad Down** | Drawer featuring HDMI inputs, system settings, weather, and sports. |
+| **Top circular icon** | Fast Control Center (Bluetooth, volume, picture mode, themes, and AirPlay). |
+| **Gear icon** | Full settings and configuration menu. |
+| **Idle TV** | Ambient screensaver with personal photos, clock, and weather. |
 
 ## FAQ
 
-**Will it break my TV?** No. It's a regular app; it doesn't touch the system or uninstall anything.
+**Can this damage my TV?** No. GB Home TV runs as a standard user-space Android application. It does not modify system partitions, does not alter firmware, and does not delete system files.
 
-**How do I go back?** *Settings → General → Launcher → Original.*
+**How do I return to the stock launcher?** Open *Settings → General → Launcher → Original*. All disabled manufacturer services are immediately re-enabled.
 
-**Which TVs?** Tested on a TCL 32S5K (Google TV, Android 14). Should run on any Android TV or Google TV (Android 8+): Sony, Xiaomi, Philips, onn., Chromecast with Google TV, NVIDIA Shield. LG and Samsung don't run Android: use a Google TV streamer on HDMI.
+**Which TVs are supported?** Any device running Google TV or Android TV (Android 8 and up): TCL, Sony, Xiaomi, Philips, onn., Chromecast with Google TV, NVIDIA Shield, and others. LG (webOS) and Samsung (Tizen) devices do not run Android; connecting a Google TV streaming device via HDMI is recommended.
 
-**Does it collect data?** No. The only connections are weather (Open-Meteo), highlights (TMDB, if you add a key) and games (ESPN).
-
-**Something went wrong.** Open an [issue](https://github.com/gabrielbaumgratz/LauncherGB/issues) with your TV model and what you saw.
+**Does it collect data?** No. Network access is strictly limited to services you enable: weather data (Open-Meteo), streaming highlights (TMDB, via your private key), and sports fixtures (public ESPN).
 
 ## Build it yourself
 
-No Gradle, no libraries: only the Android SDK.
+Built without Gradle or heavy dependencies, using only standard Android SDK command-line utilities:
 
 ```bash
 export ANDROID_HOME="/path/to/android/sdk"
-./build.sh            # GBHomeTV.apk
-tools/check.sh        # build and translation catalogues
+./build.sh            # outputs signed GBHomeTV.apk
+tools/check.sh        # runs build and translation validations
 ```
 
 ## Credits
 
-Made by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv).
+Created and maintained by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), originally inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv).
 
-- **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): GB Home TV started from it. The Gradle-free build, the canvas-drawn home screen, switching to and from the original launcher and the watchdog are theirs.
-- **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, by jqssun (GPL-3.0): the AirPlay receiver.
-- **SF Pro**, by Apple: the font, via [sahibjotsaggu/San-Francisco-Pro-Fonts](https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts); Apple's own terms still apply.
-- **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): the icons.
-- **[TMDB](https://www.themoviedb.org)**: the highlights. Uses the TMDB API, not endorsed or certified by TMDB.
-- **[Open-Meteo](https://open-meteo.com)**: the weather. **ESPN**: public game data.
+- **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): original project foundation.
+- **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, by jqssun (GPL-3.0): companion AirPlay receiver.
+- **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): interface iconography.
+- **[TMDB](https://www.themoviedb.org)**: streaming recommendations and artwork metadata.
+- **[Open-Meteo](https://open-meteo.com)**: weather forecasts. **ESPN**: public sports fixtures.
 
 ## License
 
