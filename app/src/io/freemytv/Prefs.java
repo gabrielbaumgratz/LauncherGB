@@ -37,7 +37,7 @@ final class Prefs {
                     KEY_SONY_PLAY}
             : RemoteKeys.STEM_NETFLIX ? new int[] {KEY_STEM_NETFLIX}
             : RemoteKeys.KTC ? new int[] {KEY_KTC_TABII}
-            : new int[] {KEY_NETFLIX, KEY_YOUTUBE, KEY_PRIME, KEY_TCL_CHANNEL, KEY_GUIDE};
+            : new int[] {KEY_NETFLIX, KEY_YOUTUBE, KEY_PRIME, KEY_TCL_CHANNEL};   // the CH button is taught like any other
 
     /** Bumped by every change: screens compare it to know when to redraw. */
     static volatile int version;
@@ -73,7 +73,7 @@ final class Prefs {
 
     /** "auto" or a language code as picked ("pt", "fr", "zh-CN"…); Ui.applyLanguage finds its catalogue. */
     /** What the greeting calls the person ("Good morning, Ana"); empty for no name. */
-    static String userName() { return demo() ? "Alex" : sp().getString("userName", "").trim(); }
+    static String userName() { return demo() ? "Gabriel" : sp().getString("userName", "").trim(); }
     static void setUserName(String v) { put("userName", v.trim()); }
 
     static String language() {
@@ -122,9 +122,17 @@ final class Prefs {
 
     // MARK: - City
 
-    static String city() { return demo() ? "New York" : sp().getString("city", Config.CITY).trim(); }
-    static String latitude() { return demo() ? "40.7128" : sp().getString("latitude", Config.LATITUDE); }
-    static String longitude() { return demo() ? "-74.0060" : sp().getString("longitude", Config.LONGITUDE); }
+    static String city() { return demo() ? demoPlace()[0] : sp().getString("city", Config.CITY).trim(); }
+    static String latitude() { return demo() ? demoPlace()[1] : sp().getString("latitude", Config.LATITUDE); }
+    static String longitude() { return demo() ? demoPlace()[2] : sp().getString("longitude", Config.LONGITUDE); }
+
+    /** The demo's city: São Paulo for Portuguese, Madrid for Spanish, New York for the rest. */
+    private static String[] demoPlace() {
+        String lang = Ui.language;
+        if (lang.startsWith("pt")) return new String[] {"São Paulo", "-23.5505", "-46.6333"};
+        if (lang.startsWith("es")) return new String[] {"Madrid", "40.4168", "-3.7038"};
+        return new String[] {"New York", "40.7128", "-74.0060"};
+    }
 
     /** The person (or config.properties) chose a city; if not, the home screen guesses one from the TV's time zone, once. */
     static boolean placeChosen() { return !Config.CITY.trim().isEmpty() || sp().contains("city") || sp().getBoolean("placeTried", false); }
@@ -267,12 +275,25 @@ final class Prefs {
 
     // MARK: - Games widget (Sports) and Bluetooth names
 
-    static boolean sportsOn() { return sp().getBoolean("sportsOn", false); }
+    static boolean sportsOn() { return demo() || sp().getBoolean("sportsOn", false); }
+
+    /** How many of the top of the ranking the tennis championships show ("atp", "wta"): ten, unless set (adb only). */
+    static int tennisTop(String tour) { return sp().getInt("tennisTop_" + tour, 10); }
+    static void setTennisTop(String tour, int n) { sp().edit().putInt("tennisTop_" + tour, n).apply(); version++; }
     static void setSportsOn(boolean on) { put("sportsOn", on); }
 
     /** The followed teams, as {sport, league, id, name}. */
     static List<String[]> sportsTeams() {
         List<String[]> out = new ArrayList<>();
+        if (demo()) {   // the country's own: Brazil, Spain, the United States
+            String lang = Ui.language;
+            if (lang.startsWith("pt")) out.add(new String[] {"soccer", "bra.1", "819", "Flamengo"});
+            else if (lang.startsWith("es")) {
+                out.add(new String[] {"soccer", "esp.1", "86", "Real Madrid"});
+                out.add(new String[] {"soccer", "esp.1", "83", "FC Barcelona"});
+            } else out.add(new String[] {"basketball", "nba", "13", "Los Angeles Lakers"});
+            return out;
+        }
         for (String line : sp().getString("sportsTeams", "").split("\n")) {
             String[] p = line.split("[|]", 4);
             if (p.length == 4) out.add(p);
@@ -289,6 +310,12 @@ final class Prefs {
     /** The followed championships, as ESPN's paths ("soccer/bra.1"). */
     static List<String> sportsLeagues() {
         List<String> out = new ArrayList<>();
+        if (demo()) {
+            String lang = Ui.language;
+            out.add(lang.startsWith("pt") ? "soccer/bra.1" : lang.startsWith("es") ? "soccer/esp.1" : "basketball/nba");
+            out.add("tennis/atp");
+            return out;
+        }
         for (String p : sp().getString("sportsLeagues", "").split(",")) if (!p.isEmpty()) out.add(p);
         return out;
     }
@@ -300,7 +327,11 @@ final class Prefs {
     }
 
     /** Changes when what the widget follows does (the list is fetched again). */
-    static String sportsKey() { return sp().getString("sportsTeams", "") + "#" + sp().getString("sportsLeagues", ""); }
+    static String sportsKey() {
+        StringBuilder sb = new StringBuilder();
+        for (String[] t : sportsTeams()) sb.append(t[0]).append(t[2]).append(',');
+        return sb.append('#').append(sportsLeagues()).append('#').append(tennisTop("atp")).append(tennisTop("wta")).toString();
+    }
 
     /** The name the person gave a Bluetooth device (empty: the device's own). */
     static String btAlias(String address) { return sp().getString("btAlias_" + address, ""); }

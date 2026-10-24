@@ -63,7 +63,7 @@ final class RemoteKeys {
         if (taught != null) {
             if (taught.isEmpty()) return false;
             if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
-                Intent intent = launchIntent(c.getPackageManager(), taught);
+                Intent intent = targetIntent(c, taught);
                 AppLog.w("taught key " + code + " -> " + taught + (intent == null ? " (not installed)" : ""));
                 if (intent != null) c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
@@ -110,8 +110,8 @@ final class RemoteKeys {
         String pkg = Prefs.keyApp(keyCode);
         if (pkg.isEmpty()) return false;   // "Nothing": the key goes on as if we weren't here
         if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
-            Intent intent = launchIntent(c.getPackageManager(), pkg);
-            if (intent == null && (keyCode == Prefs.KEY_TCL_CHANNEL || keyCode == Prefs.KEY_GUIDE)) intent = liveTv(c.getPackageManager());   // the default app isn't here
+            Intent intent = targetIntent(c, pkg);
+            if (intent == null && keyCode == Prefs.KEY_TCL_CHANNEL) intent = liveTv(c.getPackageManager());   // the default app isn't here
             AppLog.w("remote key " + e.getKeyCode() + " -> " + pkg + (intent == null ? " (not installed)" : ""));
             if (intent != null) c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
@@ -137,6 +137,18 @@ final class RemoteKeys {
             if (intent != null) return intent;
         }
         return null;
+    }
+
+    /** What a button can open besides an app (the picker in Settings > Remote Buttons lists them first). */
+    static final String ACTION_SETTINGS = "action:settings", ACTION_CONTROL = "action:control";
+
+    /** The intent for a button's target: the TV's settings, the Control Center, or an app's package. Null if not installed. */
+    private static Intent targetIntent(Context c, String target) {
+        if (target.equals(ACTION_SETTINGS)) return new Intent(android.provider.Settings.ACTION_SETTINGS);
+        if (target.equals(ACTION_CONTROL)) {
+            return new Intent().setComponent(new android.content.ComponentName(c, ControlCenterActivity.class)).putExtra("fromKey", true);
+        }
+        return launchIntent(c.getPackageManager(), target);
     }
 
     /** The app's TV launcher, or its plain one (kept here, not in HomeApps, so the key process stays small). */

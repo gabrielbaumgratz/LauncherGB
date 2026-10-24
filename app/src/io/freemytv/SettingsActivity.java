@@ -69,6 +69,9 @@ public class SettingsActivity extends Activity {
         }
         // From ADB: --ei page 4 opens that category (0 General, 1 Home Screen, 2 Control Center, 3 Weather, 4 Games, 5 Screensaver,
         // 6 Performance, 7 Remote, 8 About); --ez demo true puts a made-up name and city on the screen (for screenshots), false brings the real ones back.
+        // From ADB: --ei tennisAtp 5 --ei tennisWta 3 (how many of each ranking the tennis shows; ten by default, no menu).
+        if (getIntent().hasExtra("tennisAtp")) Prefs.setTennisTop("atp", getIntent().getIntExtra("tennisAtp", 10));
+        if (getIntent().hasExtra("tennisWta")) Prefs.setTennisTop("wta", getIntent().getIntExtra("tennisWta", 10));
         if (getIntent().hasExtra("demo")) {
             Prefs.setDemo(getIntent().getBooleanExtra("demo", false));
             getIntent().removeExtra("demo");
@@ -527,7 +530,7 @@ public class SettingsActivity extends Activity {
                     break;
                 }
                 case P_CONTROL: {
-                    note(Ui.tr("Choose what the Control Center shows. It opens with the info button on the remote, or the first round button at the top."));
+                    note(Ui.tr("Choose what the Control Center shows. It opens from the first round button at the top, or from a remote button you pick in Remote Buttons."));
                     header(Ui.tr("Show in the Control Center"));
                     String[][] tiles = {{"bluetooth", "Bluetooth"}, {"theme", Ui.tr("Theme")}, {"recs", Ui.tr("Recommendations")},
                             {"picture", Ui.tr("Picture mode")}, {"pair", Ui.tr("Pair a new device")}, {"tv", Ui.tr("TV Settings")},
@@ -575,7 +578,6 @@ public class SettingsActivity extends Activity {
                             Prefs.setSportsLeagues(paths);
                         });
                     }
-                    note(Ui.tr("Tennis: the matches of the top 5 men (ATP) and top 3 women (WTA)."));
                     break;
                 }
                 case P_SAVER: {
@@ -787,7 +789,7 @@ public class SettingsActivity extends Activity {
 
         private void askTeam() {
             if (Ui.tr("Searching…").equals(teamStatus)) return;
-            Prompt.ask(activity, Ui.tr("Add a team"), "", Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
+            Prompt.ask(activity, Ui.tr("Add a team"), Ui.tr("A team of any sport, or a tennis player."), Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
                     Ui.tr("Search"), this::searchTeam);
         }
 
@@ -1603,7 +1605,7 @@ public class SettingsActivity extends Activity {
                     Ui.tr("Prime Video button"), Ui.tr("YouTube button"),
                     Ui.tr("Crunchyroll button"), Ui.tr("Google Play button")};
             return new String[] {Ui.tr("Netflix button"), Ui.tr("YouTube button"),
-                    Ui.tr("Prime Video button"), Ui.tr("TCL Channel button"), Ui.tr("CH button")};
+                    Ui.tr("Prime Video button"), Ui.tr("TCL Channel button")};
         }
 
         /** Installed TV apps, by name, after "Nothing": what a remote button can open. */
@@ -1618,6 +1620,10 @@ public class SettingsActivity extends Activity {
             appPkgs.add("");
             // On Sony, "nothing" leaves the key to the TV, which opens its usual app.
             appLabels.add(RemoteKeys.SONY ? Ui.tr("Sony default") : Ui.tr("Nothing"));
+            appPkgs.add(RemoteKeys.ACTION_SETTINGS);
+            appLabels.add(Ui.tr("TV settings"));
+            appPkgs.add(RemoteKeys.ACTION_CONTROL);
+            appLabels.add(Ui.tr("Control Center"));
             for (String[] f : found) {
                 appPkgs.add(f[0]);
                 appLabels.add(f[1]);
