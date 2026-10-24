@@ -148,7 +148,7 @@ HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set
 - The settings take the home screen's look: `Scene.glass` over a flat gray (`updateTheme()`), the drawer's `glass()` recipe,
   the white focus pill, black or white ink by the theme (`HomeData.isNight`); icons are monochrome Material Symbols
   (`tools/make_symbols.py`). A row that opens a page of its own (a Bluetooth device, a team) uses `openDetail()`.
-- The games widget: `Sports` (ESPN's public JSON, no key; teams from its search, championships from `Sports.LEAGUES`),
+- The tennis championships show the top ten of each ranking (`Prefs.tennisTop`; the owner's TV is set to 5 and 3 through adb extras, with no menu); teams and tennis players can both be followed. The games widget: `Sports` (ESPN's public JSON, no key; teams from its search, championships from `Sports.LEAGUES`),
   chosen in Settings → Games (`Prefs.sportsOn/sportsTeams/sportsLeagues`) and drawn by `HomeView.drawSports` beside the
   weather card. `PhotosActivity` draws the QR code (`Qr`, byte mode, level M) of `http://ip:port/#PIN`.
 - Picture mode (Control Center) shows only on TVs that keep it in the `picture_mode` setting (TCL's).
