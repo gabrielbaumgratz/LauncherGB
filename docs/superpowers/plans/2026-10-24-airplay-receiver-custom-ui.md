@@ -34,15 +34,15 @@
 - Create: `C:\Projetos\Pessoais\android-airplay-server\local.properties`
 
 **Steps:**
-- [ ] Verificar se o diretório `C:\Projetos\Pessoais\android-airplay-server` já existe; caso contrário, clonar `https://github.com/jqssun/android-airplay-server.git`.
-- [ ] Inicializar todos os submódulos git recursivamente: `git submodule update --init --recursive --depth 1`.
-- [ ] Criar o arquivo `local.properties` apontando para o SDK e NDK instalados:
+- [x] Verificar se o diretório `C:\Projetos\Pessoais\android-airplay-server` já existe; caso contrário, clonar `https://github.com/jqssun/android-airplay-server.git`.
+- [x] Inicializar todos os submódulos git recursivamente: `git submodule update --init --recursive --depth 1`.
+- [x] Criar o arquivo `local.properties` apontando para o SDK e NDK instalados:
   ```properties
   sdk.dir=C\:\\Users\\gabri\\AppData\\Local\\Android\\Sdk
   ndk.dir=C\:\\Users\\gabri\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973
   ```
-- [ ] Executar `./gradlew --version` e verificar se o Gradle wrapper responde corretamente.
-- [ ] Executar `./gradlew assembleDebug` para validar a integridade do build original antes de qualquer modificação.
+- [x] Executar `./gradlew --version` e verificar se o Gradle wrapper responde corretamente.
+- [x] Executar `./gradlew assembleDebug` para validar a integridade do build original antes de qualquer modificação.
 
 ---
 
@@ -52,7 +52,7 @@
 - Modify: `C:\Projetos\Pessoais\android-airplay-server\app\src\main\kotlin\io/github/jqssun/airplay/ui/theme/Theme.kt`
 
 **Steps:**
-- [ ] Atualizar o esquema de cores escuro em `Theme.kt` para usar exatamente os valores do GB Launcher:
+- [x] Atualizar o esquema de cores escuro em `Theme.kt` para usar exatamente os valores do GB Launcher:
   - `background`: `Color(0xFF141416)` (cinza escuro do launcher)
   - `surface`: `Color(0xFF1C1C20)` (superfície de cartões)
   - `surfaceVariant`: `Color(0xFF26262B)`
@@ -61,8 +61,8 @@
   - `primary`: `Color(0xFFFFFFFF)`
   - `onPrimary`: `Color(0xFF1C1C1E)`
   - `secondary`: `Color(0xFF30D158)` (verde ativo do launcher)
-- [ ] Garantir que o modo escuro seja padrão na TV, mantendo alto contraste em todas as telas.
-- [ ] Compilar `./gradlew compileDebugKotlin` para validar a sintaxe e tipos.
+- [x] Garantir que o modo escuro seja padrão na TV, mantendo alto contraste em todas as telas.
+- [x] Compilar `./gradlew compileDebugKotlin` para validar a sintaxe e tipos.
 
 ---
 
@@ -72,13 +72,13 @@
 - Modify: `C:\Projetos\Pessoais\android-airplay-server\app\src\main\kotlin\io/github/jqssun/airplay/ui/TvFocus.kt`
 
 **Steps:**
-- [ ] Analisar o modificador de foco existente `Modifier.dpadFocus(...)`.
-- [ ] Ajustar as cores do foco quando focado para coincidir com a assinatura do GB Launcher:
+- [x] Analisar o modificador de foco existente `Modifier.dpadFocus(...)`.
+- [x] Ajustar as cores do foco quando focado para coincidir com a assinatura do GB Launcher:
   - Fundo do foco: `Color(0xFFFFFFFF)`
   - Conteúdo/texto quando focado: `Color(0xFF1C1C1E)`
   - Elevação e borda: `Color(0x33FFFFFF)` quando desfocado.
-- [ ] Preservar a forma (pill/arredondada) e animação suave de transição de foco.
-- [ ] Compilar `./gradlew compileDebugKotlin` para verificar conformidade.
+- [x] Preservar a forma (pill/arredondada) e animação suave de transição de foco.
+- [x] Compilar `./gradlew compileDebugKotlin` para verificar conformidade.
 
 ---
 
@@ -88,11 +88,11 @@
 - Modify: `C:\Projetos\Pessoais\android-airplay-server\app\src\main\kotlin\io/github/jqssun/airplay/ui/MainScreen.kt`
 
 **Steps:**
-- [ ] Manter todos os elementos visuais originais (cartão de status do servidor, conexões, PIN, tabs Overview/Logs/Settings).
-- [ ] Reciclar os containers existentes aplicando o fundo translúcido `Color(0x24FFFFFF)` e bordas sutis `Color(0x18FFFFFF)`.
-- [ ] Garantir que os botões de ação (Iniciar/Parar servidor, alternar tela cheia) usem a pílula de foco branca com texto invertido.
-- [ ] Ajustar o `DebugOverlay` e o `MiniController` de vídeo para que a barra de controles sobreposta ao vídeo use o fundo escuro translúcido padrão do launcher (`Color(0xE41E1E22)`).
-- [ ] Compilar `./gradlew compileDebugKotlin`.
+- [x] Manter todos os elementos visuais originais (cartão de status do servidor, conexões, PIN, tabs Overview/Logs/Settings).
+- [x] Reciclar os containers existentes aplicando o fundo translúcido `Color(0x24FFFFFF)` e bordas sutis `Color(0x18FFFFFF)`.
+- [x] Garantir que os botões de ação (Iniciar/Parar servidor, alternar tela cheia) usem a pílula de foco branca com texto invertido.
+- [x] Ajustar o `DebugOverlay` e o `MiniController` de vídeo para que a barra de controles sobreposta ao vídeo use o fundo escuro translúcido padrão do launcher (`Color(0xE41E1E22)`).
+- [x] Compilar `./gradlew compileDebugKotlin`.
 
 ---
 
@@ -102,12 +102,12 @@
 - Modify: `C:\Projetos\Pessoais\android-airplay-server\app\src\main\kotlin\io/github/jqssun/airplay/ui/SettingsScreen.kt`
 
 **Steps:**
-- [ ] Manter todos os componentes originais (`SettingSwitch`, `SettingChips`, `SettingSegmented`, `SettingTextField`).
-- [ ] Atualizar as cores de estado dos switches:
+- [x] Manter todos os componentes originais (`SettingSwitch`, `SettingChips`, `SettingSegmented`, `SettingTextField`).
+- [x] Atualizar as cores de estado dos switches:
   - Switch ligado: track em verde `Color(0xFF30D158)` ou branco `Color(0xFFFFFFFF)`, alinhado com o [SettingsActivity.java](file:///c:/Projetos/Pessoais/freemytv/app/src/io/freemytv/SettingsActivity.java).
   - Switch desligado: `Color(0x47FFFFFF)`.
-- [ ] Assegurar que ao navegar pelas opções com o controle remoto, a linha ou chip selecionado receba o destaque de foco claro com texto escuro.
-- [ ] Compilar `./gradlew compileDebugKotlin`.
+- [x] Assegurar que ao navegar pelas opções com o controle remoto, a linha ou chip selecionado receba o destaque de foco claro com texto escuro.
+- [x] Compilar `./gradlew compileDebugKotlin`.
 
 ---
 
@@ -118,7 +118,7 @@
 - Output: `C:\Projetos\Pessoais\android-airplay-server\app\build\outputs\apk\debug\app-debug.apk`
 
 **Steps:**
-- [ ] Executar `./gradlew assembleDebug` gerando o APK final customizado.
-- [ ] Verificar que o build foi concluído com sucesso e que o APK gerado possui as bibliotecas nativas de arquitetura correspondentes (`arm64-v8a`, `armeabi-v7a`).
-- [ ] Adicionar ao `README.md` do fork a seção de notas sobre a customização para o GB Launcher, preservando a atribuição e licença GPL-3.0.
-- [ ] Salvar commit com as alterações no repositório do fork.
+- [x] Executar `./gradlew assembleDebug` gerando o APK final customizado.
+- [x] Verificar que o build foi concluído com sucesso e que o APK gerado possui as bibliotecas nativas de arquitetura correspondentes (`arm64-v8a`, `armeabi-v7a`).
+- [x] Adicionar ao `README.md` do fork a seção de notas sobre a customização para o GB Launcher, preservando a atribuição e licença GPL-3.0.
+- [x] Salvar commit com as alterações no repositório do fork.
