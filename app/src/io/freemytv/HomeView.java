@@ -1046,7 +1046,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void drawImage(Canvas c, Bitmap image, float alpha) {
-        if (image == null || alpha <= 0.004f) return;
+        if (image == null || image.isRecycled() || alpha <= 0.004f) return;
         imagePaint.setAlpha(Math.round(255 * Math.min(1, alpha)));
         c.drawBitmap(image, null, screen, imagePaint);
     }
@@ -1288,6 +1288,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * a 49 ms frame), so there the image is the shader of a rounded rectangle instead, which looks the same.
      */
     private void roundImage(Canvas c, Bitmap image, RectF cell, float r) {
+        if (image == null || image.isRecycled()) return;
         if (!Ui.LEGACY) {
             clip.reset();
             clip.addRoundRect(cell, r, r, Path.Direction.CW);
@@ -2881,6 +2882,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (!picksOn()) {
             cards = java.util.Collections.emptyList();
+            bgTo = bgFrom = null;
+            neutralGlass();
             recs.clearMemory();
         } else {
             for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
