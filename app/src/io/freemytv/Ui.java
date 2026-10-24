@@ -418,6 +418,9 @@ final class Ui {
 
     /** "21:47" (in English, "9:47", like the iPhone in the US). */
     static String clock(long now) {
+        String f = Prefs.clockFormat();
+        if (f.equals("24")) return new SimpleDateFormat("HH:mm", Locale.US).format(new Date(now));
+        if (f.equals("12")) return new SimpleDateFormat("h:mm", Locale.US).format(new Date(now));
         return Ui.datePattern("format|h:mm").format(now);
     }
 

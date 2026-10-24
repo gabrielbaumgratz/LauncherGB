@@ -35,6 +35,7 @@ final class BluetoothAudio {
     /** Returns list of paired audio devices (headphones, soundbars, earbuds). */
     static List<DeviceInfo> getPairedAudioDevices() {
         List<DeviceInfo> list = new ArrayList<>();
+        if (Prefs.demo()) return list;
         try {
             BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
             if (adapter == null || !adapter.isEnabled()) return list;

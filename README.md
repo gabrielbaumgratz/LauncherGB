@@ -1,19 +1,22 @@
 <div align="center">
 
-<img src="docs/assets/icon-512.png" width="96" alt="GB Launcher icon">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-white.png">
+  <img src="docs/assets/logo-black.png" width="220" alt="GB Home TV">
+</picture>
 
 # GB Launcher
 
-**My home screen for Google TV and Android TV: no ads, 60 fps, and a look that borrows from tvOS.**
+**A fast, ad-free home screen for Google TV and Android TV, with a look that borrows from tvOS.**
 
-Made by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz) for his own TVs, shared in case it helps yours.<br>
-Inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv). Open source. One button to undo.
+Open source, made for anyone to use. Created by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv).<br>
+No ads, a Control Center, your photos on the screensaver, a games widget. One button to undo.
 
 English · [Português](README.pt.md)
 
-[What you get](#what-you-get) · [Screenshots](#screenshots) · [Install](#install) · [AirPlay](#airplay) · [Settings](#settings) · [Build](#build-it-yourself) · [Credits](#credits)
+[What you get](#what-you-get) · [Screenshots](#screenshots) · [Measured](#measured-on-a-real-tv) · [Install](#install) · [AirPlay](#airplay) · [Settings](#settings) · [Build](#build-it-yourself) · [Credits](#credits)
 
-<img src="docs/assets/en/home.png" width="880" alt="The GB Launcher home screen: three tabs, big picks from your streaming apps, and a glass shelf of apps">
+<img src="docs/assets/en/hero.gif" width="880" alt="GB Launcher: the home screen, the drawer with the inputs and the weather, and the Control Center">
 
 </div>
 
@@ -22,12 +25,12 @@ English · [Português](README.pt.md)
 - **No ads.** No sponsored rows, banners or autoplaying promos.
 - **Your apps in front.** A glass shelf with the apps you choose, in the order you choose, edited on the TV.
 - **Trending picks from the apps you have.** Three tabs (Explore, Movies, Shows), fed by TMDB with your own free key. Without a key everything else still works.
-- **A Control Center.** Press the info button on the remote (or the first round button at the top): Bluetooth headphones in one click, volume, light and dark theme, picture mode and AirPlay.
-- **A drawer one press down.** HDMI inputs with a live signal marker, shortcuts, and the weather with an hourly outlook, with no key.
-- **A screensaver you can read from the couch.** Full-screen photos, a frosted translucent clock at the top left, the date and the weather at the top right. Pick how much it dims for a dark room.
-- **Photos from your phone.** Scan the QR code on the TV (or, on a computer, type the address and the PIN), and send photos for the screensaver and the background. Local network only.
-- **A games widget next to the weather.** Pick your team and the championships you follow (Brasileirão, Libertadores, Champions, Premier League, LaLiga, NBA, tennis and more) and the next games sit beside the forecast. The data comes from ESPN, with no key.
-- **Settings laid out like the iPad's.** Categories in a sidebar, grouped cards on the right: General, Home Screen, Weather, Games, Screensaver, Remote Buttons, About. The cards, the focus and the colors are the home screen's own: black or white by the theme.
+- **A Control Center.** Press the info button on the remote (or the first round button at the top): Bluetooth headphones in one click, volume, light and dark theme, picture mode and AirPlay. You choose which tiles it shows.
+- **A drawer one press down.** HDMI inputs with a live signal marker, shortcuts, the weather with an hourly outlook, and the games widget.
+- **A games widget.** Pick your teams and the championships you follow (soccer, basketball, NFL, baseball, hockey, tennis) and the next games sit beside the forecast, each with its sport's symbol. The data comes from ESPN, with no key.
+- **A screensaver you can read from the couch.** Full-screen photos in a matte finish, a frosted translucent clock at the top left, the date and the weather at the top right. Photos in order or shuffled, and a choice of how much it dims for a dark room.
+- **Photos from your phone.** Scan the QR code on the TV (or, on a computer, type the address and the PIN) and send photos for the screensaver and the background. Local network only.
+- **Settings laid out like the iPad's.** Categories in a sidebar, grouped cards on the right. The cards, the focus and the colors are the home screen's own: black or white by the theme.
 - **Bluetooth devices.** Choose which headphones show up on the home screen, give them a name of your own, or forget them for good.
 - **Your name.** "Good morning, Ana": type the name you want in Settings, or leave it empty.
 - **Remote buttons that open what you want.** Netflix, YouTube, Prime Video and the brand buttons (TCL, Sony, Vestel, KTC, Formovie) can open any installed app.
@@ -42,19 +45,32 @@ English · [Português](README.pt.md)
 | Drawer | <img src="docs/assets/en/drawer.png" width="420"> | <img src="docs/assets/pt/drawer.png" width="420"> |
 | Control Center | <img src="docs/assets/en/control-center.png" width="420"> | <img src="docs/assets/pt/control-center.png" width="420"> |
 | Settings | <img src="docs/assets/en/settings.png" width="420"> | <img src="docs/assets/pt/settings.png" width="420"> |
-| Screensaver settings | <img src="docs/assets/en/settings-3.png" width="420"> | <img src="docs/assets/pt/settings-3.png" width="420"> |
-| Remote buttons | <img src="docs/assets/en/settings-4.png" width="420"> | <img src="docs/assets/pt/settings-4.png" width="420"> |
+| Games | <img src="docs/assets/en/settings-games.png" width="420"> | <img src="docs/assets/pt/settings-games.png" width="420"> |
+| Screensaver | <img src="docs/assets/en/settings-screensaver.png" width="420"> | <img src="docs/assets/pt/settings-screensaver.png" width="420"> |
+| Remote buttons | <img src="docs/assets/en/settings-remote.png" width="420"> | <img src="docs/assets/pt/settings-remote.png" width="420"> |
 | Photos from your phone | <img src="docs/assets/en/photos.png" width="420"> | <img src="docs/assets/pt/photos.png" width="420"> |
 
-### The screensaver
+### In motion
 
-<img src="docs/assets/en/screensaver.webp" width="720" alt="The screensaver: a full-screen photo, a frosted clock at the top left, date and weather at the top right">
+| One press down: the inputs, the weather, the games | The Control Center | Settings |
+|---|---|---|
+| <img src="docs/assets/en/drawer.webp" width="300"> | <img src="docs/assets/en/control-center.webp" width="300"> | <img src="docs/assets/en/settings.webp" width="300"> |
 
-[Watch it as a video](docs/assets/en/screensaver.mp4) · [Em português](docs/assets/pt/screensaver.mp4)
+The screensaver: <img src="docs/assets/en/screensaver.webp" width="300"> · [video](docs/assets/en/screensaver.mp4) · [em português](docs/assets/pt/screensaver.mp4)
 
-### The page on your phone
+The page on your phone: <img src="docs/assets/en/upload-phone.png" width="200" align="top">
 
-<img src="docs/assets/en/upload-phone.png" width="300" alt="The upload page on a phone: a PIN field and an Enter button">
+## Measured on a real TV
+
+The About page of the app measures both home screens on your own TV and shows them side by side. These are the numbers it showed on a TCL 32S5K (Google TV, Android 14), with nothing rounded in GB Launcher's favor:
+
+| | Original home screen | GB Launcher |
+|---|---|---|
+| Time for the Home button to show the home screen | 217 ms | 154 ms |
+| Free memory on the TV | 289 MB | 165 MB |
+| Memory used by the home screen | 89 MB | 152 MB |
+
+GB Launcher opens faster and has no ads, but it draws everything itself and keeps its images in memory, so it uses **more** memory than the stock home screen. Your numbers will differ: open *Settings → About* after switching.
 
 ## Install
 
@@ -112,11 +128,12 @@ Everything is on the TV, in *GB Launcher* (the gear at the top, or the app's ico
 
 | Category | What's in it |
 |---|---|
-| **General** | Switch between GB Launcher and the original home screen · your name · language · theme (light, dark, automatic) · glass · navigation sounds · the TV's own settings |
-| **Home Screen** | The shelf (apps and order) · the round buttons at the top · which HDMI inputs show up · Bluetooth headphones: show, rename, forget |
+| **General** | Switch between GB Launcher and the original home screen · your name · language · theme (light, dark, automatic) · time format · glass · navigation sounds · the TV's own settings |
+| **Home Screen** | The shelf (apps and order) · the round buttons at the top · recommendations on or off · which HDMI inputs show up · Bluetooth headphones: show, rename, forget |
+| **Control Center** | Which tiles it shows: Bluetooth, theme, recommendations, picture mode, pair, TV settings, home settings, AirPlay, volume |
 | **Weather** | Weather widget on or off · °C, °F or automatic · your city |
-| **Games** | Games widget on or off · your teams · the championships to follow |
-| **Screensaver** | Preview · photos from your phone · mine or recommendations · photo interval · brightness (standard, dimmer, dimmest) |
+| **Games** | Games widget on or off · your teams · the championships to follow, by sport |
+| **Screensaver** | Preview · photos from your phone · mine or recommendations · shuffle · photo interval · brightness · clock · date and weather |
 | **Remote Buttons** | The app each remote button opens |
 | **About** | Version · memory and speed against the original home screen · recommendations status · notices · credits |
 
@@ -135,7 +152,11 @@ Free, two minutes: create an account at [themoviedb.org](https://www.themoviedb.
 
 ### Photos from your phone
 
-*Settings → Screensaver → Photos from your phone.* The TV shows a QR code, and below it the address and a PIN. On your phone (same Wi-Fi), scan the code and choose photos; the PIN is already in it. On a computer, which has no camera, open the address and type the PIN. They're turned upright and saved again for the TV, without their GPS tags. The server runs only while that screen is open, and the PIN locks after a few wrong tries.
+*Settings → Screensaver → Photos from your phone.* The TV shows a QR code, and below it the address and a PIN. On your phone (same Wi-Fi), scan the code and choose photos; the PIN is already in it. On a computer, which has no camera, open the address and type the PIN. Photos are turned upright and saved again for the TV, without their GPS tags. The server runs only while that screen is open, and the PIN locks after a few wrong tries.
+
+### The games widget
+
+*Settings → Games.* Turn it on, add a team (type its name; the search is ESPN's) and tick the championships you want. The widget shows three games: your teams' first, then the rest by date. ESPN's JSON is unofficial and can change; when it does, only `Sports.java` needs a look.
 
 ## Build it yourself
 
@@ -153,10 +174,10 @@ Texts live in `app/assets/i18n/<lang>.json`; `python3 tools/translate.py` lists 
 
 - **[Free My TV](https://github.com/simbasjungles/free-my-tv)**, by its contributors (MIT): GB Launcher grew from it. The Gradle-free build, the canvas-drawn home screen, the switch to and from the original launcher and the watchdog are theirs.
 - **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, by jqssun (GPL-3.0): the AirPlay receiver GB Launcher opens.
+- **SF Pro**, by Apple: the typeface. The files come from the open-source repository [sahibjotsaggu/San-Francisco-Pro-Fonts](https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts); Apple's own license terms for the font still apply.
 - **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): the icons.
 - **[TMDB](https://www.themoviedb.org)**: the picks. This product uses the TMDB API but is not endorsed or certified by TMDB.
-- **[Open-Meteo](https://open-meteo.com)**: the weather, with no key.
-- **SF Pro**, by Apple: the typeface.
+- **[Open-Meteo](https://open-meteo.com)**: the weather, with no key. **ESPN**'s public data: the games.
 
 ## License
 

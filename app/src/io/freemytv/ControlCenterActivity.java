@@ -338,14 +338,18 @@ public class ControlCenterActivity extends Activity {
                 }
             }
             String soundTo = soundOnBluetooth();
-            Control bluetooth = add(BLUETOOTH, "Bluetooth", !btStatus.isEmpty() ? btStatus
-                    : soundTo != null ? Ui.trf("Sound: {name}", "name", soundTo) : Ui.tr("Sound: TV"), "speaker");
-            bluetooth.on = soundTo != null;
+            if (Prefs.ccShown("bluetooth")) {
+                Control bluetooth = add(BLUETOOTH, "Bluetooth", !btStatus.isEmpty() ? btStatus
+                        : soundTo != null ? Ui.trf("Sound: {name}", "name", soundTo) : Ui.tr("Sound: TV"), "speaker");
+                bluetooth.on = soundTo != null;
+            }
             String theme = Prefs.theme();
-            add(THEME, Ui.tr("Theme"), theme.equals("dark") ? Ui.tr("Dark") : theme.equals("light") ? Ui.tr("Light") : Ui.tr("Automatic"),
-                    theme.equals("auto") ? "partly_cloudy_day" : dark ? "clear_night" : "sunny");
-            add(RECS, Ui.tr("Recommendations"), Prefs.recommendations() ? Ui.tr("On") : Ui.tr("Off"), "play");
-            if (btOpen) {
+            if (Prefs.ccShown("theme")) {
+                add(THEME, Ui.tr("Theme"), theme.equals("dark") ? Ui.tr("Dark") : theme.equals("light") ? Ui.tr("Light") : Ui.tr("Automatic"),
+                        theme.equals("auto") ? "partly_cloudy_day" : dark ? "clear_night" : "sunny");
+            }
+            if (Prefs.ccShown("recs")) add(RECS, Ui.tr("Picks"), Prefs.recommendations() ? Ui.tr("On") : Ui.tr("Off"), "play");
+            if (btOpen && Prefs.ccShown("bluetooth")) {
                 for (BluetoothAudio.DeviceInfo d : devices) {
                     Control row = add(DEVICE, d.name, d.isConnected ? Ui.tr("Connected") : "", "speaker");
                     row.device = d;
@@ -353,7 +357,7 @@ public class ControlCenterActivity extends Activity {
                 }
             }
             int mode = pictureMode();
-            if (pictureSupported(mode)) {
+            if (pictureSupported(mode) && Prefs.ccShown("picture")) {
                 add(PICTURE, Ui.tr("Picture mode"), modeName(mode), "tv");
                 if (pictureOpen) {
                     for (int id : modeIds(mode)) {
@@ -363,11 +367,11 @@ public class ControlCenterActivity extends Activity {
                     }
                 }
             }
-            add(PAIR, Ui.tr("Pair a new device"), "", "sync");
-            add(TV_SETTINGS, Ui.tr("TV Settings"), "", "tv_settings");
-            add(HOME_SETTINGS, Ui.tr("Home Settings"), "", "settings");
-            if (getPackageManager().getLaunchIntentForPackage(AIRPLAY_PACKAGE) != null) add(AIRPLAY, "AirPlay", "", "");
-            add(VOLUME, "", "", "speaker");
+            if (Prefs.ccShown("pair")) add(PAIR, Ui.tr("Pair a new device"), "", "sync");
+            if (Prefs.ccShown("tv")) add(TV_SETTINGS, Ui.tr("TV Settings"), "", "tv_settings");
+            if (Prefs.ccShown("home") || controls.isEmpty() && !Prefs.ccShown("volume")) add(HOME_SETTINGS, Ui.tr("Home Settings"), "", "settings");
+            if (Prefs.ccShown("airplay") && getPackageManager().getLaunchIntentForPackage(AIRPLAY_PACKAGE) != null) add(AIRPLAY, "AirPlay", "", "");
+            if (Prefs.ccShown("volume")) add(VOLUME, "", "", "speaker");
             focus = 0;
             if (keep != null) {
                 for (int i = 0; i < controls.size(); i++) {
@@ -393,17 +397,31 @@ public class ControlCenterActivity extends Activity {
                 if (r.kind == MODE) modes++;
             }
             float roundStep = rounds > 1 ? (w - cell) / (rounds - 1) : 0;
+            // The square Bluetooth tile has the Theme and Recommendations capsules beside it; without the tile (or with
+            // one capsule) the rest still fits: full-width capsules, or one capsule centered beside the tile.
+            boolean hasBt = false;
+            int capsules = 0, capSlot = 0;
+            for (Control r : controls) {
+                if (r.kind == BLUETOOTH) hasBt = true;
+                if (r.kind == THEME || r.kind == RECS) capsules++;
+            }
+            float blockTop = y;
             for (Control c : controls) {
                 switch (c.kind) {
                     case BLUETOOTH:
+                        blockTop = y;
                         c.rect.set(x, y, x + tile, y + tile);
+                        if (capsules == 0) y += tile + gap;
                         break;
-                    case THEME:
-                        c.rect.set(x + tile + gap, y, x + w, y + cell);
-                        break;
-                    case RECS:
-                        c.rect.set(x + tile + gap, y + cell + gap, x + w, y + tile);
-                        y += tile + gap;
+                    case THEME: case RECS:
+                        if (hasBt) {
+                            float cy = capsules == 2 ? blockTop + capSlot * (cell + gap) : blockTop + (tile - cell) / 2;
+                            c.rect.set(x + tile + gap, cy, x + w, cy + cell);
+                            if (++capSlot == capsules) y = blockTop + tile + gap;
+                        } else {
+                            c.rect.set(x, y, x + w, y + cell);
+                            y += cell + gap;
+                        }
                         break;
                     case DEVICE: case PICTURE:
                         c.rect.set(x, y, x + w, y + cell);

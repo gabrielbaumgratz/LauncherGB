@@ -69,7 +69,14 @@ public class SettingsActivity extends Activity {
             view.pause();
             showPreview();
         }
-        // From ADB: --ei page 3 opens that category (0 General, 1 Home Screen, 2 Weather, 3 Games, 4 Screensaver, 5 Remote, 6 About).
+        // From ADB: --ei page 4 opens that category (0 General, 1 Home Screen, 2 Control Center, 3 Weather, 4 Games, 5 Screensaver,
+        // 6 Remote, 7 About); --ez demo true puts a made-up name and city on the screen (for screenshots), false brings the real ones back.
+        if (getIntent().hasExtra("demo")) {
+            Prefs.setDemo(getIntent().getBooleanExtra("demo", false));
+            getIntent().removeExtra("demo");
+            HomeData.get(this).settingsChanged();
+            view.refresh();
+        }
         if (getIntent().hasExtra("page")) {
             view.openPage(getIntent().getIntExtra("page", 0));
             getIntent().removeExtra("page");
@@ -130,8 +137,8 @@ public class SettingsActivity extends Activity {
         // What the pane shows: a category's page, or one of the lists that open from it.
         private static final int PAGE = 0, HOME_CHOICE = 1, PICKER = 2, SHELF_EDIT = 3;
         private static final int SIDE = 0, PANE = 1;
-        private static final int P_GENERAL = 0, P_HOME = 1, P_WEATHER = 2, P_GAMES = 3, P_SAVER = 4, P_REMOTE = 5, P_ABOUT = 6, PAGES = 7;
-        private static final String[] ICONS = {"settings", "home", "sunny", "sports", "bedtime", "remote", "info"};
+        private static final int P_GENERAL = 0, P_HOME = 1, P_CONTROL = 2, P_WEATHER = 3, P_GAMES = 4, P_SAVER = 5, P_REMOTE = 6, P_ABOUT = 7, PAGES = 8;
+        private static final String[] ICONS = {"settings", "home", "control_center", "sunny", "sports", "bedtime", "remote", "info"};
         // Rows of a page.
         private static final int HEADER = 0, NOTE = 1, LINK = 2, VALUE = 3, TOGGLE = 4, INFO = 5;
 
@@ -345,8 +352,16 @@ public class SettingsActivity extends Activity {
         // MARK: - Pages
 
         private String[] pageTitles() {
-            return new String[] {Ui.tr("General"), Ui.tr("Home Screen"), Ui.tr("Weather"), Ui.tr("Games"), Ui.tr("Screensaver"),
-                    Ui.tr("Remote Buttons"), Ui.tr("About")};
+            return new String[] {Ui.tr("General"), Ui.tr("Home Screen"), Ui.tr("Control Center"), Ui.tr("Weather"), Ui.tr("Games"),
+                    Ui.tr("Screensaver"), Ui.tr("Remote Buttons"), Ui.tr("About")};
+        }
+
+        /** Everything is read again (the demo changed what the name, the city and the devices are). */
+        void refresh() {
+            inputChoices = null;
+            deviceChoices = null;
+            rebuild();
+            invalidate();
         }
 
         /** Opens a category from outside (adb), with the focus in its rows. */
@@ -463,6 +478,13 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         updateTheme();
                     });
+                    value(Ui.tr("Time format"), () -> {
+                        String f = Prefs.clockFormat();
+                        return f.equals("12") ? Ui.tr("12 hours") : f.equals("24") ? Ui.tr("24 hours") : Ui.tr("Automatic");
+                    }, () -> {
+                        String f = Prefs.clockFormat();
+                        Prefs.setClockFormat(f.equals("auto") ? "24" : f.equals("24") ? "12" : "auto");
+                    });
                     value(Ui.tr("Glass: clear to frosted"), () -> (Prefs.glass() + 1) + " / 5", () -> {
                         Prefs.setGlass((Prefs.glass() + 1) % 5);
                         HomeData.get(c).settingsChanged();
@@ -477,6 +499,9 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Layout"));
                     link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
                     link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
+                    header(Ui.tr("Content"));
+                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> Prefs.setRecommendations(!Prefs.recommendations()));
+                    note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
                     List<HomeApps.Item> inputs = inputChoices();
                     if (!inputs.isEmpty()) {
                         header(Ui.tr("Inputs on the home screen"));
@@ -492,6 +517,18 @@ public class SettingsActivity extends Activity {
                         }
                         note(Ui.tr("OK on a device: show it on the home screen, rename it or forget it."));
                     }
+                    break;
+                }
+                case P_CONTROL: {
+                    note(Ui.tr("Choose what the Control Center shows. It opens with the info button on the remote, or the first round button at the top."));
+                    header(Ui.tr("Show in the Control Center"));
+                    String[][] tiles = {{"bluetooth", "Bluetooth"}, {"theme", Ui.tr("Theme")}, {"recs", Ui.tr("Recommendations")},
+                            {"picture", Ui.tr("Picture mode")}, {"pair", Ui.tr("Pair a new device")}, {"tv", Ui.tr("TV Settings")},
+                            {"home", Ui.tr("Home Settings")}, {"airplay", "AirPlay"}, {"volume", Ui.tr("Volume")}};
+                    for (String[] tile : tiles) {
+                        toggle(tile[1], () -> Prefs.ccShown(tile[0]), () -> Prefs.setCcShown(tile[0], !Prefs.ccShown(tile[0])));
+                    }
+                    note(Ui.tr("Picture mode only exists on TVs that keep it in a setting (TCL's); AirPlay needs its receiver app."));
                     break;
                 }
                 case P_WEATHER: {
@@ -517,8 +554,13 @@ public class SettingsActivity extends Activity {
                         link(team[3], () -> Sports.leagueName(team[0] + "/" + team[1]), () -> openTeam(team));
                     }
                     link(Ui.tr("Add a team"), () -> !teamStatus.isEmpty() ? teamStatus : "", this::askTeam);
-                    header(Ui.tr("Championships"));
+                    String lastSport = "";
                     for (String[] league : Sports.LEAGUES) {
+                        String sport = Sports.sportOf(league[0]);
+                        if (!sport.equals(lastSport)) {
+                            header(Sports.sportName(sport));
+                            lastSport = sport;
+                        }
                         toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
                             List<String> paths = Prefs.sportsLeagues();
                             if (!paths.remove(league[0])) paths.add(league[0]);
@@ -540,6 +582,7 @@ public class SettingsActivity extends Activity {
                         value(Ui.tr("Screensaver photos"), () -> Prefs.ownPhotos() ? Ui.tr("Mine") : Ui.tr("Recommendations"),
                                 () -> Prefs.setOwnPhotos(!Prefs.ownPhotos()));
                     }
+                    toggle(Ui.tr("Shuffle photos"), Prefs::shuffle, () -> Prefs.setShuffle(!Prefs.shuffle()));
                     value(Ui.tr("Photo interval"), () -> {
                         int s = Prefs.photoSeconds();
                         return s < 60 ? Ui.trf("{n} s", "n", s) : s < 3600 ? Ui.trf("{n} min", "n", s / 60) : Ui.trf("{n} h", "n", s / 3600);
@@ -550,6 +593,8 @@ public class SettingsActivity extends Activity {
                         Prefs.setPhotoSeconds(options[(at + 1) % options.length]);
                     });
                     header(Ui.tr("Display"));
+                    toggle(Ui.tr("Clock"), Prefs::dreamClock, () -> Prefs.setDreamClock(!Prefs.dreamClock()));
+                    toggle(Ui.tr("Date and weather"), Prefs::dreamDate, () -> Prefs.setDreamDate(!Prefs.dreamDate()));
                     value(Ui.tr("Screensaver brightness"),
                             () -> new String[] {Ui.tr("Standard"), Ui.tr("Dimmer"), Ui.tr("Dimmest")}[Prefs.dreamDim()],
                             () -> Prefs.setDreamDim((Prefs.dreamDim() + 1) % 3));

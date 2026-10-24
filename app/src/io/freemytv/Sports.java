@@ -36,18 +36,49 @@ import org.json.JSONObject;
 final class Sports {
     static final class Game {
         long when;
-        String day = "", time = "", match = "", tag = "";
+        String day = "", time = "", match = "", tag = "", sport = "soccer";
         boolean live, mine;
     }
 
     /** A championship the person can follow: ESPN's path (sport/league) and its name. */
     static final String[][] LEAGUES = {
-            {"soccer/bra.1", "Brasileirão"}, {"soccer/conmebol.libertadores", "Libertadores"},
+            {"soccer/bra.1", "Brasileirão"}, {"soccer/bra.2", "Série B"}, {"soccer/conmebol.libertadores", "Libertadores"},
             {"soccer/conmebol.sudamericana", "Sudamericana"}, {"soccer/bra.copa_do_brazil", "Copa do Brasil"},
             {"soccer/eng.1", "Premier League"}, {"soccer/esp.1", "LaLiga"}, {"soccer/ita.1", "Serie A"},
-            {"soccer/ger.1", "Bundesliga"}, {"soccer/fra.1", "Ligue 1"}, {"soccer/uefa.champions", "Champions League"},
-            {"soccer/uefa.europa", "Europa League"}, {"basketball/nba", "NBA"}, {"football/nfl", "NFL"},
-            {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"}};
+            {"soccer/ger.1", "Bundesliga"}, {"soccer/fra.1", "Ligue 1"}, {"soccer/por.1", "Liga Portugal"},
+            {"soccer/uefa.champions", "Champions League"}, {"soccer/uefa.europa", "Europa League"}, {"soccer/usa.1", "MLS"},
+            {"basketball/nba", "NBA"}, {"basketball/wnba", "WNBA"}, {"football/nfl", "NFL"}, {"baseball/mlb", "MLB"},
+            {"hockey/nhl", "NHL"}, {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"}};
+
+    /** "soccer" from "soccer/bra.1". */
+    static String sportOf(String path) {
+        int slash = path.indexOf('/');
+        return slash < 0 ? path : path.substring(0, slash);
+    }
+
+    /** The sport's name, for the headings of the championships. */
+    static String sportName(String sport) {
+        switch (sport) {
+            case "soccer": return Ui.tr("Soccer");
+            case "basketball": return Ui.tr("Basketball");
+            case "football": return Ui.tr("American football");
+            case "baseball": return Ui.tr("Baseball");
+            case "hockey": return Ui.tr("Hockey");
+            default: return Ui.tr("Tennis");
+        }
+    }
+
+    /** The sport's symbol (a monochrome PNG in assets/symbols). */
+    static String icon(String sport) {
+        switch (sport) {
+            case "basketball": return "basketball";
+            case "football": return "football";
+            case "baseball": return "baseball";
+            case "hockey": return "hockey";
+            case "tennis": return "tennis";
+            default: return "sports";
+        }
+    }
 
     interface Listener { void onSports(); }
 
@@ -208,6 +239,7 @@ final class Sports {
         if (g.when == 0) return;
         g.match = home + " × " + away;
         g.tag = leagueName(path);
+        g.sport = sportOf(path);
         g.live = state.equals("in");
         g.mine = mine != null && (home.equals(mine) || away.equals(mine));
         fill(g);
@@ -263,6 +295,7 @@ final class Sports {
         if (g.when == 0) return;
         g.match = names.get(0) + " × " + names.get(1);
         g.tag = tour;
+        g.sport = "tennis";
         g.live = state.equals("in");
         fill(g);
         out.add(g);
@@ -337,7 +370,7 @@ final class Sports {
     private void save(List<Game> list) {
         try (FileOutputStream out = new FileOutputStream(file())) {
             JSONArray a = new JSONArray();
-            for (Game g : list) a.put(new JSONObject().put("w", g.when).put("m", g.match).put("t", g.tag).put("l", g.live).put("p", g.mine));
+            for (Game g : list) a.put(new JSONObject().put("w", g.when).put("m", g.match).put("t", g.tag).put("l", g.live).put("p", g.mine).put("s", g.sport));
             out.write(a.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException | JSONException e) {
             AppLog.w("sports not saved: " + e.getMessage());
@@ -362,6 +395,7 @@ final class Sports {
                 g.tag = o.getString("t");
                 g.live = o.optBoolean("l");
                 g.mine = o.optBoolean("p");
+                g.sport = o.optString("s", "soccer");
                 fill(g);
                 list.add(g);
             }

@@ -1483,26 +1483,20 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Settings → Games."), x, r.top + 120 * k, cardDim);
             return;
         }
-        float dayW = 156 * k;
-        for (int i = 0; i < games.size() && i < 5; i++) {
+        // Three games, two lines each: the match, then the day, the time and the championship. Same fonts as the weather card.
+        cardText.setTextSize(25 * k);
+        cardDim.setTextSize(20 * k);
+        float textX = x + 56 * k, room = right - textX;
+        for (int i = 0; i < games.size() && i < 3; i++) {
             Sports.Game g = games.get(i);
-            float base = r.top + (104 + 48 * i) * k;
-            cardDim.setTextSize(21 * k);
-            c.drawText(g.live ? Ui.tr("LIVE") : g.day, x, base - 14 * k, cardDim);
-            c.drawText(g.time, x, base + 12 * k, cardDim);
-            cardDim.setTextSize(23 * k);
-            cardText.setTextSize(26 * k);
-            String tagText = g.tag;
-            float tagW = cardDim.measureText(tagText);
-            String match = TextUtils.ellipsize(g.match, new TextPaint(cardText), right - (x + dayW) - tagW - 24 * k, TextUtils.TruncateAt.END).toString();
-            cardText.setTypeface(g.mine ? Ui.semibold : Ui.medium);
-            c.drawText(match, x + dayW, base + 2 * k, cardText);
-            cardText.setTypeface(Ui.medium);
-            cardText.setTextSize(29 * k);
-            cardDimRight.setTextSize(21 * k);
-            c.drawText(tagText, right, base + 2 * k, cardDimRight);
-            cardDimRight.setTextSize(23 * k);
+            float top = r.top + (82 + 70 * i) * k;
+            Symbols.draw(getContext(), c, Sports.icon(g.sport), x + 17 * k, top + 36 * k, 30 * k, drawerInk(0.9f));
+            c.drawText(TextUtils.ellipsize(g.match, new TextPaint(cardText), room, TextUtils.TruncateAt.END).toString(), textX, top + 30 * k, cardText);
+            String when = (g.live ? Ui.tr("LIVE") : g.day) + " · " + g.time + " · " + g.tag;
+            c.drawText(TextUtils.ellipsize(when, new TextPaint(cardDim), room, TextUtils.TruncateAt.END).toString(), textX, top + 58 * k, cardDim);
         }
+        cardText.setTextSize(29 * k);
+        cardDim.setTextSize(23 * k);
     }
 
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */

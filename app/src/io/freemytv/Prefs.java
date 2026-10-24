@@ -73,7 +73,7 @@ final class Prefs {
 
     /** "auto" or a language code as picked ("pt", "fr", "zh-CN"…); Ui.applyLanguage finds its catalogue. */
     /** What the greeting calls the person ("Good morning, Ana"); empty for no name. */
-    static String userName() { return sp().getString("userName", "").trim(); }
+    static String userName() { return demo() ? "Alex" : sp().getString("userName", "").trim(); }
     static void setUserName(String v) { put("userName", v.trim()); }
 
     static String language() {
@@ -122,9 +122,9 @@ final class Prefs {
 
     // MARK: - City
 
-    static String city() { return sp().getString("city", Config.CITY).trim(); }
-    static String latitude() { return sp().getString("latitude", Config.LATITUDE); }
-    static String longitude() { return sp().getString("longitude", Config.LONGITUDE); }
+    static String city() { return demo() ? "New York" : sp().getString("city", Config.CITY).trim(); }
+    static String latitude() { return demo() ? "40.7128" : sp().getString("latitude", Config.LATITUDE); }
+    static String longitude() { return demo() ? "-74.0060" : sp().getString("longitude", Config.LONGITUDE); }
 
     static void setCity(String name, String latitude, String longitude) {
         sp().edit().putString("city", name).putString("latitude", latitude).putString("longitude", longitude).apply();
@@ -202,6 +202,39 @@ final class Prefs {
         StringBuilder sb = new StringBuilder();
         for (String p : packages) sb.append(sb.length() == 0 ? "" : ",").append(p);
         put("shelf", sb.toString());
+    }
+
+    // MARK: - Demo, options of the screensaver, the clock and the Control Center
+
+    /**
+     * For screenshots and videos (adb: `am start -n io.freemytv/.SettingsActivity --ez demo true`): a made-up name, city
+     * and no Bluetooth devices, so nothing personal is on the screen. `--ez demo false` brings the real ones back.
+     */
+    static boolean demo() { return sp().getBoolean("demo", false); }
+    static void setDemo(boolean on) { put("demo", on); }
+
+    /** The screensaver shows its photos in a random order instead of the order they came in. */
+    static boolean shuffle() { return sp().getBoolean("shuffle", false); }
+    static void setShuffle(boolean on) { put("shuffle", on); }
+
+    static boolean dreamClock() { return sp().getBoolean("dreamClock", true); }
+    static void setDreamClock(boolean on) { put("dreamClock", on); }
+
+    static boolean dreamDate() { return sp().getBoolean("dreamDate", true); }
+    static void setDreamDate(boolean on) { put("dreamDate", on); }
+
+    /** "auto" (the language's own), "12" or "24". */
+    static String clockFormat() { return sp().getString("clockFormat", "auto"); }
+    static void setClockFormat(String v) { put("clockFormat", v); }
+
+    /** The Control Center's tiles the person turned off (their ids: bluetooth, theme, recs, picture, pair, tv, home, airplay, volume). */
+    static boolean ccShown(String id) { return !sp().getStringSet("ccHidden", new java.util.HashSet<String>()).contains(id); }
+
+    static void setCcShown(String id, boolean shown) {
+        java.util.Set<String> hidden = new java.util.HashSet<>(sp().getStringSet("ccHidden", new java.util.HashSet<String>()));
+        if (shown) hidden.remove(id); else hidden.add(id);
+        sp().edit().putStringSet("ccHidden", hidden).apply();
+        version++;
     }
 
     // MARK: - Games widget (Sports) and Bluetooth names

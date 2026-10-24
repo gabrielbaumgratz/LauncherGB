@@ -118,6 +118,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     private boolean fallback;       // the aurora with the clock (no photos)
     private boolean decoding;
     private int generation, slides;
+    private final java.util.Random random = new java.util.Random();
     private Slide current, incoming, prepared;
     private Glass glass;
     private final Paint tint = new Paint(Paint.FILTER_BITMAP_FLAG);
@@ -269,6 +270,10 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
                     break;
                 }
             }
+        }
+        if (Prefs.shuffle() && list.size() > 1) {   // any but the one that was just shown
+            int shown = start - 1;
+            do start = random.nextInt(list.size()); while (last != null && start == (shown + list.size()) % list.size());
         }
         Recs.Pick pick = null;
         for (int i = 0; i < list.size() && pick == null; i++) {
@@ -509,7 +514,9 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
             float right = RIGHT * k;
             HomeData.Weather wx = data.weather;
             float x = right;
-            if (!Double.isNaN(wx.temp) && Prefs.weather()) {
+            if (!Prefs.dreamDate()) {
+                // no date and no weather
+            } else if (!Double.isNaN(wx.temp) && Prefs.weather()) {
                 String temp = HomeData.degrees(wx.temp);
                 float tw = cornerDate.measureText(temp);
                 c.drawText(temp, x - tw, DATE_BASE * k, cornerDate);
@@ -519,10 +526,12 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
                 Symbols.draw(getContext(), c, symbol, x - sw / 2, DATE_BASE * k - Ui.halfCap(cornerDate), size, 0xEBFFFFFF);
                 x -= sw + 26 * k;
             }
-            c.drawText(date, x - cornerDate.measureText(date), DATE_BASE * k, cornerDate);
+            if (Prefs.dreamDate()) c.drawText(date, x - cornerDate.measureText(date), DATE_BASE * k, cornerDate);
 
             Glass g = glass;
-            if (g != null && glassShader != null) {
+            if (!Prefs.dreamClock()) {
+                // no clock
+            } else if (g != null && glassShader != null) {
                 // The shadow under the glass: sets the digits apart from a bright photo.
                 shadowPaint.setAlpha(140);
                 c.drawBitmap(g.shadow, g.x, g.y + 6 * k, shadowPaint);
@@ -539,7 +548,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
 
     private void drawGlass(Canvas c, float alpha, float e) {
         Glass g = glass;
-        if (g == null || glassShader == null || alpha <= 0.004f) return;
+        if (g == null || glassShader == null || alpha <= 0.004f || !Prefs.dreamClock()) return;
         // The glass samples the frosted version (1/6 of the photo): same position, with the scale 6 times larger.
         float f = Backdrop.PHOTO_FROST;
         glassShader.setFloatUniform("placeA", placeA[0], placeA[1], placeA[2] * f);

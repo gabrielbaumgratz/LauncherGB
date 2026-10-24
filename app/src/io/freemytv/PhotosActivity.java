@@ -175,7 +175,7 @@ public class PhotosActivity extends Activity {
             if (address.isEmpty()) {
                 c.drawText(Ui.tr("Couldn't start. Is the TV on Wi-Fi?"), 1050 * k, 780 * k, warn);
             } else {
-                c.drawText(address.replace("http://", ""), 1050 * k, 776 * k, big);
+                c.drawText(Prefs.demo() ? "192.168.1.20:8080" : address.replace("http://", ""), 1050 * k, 776 * k, big);
             }
             c.drawText(Ui.tr("PIN"), 1050 * k, 836 * k, label);
             for (int i = 0; i < 6; i++) {

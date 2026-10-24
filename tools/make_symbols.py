@@ -18,6 +18,10 @@ MAP = {
     "check": ("check", 0), "play": ("play_arrow", 1), "tv_settings": ("display_settings", 1),
     "chevron_down": ("keyboard_arrow_down", 0), "sunrise": ("wb_twilight", 1), "sunset": ("wb_twilight", 1),
     "live_tv": ("live_tv", 1), "bitcoin": ("currency_bitcoin", 0),
+    "info": ("info", 1), "remote": ("settings_remote", 1), "sports": ("sports_soccer", 1), "bluetooth": ("bluetooth", 0),
+    "edit": ("edit", 0), "delete": ("delete", 0), "shuffle": ("shuffle", 0), "tune": ("tune", 0),
+    "basketball": ("sports_basketball", 1), "football": ("sports_football", 1), "baseball": ("sports_baseball", 1),
+    "hockey": ("sports_hockey", 1), "tennis": ("sports_tennis", 1),
 }
 
 
