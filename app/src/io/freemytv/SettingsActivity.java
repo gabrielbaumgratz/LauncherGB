@@ -68,7 +68,7 @@ public class SettingsActivity extends Activity {
             showPreview();
         }
         // From ADB: --ei page 4 opens that category (0 General, 1 Home Screen, 2 Control Center, 3 Weather, 4 Games, 5 Screensaver,
-        // 6 Remote, 7 About); --ez demo true puts a made-up name and city on the screen (for screenshots), false brings the real ones back.
+        // 6 Performance, 7 Remote, 8 About); --ez demo true puts a made-up name and city on the screen (for screenshots), false brings the real ones back.
         if (getIntent().hasExtra("demo")) {
             Prefs.setDemo(getIntent().getBooleanExtra("demo", false));
             getIntent().removeExtra("demo");
@@ -135,8 +135,8 @@ public class SettingsActivity extends Activity {
         // What the pane shows: a category's page, or one of the lists that open from it.
         private static final int PAGE = 0, HOME_CHOICE = 1, PICKER = 2, SHELF_EDIT = 3, LEARN = 4;
         private static final int SIDE = 0, PANE = 1;
-        private static final int P_GENERAL = 0, P_HOME = 1, P_CONTROL = 2, P_WEATHER = 3, P_GAMES = 4, P_SAVER = 5, P_REMOTE = 6, P_ABOUT = 7, PAGES = 8;
-        private static final String[] ICONS = {"settings", "home", "control_center", "sunny", "sports", "bedtime", "remote", "info"};
+        private static final int P_GENERAL = 0, P_HOME = 1, P_CONTROL = 2, P_WEATHER = 3, P_GAMES = 4, P_SAVER = 5, P_PERF = 6, P_REMOTE = 7, P_ABOUT = 8, PAGES = 9;
+        private static final String[] ICONS = {"settings", "home", "control_center", "sunny", "sports", "bedtime", "speed", "remote", "info"};
         // Rows of a page.
         private static final int HEADER = 0, NOTE = 1, LINK = 2, VALUE = 3, TOGGLE = 4, INFO = 5;
 
@@ -149,8 +149,7 @@ public class SettingsActivity extends Activity {
         private static final int SMOKE = 0xFF111113, INK = 0xFF1C1C1E, WHITE = 0xFFF5F5F7;
         private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73;
         private static final float SHADOW_BLUR = 26;
-        private static final int AMBER = 0xFFFFC266;
-        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2, PICK_CUSTOM = -3;
+        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2, PICK_CUSTOM = -3, PICK_LEVEL = -4;
         private static final String[] UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
 
         private static final class Row {
@@ -237,7 +236,7 @@ public class SettingsActivity extends Activity {
                 JSONArray notices = state.optJSONArray("notices");
                 if (wasBusy && !nowBusy && notices != null && notices.length() > 0) {
                     JSONObject newest = notices.optJSONObject(0);
-                    if (newest != null) announceForAccessibility(newest.optString("text"));
+                    if (newest != null) announceForAccessibility(Ui.render(newest.optString("text")));
                 }
                 wasBusy = nowBusy;
                 updateTheme();
@@ -360,7 +359,7 @@ public class SettingsActivity extends Activity {
 
         private String[] pageTitles() {
             return new String[] {Ui.tr("General"), Ui.tr("Home Screen"), Ui.tr("Control Center"), Ui.tr("Weather"), Ui.tr("Games"),
-                    Ui.tr("Screensaver"), Ui.tr("Remote Buttons"), Ui.tr("About")};
+                    Ui.tr("Screensaver"), Ui.tr("Performance"), Ui.tr("Remote Buttons"), Ui.tr("About")};
         }
 
         /** Everything is read again (the demo changed what the name, the city and the devices are). */
@@ -507,6 +506,7 @@ public class SettingsActivity extends Activity {
                     link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
                     link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
                     header(Ui.tr("Content"));
+                    toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
                     toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> Prefs.setRecommendations(!Prefs.recommendations()));
                     note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
                     List<HomeApps.Item> inputs = inputChoices();
@@ -531,7 +531,8 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Show in the Control Center"));
                     String[][] tiles = {{"bluetooth", "Bluetooth"}, {"theme", Ui.tr("Theme")}, {"recs", Ui.tr("Recommendations")},
                             {"picture", Ui.tr("Picture mode")}, {"pair", Ui.tr("Pair a new device")}, {"tv", Ui.tr("TV Settings")},
-                            {"home", Ui.tr("Home Settings")}, {"airplay", "AirPlay"}, {"volume", Ui.tr("Volume")}};
+                            {"home", Ui.tr("Home Settings")}, {"airplay", "AirPlay"}, {"saver", Ui.tr("Screensaver")},
+                            {"mute", Ui.tr("Mute")}, {"network", Ui.tr("Network")}, {"volume", Ui.tr("Volume")}};
                     for (String[] tile : tiles) {
                         toggle(tile[1], () -> Prefs.ccShown(tile[0]), () -> Prefs.setCcShown(tile[0], !Prefs.ccShown(tile[0])));
                     }
@@ -602,9 +603,34 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Display"));
                     toggle(Ui.tr("Clock"), Prefs::dreamClock, () -> Prefs.setDreamClock(!Prefs.dreamClock()));
                     toggle(Ui.tr("Date and weather"), Prefs::dreamDate, () -> Prefs.setDreamDate(!Prefs.dreamDate()));
-                    value(Ui.tr("Screensaver brightness"),
-                            () -> new String[] {Ui.tr("Standard"), Ui.tr("Dimmer"), Ui.tr("Dimmest")}[Prefs.dreamDim()],
-                            () -> Prefs.setDreamDim((Prefs.dreamDim() + 1) % 3));
+                    value(Ui.tr("Screensaver brightness"), () -> levelNames()[Prefs.dreamLevel()], () -> openPicker(PICK_LEVEL));
+                    toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
+                    break;
+                }
+                case P_PERF: {
+                    info(Ui.tr("Memory in use now"), () -> Ui.trf("{n} MB", "n", memoryMb()));
+                    note(Ui.tr("What the home screen, the settings and the screensaver use together. Turn off what you don't need."));
+                    header(Ui.tr("Use less memory"));
+                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
+                        Prefs.setRecommendations(!Prefs.recommendations());
+                        HomeData.get(c).settingsChanged();
+                    });
+                    toggle(Ui.tr("Weather widget"), Prefs::weather, () -> {
+                        Prefs.setWeather(!Prefs.weather());
+                        HomeData.get(c).settingsChanged();
+                    });
+                    toggle(Ui.tr("Games widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
+                    toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
+                    toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
+                    header(Ui.tr("In one step"));
+                    link(Ui.tr("Turn all of these off"), () -> "", () -> {
+                        Prefs.setRecommendations(false);
+                        Prefs.setWeather(false);
+                        Prefs.setSportsOn(false);
+                        Prefs.setDreamMotion(false);
+                        HomeData.get(c).settingsChanged();
+                    });
+                    note(Ui.tr("The home screen then keeps only your apps, the inputs and the clock. Turn them back on here any time."));
                     break;
                 }
                 case P_REMOTE: {
@@ -656,7 +682,8 @@ public class SettingsActivity extends Activity {
                     for (int i = 0; notices != null && i < notices.length() && shown < 3; i++) {
                         JSONObject o = notices.optJSONObject(i);
                         if (o == null) continue;
-                        final String when = ago(o.optLong("at")), text = o.optString("text").replace("Free My TV", "GB Home TV").replace("GB Launcher", "GB Home TV");
+                        if (!o.optString("text").startsWith("\u0001")) continue;   // written before notices kept their English
+                        final String when = ago(o.optLong("at")), text = Ui.render(o.optString("text"));
                         info(text, () -> when);
                         shown++;
                     }
@@ -1017,7 +1044,7 @@ public class SettingsActivity extends Activity {
 
         private String pickerTitle() {
             return pickFor == PICK_CITY ? Ui.tr("City") : pickFor == PICK_LANGUAGE ? Ui.tr("Language")
-                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : pickFor == PICK_CUSTOM ? Ui.tr("What should it open?") : keyLabels()[pickFor - 1];
+                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : pickFor == PICK_CUSTOM ? Ui.tr("What should it open?") : pickFor == PICK_LEVEL ? Ui.tr("Screensaver brightness") : keyLabels()[pickFor - 1];
         }
 
         private void drawSidebar(Canvas c) {
@@ -1401,6 +1428,9 @@ public class SettingsActivity extends Activity {
                 Prefs.setCity(city[1], city[2], city[3]);
                 HomeData.get(getContext()).settingsChanged();
                 back();
+            } else if (screen == PICKER && pickFor == PICK_LEVEL) {
+                Prefs.setDreamLevel(pickScroll + focus);
+                back();
             } else if (screen == PICKER && pickFor == PICK_CUSTOM) {
                 Prefs.setCustomKey(customCode, customScan, appPkgs.get(pickScroll + focus));
                 back();
@@ -1495,6 +1525,17 @@ public class SettingsActivity extends Activity {
         }
 
         // MARK: - Remote buttons
+
+        private static String[] levelNames() {
+            return new String[] {Ui.tr("Brightest"), Ui.tr("Brighter"), Ui.tr("Standard"), Ui.tr("Dim"), Ui.tr("Dark"), Ui.tr("Darkest and matte")};
+        }
+
+        /** This process's memory (the home screen, the settings and the screensaver live in it), in MB. */
+        private static long memoryMb() {
+            android.os.Debug.MemoryInfo info = new android.os.Debug.MemoryInfo();
+            android.os.Debug.getMemoryInfo(info);
+            return info.getTotalPss() / 1024;
+        }
 
         /** "TCL 32S5K": who made the TV and which model it is, as the TV says. */
         private static String tvName() {
@@ -1606,6 +1647,9 @@ public class SettingsActivity extends Activity {
             } else if (which == PICK_TEAM) {
                 for (String[] team : teamResults) pickLabels.add(Sports.describe(team));
                 pickCurrent = -1;
+            } else if (which == PICK_LEVEL) {
+                pickLabels.addAll(java.util.Arrays.asList(levelNames()));
+                pickCurrent = Prefs.dreamLevel();
             } else if (which == PICK_CUSTOM) {
                 pickLabels.addAll(appLabels);
                 String now = Prefs.customKeyApp(customCode, customScan);

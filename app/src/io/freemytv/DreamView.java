@@ -378,7 +378,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     /** Photo position and scale now: zoom from 1 to 1.1 (or back) and a pan toward a corner, never showing an edge. */
     private void place(Slide s, long up, float[] out) {
         float u = Ui.clamp((up - s.startedAt) / (float) (Prefs.photoSeconds() * 1000L + FADE_MS));
-        float f = s.zoomIn ? u : 1 - u;
+        float f = !Prefs.dreamMotion() ? 0 : s.zoomIn ? u : 1 - u;   // still photos: no zoom, no drift
         float z = 1 + ZOOM * f;
         float rx = w * (z - 1) / 2, ry = h * (z - 1) / 2;
         out[0] = rx * (s.panX * f - 1);
@@ -448,8 +448,26 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         chrome.draw(canvas);
         drawGlass(canvas, first, e);
         drawCaptions(canvas, up);
-        int dim = Prefs.dreamDim();   // for a dark room: a little less light, like an always-on display
-        if (dim > 0) canvas.drawColor(Prefs.DIM_ALPHA[dim] << 24);
+        veil(canvas, Prefs.dreamLevel());
+    }
+
+    /**
+     * The brightness the person chose, over everything: lighter than standard lifts the picture (a "screen" of gray, which
+     * brightens the shadows more than the lights); darker dims it, and the darkest also flattens it, like a matte print
+     * in a dark room, an always-on display.
+     */
+    private void veil(Canvas c, int level) {
+        switch (level) {
+            case 0: c.drawColor(0xFF3A3A3A, PorterDuff.Mode.SCREEN); break;
+            case 1: c.drawColor(0xFF1E1E1E, PorterDuff.Mode.SCREEN); break;
+            case 3: c.drawColor(0x38000000); break;
+            case 4: c.drawColor(0x66000000); break;
+            case 5:
+                c.drawColor(0x30808080);
+                c.drawColor(0x8C000000);
+                break;
+            default:
+        }
     }
 
     private static float fadeIn(long elapsed, long duration) {

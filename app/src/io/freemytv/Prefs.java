@@ -168,10 +168,27 @@ final class Prefs {
     static int photoSeconds() { return sp().getInt("photoSeconds", 30); }
     static void setPhotoSeconds(int s) { sp().edit().putInt("photoSeconds", s).apply(); version++; }
 
-    /** How much the screensaver dims (0 none, 1 a little, 2 more): a black veil of DIM_ALPHA over everything. */
-    static final int[] DIM_ALPHA = {0, 0x38, 0x66};
-    static int dreamDim() { return sp().getInt("dreamDim", 0); }
-    static void setDreamDim(int d) { sp().edit().putInt("dreamDim", d).apply(); version++; }
+    /**
+     * How bright the screensaver is: 0 brightest, 1 brighter, 2 standard, 3 dim, 4 dark, 5 darkest and most matte. The
+     * levels around the standard one are a veil over everything (DreamView.veil).
+     */
+    static int dreamLevel() {
+        if (demo()) return 2;   // screenshots and videos at the standard brightness
+        if (!sp().contains("dreamLevel")) {   // from the first version of the setting (none, a little, more)
+            int old = sp().getInt("dreamDim", 0);
+            return old == 0 ? 2 : old == 1 ? 3 : 4;
+        }
+        return Math.max(0, Math.min(5, sp().getInt("dreamLevel", 2)));
+    }
+    static void setDreamLevel(int level) { sp().edit().putInt("dreamLevel", level).apply(); version++; }
+
+    /** The slow zoom and drift of the photos (off: still photos, less for the GPU to do). */
+    static boolean dreamMotion() { return sp().getBoolean("dreamMotion", true); }
+    static void setDreamMotion(boolean on) { put("dreamMotion", on); }
+
+    /** The greeting at the top of the home screen (off: the time there instead). */
+    static boolean greeting() { return sp().getBoolean("greeting", true); }
+    static void setGreeting(boolean on) { put("greeting", on); }
 
     /** The screensaver shows the photos from the phone (when there are any) instead of the recommendations. */
     static boolean ownPhotos() { return sp().getBoolean("ownPhotos", true); }
@@ -232,12 +249,19 @@ final class Prefs {
     static void setClockFormat(String v) { put("clockFormat", v); }
 
     /** The Control Center's tiles the person turned off (their ids: bluetooth, theme, recs, picture, pair, tv, home, airplay, volume). */
-    static boolean ccShown(String id) { return !sp().getStringSet("ccHidden", new java.util.HashSet<String>()).contains(id); }
+    static boolean ccShown(String id) {
+        if (CC_OFF.contains(id)) return sp().getStringSet("ccExtra", new java.util.HashSet<String>()).contains(id);
+        return !sp().getStringSet("ccHidden", new java.util.HashSet<String>()).contains(id);
+    }
+
+    /** Tiles that are off until the person turns them on (the Control Center keeps its usual look). */
+    private static final java.util.Set<String> CC_OFF = new java.util.HashSet<>(java.util.Arrays.asList("saver", "mute", "network"));
 
     static void setCcShown(String id, boolean shown) {
-        java.util.Set<String> hidden = new java.util.HashSet<>(sp().getStringSet("ccHidden", new java.util.HashSet<String>()));
-        if (shown) hidden.remove(id); else hidden.add(id);
-        sp().edit().putStringSet("ccHidden", hidden).apply();
+        String key = CC_OFF.contains(id) ? "ccExtra" : "ccHidden";
+        java.util.Set<String> set = new java.util.HashSet<>(sp().getStringSet(key, new java.util.HashSet<String>()));
+        if (shown == CC_OFF.contains(id)) set.add(id); else set.remove(id);
+        sp().edit().putStringSet(key, set).apply();
         version++;
     }
 

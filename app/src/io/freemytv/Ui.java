@@ -406,6 +406,24 @@ final class Ui {
         }
     }
 
+    /**
+     * A text kept in English plus its values, to be put in the language when it is shown (the notices in the settings
+     * were written once and read later, maybe after the language changed). Shown through `render`.
+     */
+    static String trl(String english, Object... nameValue) {
+        StringBuilder sb = new StringBuilder("\u0001").append(english);
+        for (Object o : nameValue) sb.append('\u0002').append(o);
+        return sb.toString();
+    }
+
+    /** What `trl` made, in the language now; any other text as it is. */
+    static String render(String stored) {
+        if (stored == null) return "";
+        if (!stored.startsWith("\u0001")) return stored;
+        String[] p = stored.substring(1).split("\u0002", -1);
+        return p.length == 1 ? tr(p[0]) : trf(p[0], (Object[]) java.util.Arrays.copyOfRange(p, 1, p.length));
+    }
+
     /** "Good morning, Ana" by the hour (05:00 to 11:59 morning, to 18:59 afternoon, then evening); no name, no comma. */
     static String greeting() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);

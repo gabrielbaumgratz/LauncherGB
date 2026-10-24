@@ -382,7 +382,7 @@ final class HomeMode {
                     AppLog.w("remote buttons service: " + e.getMessage());
                 }
             }
-            notice(c, Ui.trf("GB Home TV is on: new home screen and screensaver, {n} apps turned off.", "n", disabled.size()));
+            notice(c, Ui.trl("GB Home TV is on: new home screen and screensaver, {n} apps turned off.", "n", disabled.size()));
             busy(c, Ui.tr("Measuring GB Home TV…"));
             measureHomeTime(c, adb, FREE);
             done(c, null);
@@ -441,11 +441,11 @@ final class HomeMode {
                     .put("disabled", new JSONArray(failed)).remove("keptOff");
             save(c, s);
             if (failed.isEmpty() && homeOk) {
-                notice(c, Ui.tr("Original mode: the factory home screen, screensaver and apps are back."));
+                notice(c, Ui.trl("Original mode: the factory home screen, screensaver and apps are back."));
             } else {
                 List<String> problems = new ArrayList<>(failed);
                 if (!homeOk) problems.add(Ui.tr("the original home screen"));
-                notice(c, Ui.trf("Original mode, but I couldn't turn back on: {list}.", "list", String.join(", ", problems)));
+                notice(c, Ui.trl("Original mode, but I couldn't turn back on: {list}.", "list", String.join(", ", problems)));
             }
             busy(c, Ui.tr("Measuring the original home screen…"));
             measureHomeTime(c, adb, ORIGINAL);
@@ -533,7 +533,7 @@ final class HomeMode {
                 restoreScreensaver(adb, s);
                 s.put("homeReverted", true).put("disabled", kept);
                 save(app, s);
-                notice(app, Ui.tr("GB Home TV's home screen crashed 3 times in a row; I switched back to the original one."));
+                notice(app, Ui.trl("GB Home TV's home screen crashed 3 times in a row; I switched back to the original one."));
                 adb.shell("am start -a android.intent.action.MAIN -c android.intent.category.HOME");
             } catch (Exception e) {
                 AppLog.w("could not give the home screen back: " + e.getMessage());
@@ -606,7 +606,7 @@ final class HomeMode {
                         }
                     }
                 }
-                if (!back.isEmpty()) notice(app, Ui.trf("Turned back on {list}: the TV's inputs or remote need it.", "list", String.join(", ", back)));
+                if (!back.isEmpty()) notice(app, Ui.trl("Turned back on {list}: the TV's inputs or remote need it.", "list", String.join(", ", back)));
                 boolean setupOn = present.contains(GOOGLE_SETUP) && !disabledNow.contains(GOOGLE_SETUP)
                         && s.optBoolean("setupHome", true);
                 for (String pkg : order) {
@@ -640,14 +640,14 @@ final class HomeMode {
                 latest.put("disabled", new JSONArray(sorted(disabled)));
                 save(app, latest);
             } catch (Exception e) {
-                notice(app, Ui.trf("Couldn't check GB Home TV: {error}", "error", e.getMessage()));
+                notice(app, Ui.trl("Couldn't check GB Home TV: {error}", "error", e.getMessage()));
                 return;
             }
             if (!fixed.isEmpty()) {
-                notice(app, updated ? Ui.trf("The TV update turned back on {list}.", "list", String.join(", ", fixed))
-                        : Ui.trf("Turned off what was missing: {list}.", "list", String.join(", ", fixed)));
+                notice(app, updated ? Ui.trl("The TV update turned back on {list}.", "list", String.join(", ", fixed))
+                        : Ui.trl("Turned off what was missing: {list}.", "list", String.join(", ", fixed)));
             } else if (updated) {
-                notice(app, Ui.tr("The TV was updated; GB Home TV is still on."));
+                notice(app, Ui.trl("The TV was updated; GB Home TV is still on."));
             }
         }
     }
@@ -916,7 +916,7 @@ final class HomeMode {
 
     /** A notice for the home screen (a bubble) and the settings screen. Keeps the last 20. */
     static void notice(Context c, String text) {
-        AppLog.w("notice: " + text);
+        AppLog.w("notice: " + Ui.render(text));
         JSONObject s = state(c);
         JSONArray old = s.optJSONArray("notices");
         JSONArray list = new JSONArray();

@@ -84,7 +84,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int COLUMNS = 5, VISIBLE_ROWS = 3;
     private static final float GRID_W = 300, GRID_H = 169, GRID_GAP = 40, GRID_ROW = 239, GRID_TOP = 196, GRID_RADIUS = 22;
     private static final int SMOKE = 0xFF111113, INK = 0xFF1C1C1E, WHITE = 0xFFF5F5F7;
-    private static final int UP_COLOR = 0xFF30D158, DOWN_COLOR = 0xFFFF453A;
     private static final long TOAST_MS = 6000, FADE_MS = 800;
     /** Blur radii of the shadow and shadowDeep paints (Shadows needs them to draw the same blur on older TVs). */
     private static final float SHADOW_BLUR = 26, DEEP_BLUR = 30;
@@ -1492,7 +1491,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             float top = r.top + (86 + 64 * i) * k;
             Symbols.draw(getContext(), c, Sports.icon(g.sport), x + 17 * k, top + 32 * k, 30 * k, drawerInk(0.9f));
             c.drawText(TextUtils.ellipsize(g.match, new TextPaint(cardText), room, TextUtils.TruncateAt.END).toString(), textX, top + 26 * k, cardText);
-            String when = (g.live ? Ui.tr("LIVE") : g.day) + " · " + g.time + " · " + g.tag;
+            String when = (g.live ? Ui.tr("LIVE") : g.day()) + " · " + g.time() + " · " + g.tag;
             c.drawText(TextUtils.ellipsize(when, new TextPaint(cardDim), room, TextUtils.TruncateAt.END).toString(), textX, top + 54 * k, cardDim);
         }
         cardText.setTextSize(29 * k);
@@ -1885,7 +1884,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 if (o == null) continue;
                 long at = o.optLong("at");
                 if (at <= seen || at < cutoff) continue;
-                fresh.add(o.optString("text"));
+                fresh.add(Ui.render(o.optString("text")));
                 newest = Math.max(newest, at);
             }
             if (newest > seen) ui.edit().putLong("seenNotice", newest).apply();
@@ -1918,6 +1917,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 if (s != null) setShelf(s);
                 setStatusItems(st);
                 setDrawerItems(d);
+                drawerDirty = true;   // its texts (the games' dates) again, in the language and the clock now
                 if (o != null && !sheetOpen) setOthers(o);
                 else if (o != null) appsStale = true;   // All Apps is open: its list comes next time
             });
@@ -2825,7 +2825,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             drawClock(c);
             return;
         }
-        String hello = greetingText.isEmpty() ? Ui.greeting() : greetingText;
+        String hello = !Prefs.greeting() ? clockText : greetingText.isEmpty() ? Ui.greeting() : greetingText;
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // The time and date stay on screen, small, left of the buttons.
         float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[3].left - 36 * k;

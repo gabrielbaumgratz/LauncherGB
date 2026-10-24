@@ -12,7 +12,7 @@ Ela se configura sozinha pelas configurações da própria TV, e um clique traz 
 
 [English](README.md) · Português · [Español](README.es.md)
 
-[Por quê](#por-que-o-gb-home-tv) · [Instalar](#instalar-em-5-minutos) · [Como usar](#como-usar) · [O que tem](#o-que-tem) · [Capturas](#capturas-de-tela) · [Perguntas](#perguntas) · [Créditos](#créditos)
+[Por quê](#por-que-o-gb-home-tv) · [Instalar](#instalar-em-5-minutos) · [Como usar](#como-usar) · [O que tem](#o-que-tem) · [Capturas](#capturas-de-tela) · [O que ele desliga](#o-que-ele-desliga) · [Extras](#extras-opcionais-passo-a-passo) · [Perguntas](#perguntas) · [Créditos](#créditos)
 
 <img src="docs/assets/pt/hero.gif" width="880" alt="GB Home TV: a tela inicial, a gaveta com as entradas, o clima e os jogos, e a Central de Controle">
 
@@ -38,13 +38,13 @@ Um assistente de código com IA ([Claude Code](https://claude.com/claude-code), 
 **1. Na TV: ligue o modo desenvolvedor** (é um menu, não tem risco)
 - Abra *Configurações → Sistema → Sobre* e aperte *Versão do Android TV OS* (ou *Número da versão*) **7 vezes**.
 - Volte para *Configurações → Sistema → Opções do desenvolvedor* e ligue a **Depuração USB** (algumas TVs chamam de *Depuração de rede*).
-- Veja o endereço da TV em *Configurações → Rede e Internet* e anote. Parece com `192.168.1.50`.
+- Descubra o **endereço (o IP)** da TV: *Configurações → Rede e Internet*, toque no seu Wi-Fi e procure *Endereço IP*. São quatro números separados por pontos, como `192.168.1.50`. **O seu é diferente: anote e use no lugar de `192.168.1.50` onde esta página mostrar.**
 
-**2. No computador: peça para a IA.** Abra o seu assistente e cole isto, com o endereço da sua TV:
+**2. No computador: peça para a IA.** Abra o seu assistente e cole isto, **trocando os números pelo endereço da sua TV**:
 
 > Instale o GB Home TV (github.com/gabrielbaumgratz/LauncherGB) na minha TV em 192.168.1.50.
 
-Ela baixa o projeto, instala o que precisa, compila o app e coloca na sua TV. Vai perguntar antes de qualquer coisa importante.
+Ela baixa o projeto, instala o que precisa, compila o app e coloca na sua TV. Vai perguntar antes de qualquer coisa importante, e na primeira vez pode levar alguns minutos.
 
 **3. Na TV: diga sim.** Uma mensagem pergunta *Permitir depuração USB?*. Marque *Sempre permitir* e aperte OK. Depois abra o **GB Home TV** nos seus apps e escolha *Launcher → GB Home TV*. Pronto: aperte Início e ele está lá.
 
@@ -62,7 +62,7 @@ Ela baixa o projeto, instala o que precisa, compila o app e coloca na sua TV. Va
    ```bash
    ./build.sh
    ```
-   A primeira execução cria o `config.properties`; editar é opcional (veja [a chave do TMDB](#a-chave-do-tmdb)). O resultado é o `GBHomeTV.apk`.
+   A primeira execução cria o `config.properties`; editar é opcional (veja [os extras](#extras-opcionais-passo-a-passo)). O resultado é o `GBHomeTV.apk`.
 4. **Instale:**
    ```bash
    adb connect 192.168.1.50:5555
@@ -91,7 +91,7 @@ As atualizações precisam da mesma assinatura: guarde o `freemytv.keystore`.
 - **Um widget de jogos** ao lado do clima: seus times e campeonatos (futebol, basquete, NFL, beisebol, hóquei, tênis), cada um com o símbolo do esporte. Dados da ESPN, sem chave.
 - **Uma tela de descanso legível do sofá:** fotos em tela cheia com acabamento fosco, um relógio fosco, a data e o clima. Fotos em ordem ou aleatórias, e ela pode escurecer para um quarto apagado.
 - **Fotos do celular:** aponte a câmera para o QR code na TV (no computador, digite o endereço e o PIN) e envie fotos. Só na rede local.
-- **Destaques dos seus apps:** títulos em alta dos apps de streaming que você tem (com uma [chave do TMDB](#a-chave-do-tmdb) gratuita; o resto funciona sem ela).
+- **Destaques dos seus apps:** títulos em alta dos apps de streaming que você tem (com uma chave do TMDB gratuita, [explicada abaixo](#extras-opcionais-passo-a-passo); o resto funciona sem ela).
 - **Configurações no estilo do iPad,** com o visual da própria tela inicial.
 - **Dispositivos Bluetooth:** escolha quais aparecem, renomeie, esqueça.
 - **Seu nome:** "Bom dia, Ana" (ou sem nome).
@@ -108,18 +108,23 @@ As atualizações precisam da mesma assinatura: guarde o `freemytv.keystore`.
 | Configurações | <img src="docs/assets/pt/settings.png" width="420"> | <img src="docs/assets/en/settings.png" width="420"> |
 | Jogos | <img src="docs/assets/pt/settings-games.png" width="420"> | <img src="docs/assets/en/settings-games.png" width="420"> |
 | Tela de descanso | <img src="docs/assets/pt/settings-screensaver.png" width="420"> | <img src="docs/assets/en/settings-screensaver.png" width="420"> |
+| Desempenho | <img src="docs/assets/pt/settings-performance.png" width="420"> | <img src="docs/assets/en/settings-performance.png" width="420"> |
 | Botões do controle | <img src="docs/assets/pt/settings-remote.png" width="420"> | <img src="docs/assets/en/settings-remote.png" width="420"> |
 | Fotos do celular | <img src="docs/assets/pt/photos.png" width="420"> | <img src="docs/assets/en/photos.png" width="420"> |
 
 ### Em movimento
 
-| Um toque para baixo: entradas, clima, jogos | A Central de Controle | Configurações |
-|---|---|---|
-| <img src="docs/assets/pt/drawer.webp" width="300"> | <img src="docs/assets/pt/control-center.webp" width="300"> | <img src="docs/assets/pt/settings.webp" width="300"> |
+| A Central de Controle | Configurações |
+|---|---|
+| <img src="docs/assets/pt/control-center.webp" width="420"> | <img src="docs/assets/pt/settings.webp" width="420"> |
 
-A tela de descanso: <img src="docs/assets/pt/screensaver.webp" width="300"> · [vídeo](docs/assets/pt/screensaver.mp4) · [in English](docs/assets/en/screensaver.mp4)
+A tela de descanso ([vídeo](docs/assets/pt/screensaver.mp4)):
 
-A página no celular: <img src="docs/assets/pt/upload-phone.png" width="200" align="top">
+<img src="docs/assets/pt/screensaver.webp" width="880" alt="A tela de descanso">
+
+## O que ele desliga
+
+A promessa é uma tela inicial sem anúncios, espionagem ou telemetria. Quando você troca para o GB Home TV, ele desliga (nunca desinstala) os apps de propaganda, demonstração e rastreamento do fabricante que ele conhece, e *Launcher → Original* liga tudo de volta. Na TCL, por exemplo: os canais de propaganda e anúncios (TCL Channel e sua TV ao vivo), as caixas de conta e mensagens, a demonstração de loja, os apps de guia de reparo e de coleta de logs, e a segmentação de anúncios do Android. Em outras marcas, o mesmo tipo de coisa: o Anoki ACR (que vê o que está na tela), a análise da Xiaomi, as propagandas do Mi TV+ e da Coolita, demonstrações de loja. Imagem, som, entradas, controle, atualizações e os serviços do Google são protegidos e nunca são mexidos. A lista completa está em [`HomeMode.java`](app/src/io/freemytv/HomeMode.java).
 
 ## Medido numa TV de verdade
 
@@ -131,7 +136,7 @@ A página no celular: <img src="docs/assets/pt/upload-phone.png" width="200" ali
 | Memória livre na TV | 289 MB | 165 MB |
 | Memória usada pela tela inicial | 89 MB | 152 MB |
 
-O GB Home TV abre mais rápido e não tem anúncios, mas desenha tudo sozinho e guarda as imagens na memória, então usa **mais** memória que a tela inicial de fábrica. Os seus números serão outros.
+O GB Home TV abre mais rápido e não tem anúncios, mas desenha tudo sozinho e guarda as imagens na memória, então usa **mais** memória que a tela inicial de fábrica. A memória própria dele é de uns 46 MB com tudo ligado e de uns 41 MB com as opções de memória desligadas (*Configurações → Desempenho → Desligar tudo isso*): uma economia de uns 5 MB, porque a maior parte do que o sistema conta para ele são bibliotecas compartilhadas. O objetivo aqui é sem anúncios, sem telemetria e uma tela inicial mais rápida, não o menor uso de RAM possível. Os seus números serão outros.
 
 ## Mais sobre…
 
@@ -140,19 +145,40 @@ O GB Home TV abre mais rápido e não tem anúncios, mas desenha tudo sozinho e 
 | Categoria | O que tem |
 |---|---|
 | **Geral** | Launcher ou original · seu nome · idioma · tema · formato da hora · vidro · sons de navegação · as configurações da própria TV |
-| **Início** | A prateleira · os botões redondos do topo · recomendações · entradas HDMI · Bluetooth: mostrar, renomear, esquecer |
-| **Central de Controle** | Quais blocos ela mostra |
+| **Início** | A prateleira · os botões redondos do topo · saudação · recomendações · entradas HDMI · Bluetooth: mostrar, renomear, esquecer |
+| **Central de Controle** | Quais blocos ela mostra, inclusive extras que vêm desligados: tela de descanso, mudo, rede |
 | **Clima** | Ligado ou desligado · °C, °F ou automático · sua cidade |
 | **Jogos** | Ligado ou desligado · seus times · campeonatos por esporte |
-| **Tela de Descanso** | Ver agora · suas fotos · ordem aleatória · intervalo · brilho · relógio · data e clima |
+| **Tela de Descanso** | Ver agora · suas fotos · ordem aleatória · intervalo · brilho (seis níveis, do mais claro ao bem escuro e fosco) · zoom lento · relógio · data e clima |
+| **Desempenho** | Memória em uso agora · recomendações, clima, jogos, zoom e saudação ligados ou desligados · tudo desligado de uma vez |
 | **Botões do Controle** | O app que cada botão abre, e os botões que você ensina |
 | **Sobre** | Versão · números medidos · avisos · créditos |
 
-### A chave do TMDB
+### Extras opcionais, passo a passo
 
-Só para os destaques, gratuita, dois minutos: crie uma conta em [themoviedb.org](https://www.themoviedb.org/signup), abra [Settings → API](https://www.themoviedb.org/settings/api) e peça uma chave de desenvolvedor. Cole depois de `tmdb_key=` no `config.properties` e compile de novo. É sua: esse arquivo fica fora do git.
+**Destaques (as três abas com títulos em alta): a chave gratuita do TMDB.** Sem ela o resto funciona; com ela a tela inicial mostra títulos em alta dos apps de streaming que você tem.
 
-### Fotos do celular
+1. Entre em [themoviedb.org](https://www.themoviedb.org/signup), crie uma conta gratuita e confirme o e-mail.
+2. Abra a sua foto de perfil (canto superior direito) → *Configurações* → *API* (no menu da esquerda).
+3. Clique para pedir uma chave e escolha **Developer**. Aceite os termos e preencha o formulário (nome, e-mail e, no uso, escreva "uso pessoal, tela inicial de TV").
+4. Quando for aprovada, a página mostra duas coisas: *API Key* e **API Read Access Token** (um texto bem longo). Copie o **API Read Access Token**.
+5. Na pasta do projeto, abra o arquivo `config.properties` com qualquer editor de texto (o Bloco de Notas serve). Ele é criado pelo primeiro `./build.sh`. Ache a linha `tmdb_key=` e cole o token logo depois do `=`, sem espaços nem aspas:
+   `tmdb_key=eyJhbGciOi...`
+6. Compile e instale de novo: `./build.sh` e depois `adb install -r GBHomeTV.apk` (antes, `adb connect` com o endereço da sua TV, como na instalação). Ou peça ao seu assistente de IA: *"Compile o GB Home TV de novo e instale na minha TV em 192.168.1.50."*
+
+Essa chave é sua: não compartilhe. O `config.properties` nunca vai para o GitHub.
+
+**AirPlay (mandar a tela do iPhone, iPad ou Mac para a TV): o app receptor gratuito.** O GB Home TV só adiciona o botão; o receptor é um app gratuito à parte.
+
+1. Baixe o `.apk` mais recente em [android-airplay-server → Releases](https://github.com/jqssun/android-airplay-server/releases).
+2. Com o computador conectado à TV (`adb connect 192.168.1.50:5555`, com o seu endereço), rode: `adb install -r o-arquivo-que-voce-baixou.apk`. Ou peça ao seu assistente de IA: *"Instale este APK do receptor de AirPlay na minha TV em 192.168.1.50."*
+3. Abra a **Central de Controle** (botão de informação do controle): aparece um botão **AirPlay**. No iPhone, iPad ou Mac, abra o menu do AirPlay e escolha a TV.
+
+**Jogos: sem chave nenhuma.** *Configurações → Jogos*: ligue, adicione o seu time e marque os campeonatos. Os dados vêm das páginas públicas da ESPN.
+
+**Clima: sem chave nenhuma.** Usa o Open-Meteo, e a sua cidade é adivinhada pelo fuso horário da TV (mude em *Configurações → Clima*).
+
+### Fotos do celular (opcional)
 
 *Configurações → Tela de Descanso → Fotos do seu celular.* A TV mostra um QR code e, abaixo, o endereço e um PIN. Aponte a câmera do celular (mesmo Wi-Fi) para o código e escolha as fotos; o PIN já vai dentro dele. No computador, que não tem câmera, abra o endereço e digite o PIN. As fotos são endireitadas e salvas de novo para a TV, sem as marcas de GPS. O servidor só roda enquanto essa tela está aberta, e o PIN bloqueia depois de algumas tentativas erradas.
 

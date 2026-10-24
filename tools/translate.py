@@ -36,7 +36,7 @@ WEB = os.path.join(ROOT, "web")
 I18N = os.path.join(ROOT, "app", "assets", "i18n")
 CACHE = os.path.join(ROOT, "tools", ".i18n-cache.json")   # translations made with --fill, by hash (not committed)
 DEFAULT_MODEL = "claude-haiku-5-5"
-CALL = re.compile(r"\bUi\.(trf?|plural|datePattern)\(")
+CALL = re.compile(r"\bUi\.(trf?|trl|plural|datePattern)\(")
 WEB_CALL = re.compile(r"(?:(?<![\w.$])|(?<=\bI18N\.))(trf?|plural|formatDate)\(")
 PLURAL_FORM = re.compile(r"^(zero|one|two|few|many|other):")
 PLACEHOLDER = re.compile(r"\{[a-zA-Z_][a-zA-Z_0-9]*\}")

@@ -34,7 +34,7 @@ import java.util.List;
  * channel button closes it. Sizes are Tigris's, in dp.
  */
 public class ControlCenterActivity extends Activity {
-    private static final int BLUETOOTH = 0, THEME = 1, RECS = 2, VOLUME = 3, PAIR = 4, TV_SETTINGS = 5, HOME_SETTINGS = 6, DEVICE = 7, AIRPLAY = 8, PICTURE = 9, MODE = 10;
+    private static final int BLUETOOTH = 0, THEME = 1, RECS = 2, VOLUME = 3, PAIR = 4, TV_SETTINGS = 5, HOME_SETTINGS = 6, DEVICE = 7, AIRPLAY = 8, PICTURE = 9, MODE = 10, SAVER = 11, MUTE = 12, NETWORK = 13;
     /** The TV's own picture modes (its picture_mode setting): Standard, Movie, Sports, Game, Vivid. */
     private static final int[] MODE_IDS = {7, 9, 2, 10, 3};
     private static final String AIRPLAY_PACKAGE = "io.github.jqssun.airplay";
@@ -239,6 +239,20 @@ public class ControlCenterActivity extends Activity {
                 break;
             }
             case TV_SETTINGS: openSystem(Settings.ACTION_SETTINGS); break;
+            case NETWORK: openSystem(Settings.ACTION_WIFI_SETTINGS); break;
+            case MUTE:
+                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, 0);
+                volume = readVolume();
+                view.invalidate();
+                break;
+            case SAVER:
+                try {
+                    startActivity(new Intent(this, SettingsActivity.class).putExtra("screensaver", true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                } catch (Exception e) {
+                    AppLog.w("control center: " + e.getMessage());
+                }
+                finish();
+                break;
             case HOME_SETTINGS:
                 try {
                     startActivity(new Intent(this, SettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -371,6 +385,9 @@ public class ControlCenterActivity extends Activity {
             if (Prefs.ccShown("tv")) add(TV_SETTINGS, Ui.tr("TV Settings"), "", "tv_settings");
             if (Prefs.ccShown("home") || controls.isEmpty() && !Prefs.ccShown("volume")) add(HOME_SETTINGS, Ui.tr("Home Settings"), "", "settings");
             if (Prefs.ccShown("airplay") && getPackageManager().getLaunchIntentForPackage(AIRPLAY_PACKAGE) != null) add(AIRPLAY, "AirPlay", "", "");
+            if (Prefs.ccShown("saver")) add(SAVER, Ui.tr("Screensaver"), "", "bedtime");
+            if (Prefs.ccShown("mute")) add(MUTE, Ui.tr("Mute"), "", "volume_off");
+            if (Prefs.ccShown("network")) add(NETWORK, Ui.tr("Network"), "", "wifi");
             if (Prefs.ccShown("volume")) add(VOLUME, "", "", "speaker");
             focus = 0;
             if (keep != null) {
@@ -384,7 +401,8 @@ public class ControlCenterActivity extends Activity {
         }
 
         private boolean isRound(Control c) {
-            return c.kind == PAIR || c.kind == TV_SETTINGS || c.kind == HOME_SETTINGS || c.kind == AIRPLAY;
+            return c.kind == PAIR || c.kind == TV_SETTINGS || c.kind == HOME_SETTINGS || c.kind == AIRPLAY
+                    || c.kind == SAVER || c.kind == MUTE || c.kind == NETWORK;
         }
 
         /** Tigris's grid: a square tile beside two capsules, then the device list, three round buttons and the slider. */
@@ -396,7 +414,8 @@ public class ControlCenterActivity extends Activity {
                 if (isRound(r)) rounds++;
                 if (r.kind == MODE) modes++;
             }
-            float roundStep = rounds > 1 ? (w - cell) / (rounds - 1) : 0;
+            int perRow = Math.min(rounds, 4);   // up to four round buttons to a row, then another row
+            float roundStep = perRow > 1 ? (w - cell) / (perRow - 1) : 0;
             // The square Bluetooth tile has the Theme and Recommendations capsules beside it; without the tile (or with
             // one capsule) the rest still fits: full-width capsules, or one capsule centered beside the tile.
             boolean hasBt = false;
@@ -438,10 +457,10 @@ public class ControlCenterActivity extends Activity {
                         c.rect.set(x, y, x + w, y + SLIDER_H * dp);
                         y += SLIDER_H * dp + gap;
                         break;
-                    default: {   // the round buttons share a row
-                        float left = x + round * roundStep;
-                        c.rect.set(left, y, left + cell, y + cell);
-                        if (++round == rounds) y += cell + gap;
+                    default: {   // the round buttons share rows of four
+                        float left = x + (round % 4) * roundStep, rowTop = y + (round / 4) * (cell + gap);
+                        c.rect.set(left, rowTop, left + cell, rowTop + cell);
+                        if (++round == rounds) y += ((rounds + 3) / 4) * (cell + gap);
                     }
                 }
             }

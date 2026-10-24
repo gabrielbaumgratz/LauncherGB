@@ -36,8 +36,14 @@ import org.json.JSONObject;
 final class Sports {
     static final class Game {
         long when;
-        String day = "", time = "", match = "", tag = "", sport = "soccer";
+        String match = "", tag = "", sport = "soccer";
         boolean live, mine;
+
+        /** "TODAY", "TOMORROW" or "SAT 25/10", in the language now. */
+        String day() { return dayText(when); }
+
+        /** The time, in the TV's clock (12 or 24 hours, as set). */
+        String time() { return timeText(when); }
     }
 
     /** A championship the person can follow: ESPN's path (sport/league) and its name. */
@@ -242,7 +248,6 @@ final class Sports {
         g.sport = sportOf(path);
         g.live = state.equals("in");
         g.mine = mine != null && (home.equals(mine) || away.equals(mine));
-        fill(g);
         out.add(g);
     }
 
@@ -297,7 +302,6 @@ final class Sports {
         g.tag = tour;
         g.sport = "tennis";
         g.live = state.equals("in");
-        fill(g);
         out.add(g);
     }
 
@@ -307,15 +311,20 @@ final class Sports {
 
     // MARK: - Text
 
-    /** The day ("TODAY", "SAT 25/10") and the time, in the TV's time zone and language. */
-    private void fill(Game g) {
+    private static String dayText(long when) {
         long now = System.currentTimeMillis();
         SimpleDateFormat dayFormat = new SimpleDateFormat("yyyyMMdd", Locale.US);
-        String today = dayFormat.format(new Date(now)), that = dayFormat.format(new Date(g.when));
-        if (that.equals(today)) g.day = Ui.tr("TODAY");
-        else if (that.equals(dayFormat.format(new Date(now + DAY)))) g.day = Ui.tr("TOMORROW");
-        else g.day = new SimpleDateFormat("EEE dd/MM", Ui.locale()).format(new Date(g.when)).toUpperCase(Ui.locale()).replace(".", "");
-        g.time = DateFormat.getTimeInstance(DateFormat.SHORT, Ui.locale()).format(new Date(g.when));
+        String today = dayFormat.format(new Date(now)), that = dayFormat.format(new Date(when));
+        if (that.equals(today)) return Ui.tr("TODAY");
+        if (that.equals(dayFormat.format(new Date(now + DAY)))) return Ui.tr("TOMORROW");
+        return new SimpleDateFormat("EEE dd/MM", Ui.locale()).format(new Date(when)).toUpperCase(Ui.locale()).replace(".", "");
+    }
+
+    private static String timeText(long when) {
+        String f = Prefs.clockFormat();
+        if (f.equals("24")) return new SimpleDateFormat("HH:mm", Ui.locale()).format(new Date(when));
+        if (f.equals("12")) return new SimpleDateFormat("h:mm a", Ui.locale()).format(new Date(when));
+        return DateFormat.getTimeInstance(DateFormat.SHORT, Ui.locale()).format(new Date(when));
     }
 
     private static String stamp(long when) {
@@ -396,7 +405,6 @@ final class Sports {
                 g.live = o.optBoolean("l");
                 g.mine = o.optBoolean("p");
                 g.sport = o.optString("s", "soccer");
-                fill(g);
                 list.add(g);
             }
         } catch (IOException | JSONException ignored) {

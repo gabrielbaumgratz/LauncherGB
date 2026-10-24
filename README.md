@@ -12,7 +12,7 @@ It sets itself up from your TV's own settings, and one click brings the old one 
 
 English · [Português](README.pt.md) · [Español](README.es.md)
 
-[Why](#why-gb-home-tv) · [Install](#install-in-5-minutes) · [How to use it](#how-to-use-it) · [What's inside](#whats-inside) · [Screenshots](#screenshots) · [Questions](#questions) · [Credits](#credits)
+[Why](#why-gb-home-tv) · [Install](#install-in-5-minutes) · [How to use it](#how-to-use-it) · [What's inside](#whats-inside) · [Screenshots](#screenshots) · [What it turns off](#what-it-turns-off) · [Extras](#optional-extras-step-by-step) · [Questions](#questions) · [Credits](#credits)
 
 <img src="docs/assets/en/hero.gif" width="880" alt="GB Home TV: the home screen, the drawer with the inputs, the weather and the games, and the Control Center">
 
@@ -38,13 +38,13 @@ An AI coding assistant ([Claude Code](https://claude.com/claude-code), Codex, An
 **1. On the TV: turn on developer mode** (it's a menu, nothing risky)
 - Open *Settings → System → About* and press *Android TV OS build* (or *Build number*) **7 times**.
 - Go back to *Settings → System → Developer options* and turn on **USB debugging** (some TVs call it *Network debugging*).
-- Find the TV's address in *Settings → Network & Internet* and write it down. It looks like `192.168.1.50`.
+- Find the TV's **address (its IP)**: *Settings → Network & Internet*, tap your Wi-Fi and look for *IP address*. It's four numbers with dots, like `192.168.1.50`. **Yours is different: write it down and use it wherever this page says `192.168.1.50`.**
 
-**2. On the computer: ask the AI.** Open your assistant and paste this, with your TV's address:
+**2. On the computer: ask the AI.** Open your assistant and paste this, **changing the numbers to your TV's address**:
 
 > Install GB Home TV (github.com/gabrielbaumgratz/LauncherGB) on my TV at 192.168.1.50.
 
-It downloads the project, installs what it needs, builds the app and puts it on your TV. It will ask before anything important.
+It downloads the project, installs what it needs, builds the app and puts it on your TV. It will ask before anything important, and it may take a few minutes the first time.
 
 **3. On the TV: say yes.** A message asks *Allow USB debugging?*. Tick *Always allow* and press OK. Then open **GB Home TV** from your apps and choose *Launcher → GB Home TV*. Done: press Home and it's there.
 
@@ -62,7 +62,7 @@ It downloads the project, installs what it needs, builds the app and puts it on 
    ```bash
    ./build.sh
    ```
-   The first run creates `config.properties`; editing it is optional (see [the TMDB key](#the-tmdb-key)). The result is `GBHomeTV.apk`.
+   The first run creates `config.properties`; editing it is optional (see [the extras](#optional-extras-step-by-step)). The result is `GBHomeTV.apk`.
 4. **Install:**
    ```bash
    adb connect 192.168.1.50:5555
@@ -91,7 +91,7 @@ Updates must be signed with the same key: keep `freemytv.keystore`.
 - **A games widget** beside the weather: your teams and championships (soccer, basketball, NFL, baseball, hockey, tennis), each with its sport's symbol. Data from ESPN, no key.
 - **A screensaver you can read from the couch:** matte full-screen photos, a frosted clock, the date and the weather. Photos in order or shuffled, and it can dim for a dark room.
 - **Photos from your phone:** scan the QR code on the TV (on a computer, type the address and the PIN) and send photos. Local network only.
-- **Picks from your apps:** trending titles from the streaming apps you have (with a free [TMDB key](#the-tmdb-key); everything else works without one).
+- **Picks from your apps:** trending titles from the streaming apps you have (with a free TMDB key, [explained below](#optional-extras-step-by-step); everything else works without one).
 - **Settings laid out like the iPad's,** in the home screen's own look.
 - **Bluetooth devices:** choose which show up, rename them, forget them.
 - **Your name:** "Good morning, Ana" (or no name).
@@ -108,18 +108,23 @@ Updates must be signed with the same key: keep `freemytv.keystore`.
 | Settings | <img src="docs/assets/en/settings.png" width="420"> | <img src="docs/assets/pt/settings.png" width="420"> |
 | Games | <img src="docs/assets/en/settings-games.png" width="420"> | <img src="docs/assets/pt/settings-games.png" width="420"> |
 | Screensaver | <img src="docs/assets/en/settings-screensaver.png" width="420"> | <img src="docs/assets/pt/settings-screensaver.png" width="420"> |
+| Performance | <img src="docs/assets/en/settings-performance.png" width="420"> | <img src="docs/assets/pt/settings-performance.png" width="420"> |
 | Remote buttons | <img src="docs/assets/en/settings-remote.png" width="420"> | <img src="docs/assets/pt/settings-remote.png" width="420"> |
 | Photos from your phone | <img src="docs/assets/en/photos.png" width="420"> | <img src="docs/assets/pt/photos.png" width="420"> |
 
 ### In motion
 
-| One press down: the inputs, the weather, the games | The Control Center | Settings |
-|---|---|---|
-| <img src="docs/assets/en/drawer.webp" width="300"> | <img src="docs/assets/en/control-center.webp" width="300"> | <img src="docs/assets/en/settings.webp" width="300"> |
+| The Control Center | Settings |
+|---|---|
+| <img src="docs/assets/en/control-center.webp" width="420"> | <img src="docs/assets/en/settings.webp" width="420"> |
 
-The screensaver: <img src="docs/assets/en/screensaver.webp" width="300"> · [video](docs/assets/en/screensaver.mp4) · [em português](docs/assets/pt/screensaver.mp4)
+The screensaver ([video](docs/assets/en/screensaver.mp4)):
 
-The page on your phone: <img src="docs/assets/en/upload-phone.png" width="200" align="top">
+<img src="docs/assets/en/screensaver.webp" width="880" alt="The screensaver">
+
+## What it turns off
+
+The promise is a home screen without ads, spyware or telemetry. When you switch to GB Home TV, it turns off (never uninstalls) the maker's promo, demo and tracking apps it knows about, and *Launcher → Original* turns them back on. On TCL, for example: the promo channels and ads (TCL Channel and its Live TV), the account and message boxes, the store demo, the repair-guide and log-collecting apps, and Android's ad targeting. On other brands, the same kind of thing: Anoki ACR (it watches what's on the screen), Xiaomi's analytics, Mi TV+ and Coolita promos, store demos. Picture, sound, inputs, remote, updates and Google's services are protected and never touched. The full list is in [`HomeMode.java`](app/src/io/freemytv/HomeMode.java).
 
 ## Measured on a real TV
 
@@ -131,7 +136,7 @@ The page on your phone: <img src="docs/assets/en/upload-phone.png" width="200" a
 | Free memory on the TV | 289 MB | 165 MB |
 | Memory used by the home screen | 89 MB | 152 MB |
 
-GB Home TV opens faster and has no ads, but it draws everything itself and keeps its images in memory, so it uses **more** memory than the stock home screen. Your numbers will differ.
+GB Home TV opens faster and has no ads, but it draws everything itself and keeps its images in memory, so it uses **more** memory than the stock home screen. Its own heap is about 46 MB with everything on, and about 41 MB with the memory options off (*Settings → Performance → Turn all of these off*): a saving of roughly 5 MB, because most of what the system counts for it is shared libraries. The goal here is no ads, no telemetry and a faster home screen, not the smallest possible RAM. Your numbers will differ.
 
 ## More about…
 
@@ -140,19 +145,40 @@ GB Home TV opens faster and has no ads, but it draws everything itself and keeps
 | Category | What's in it |
 |---|---|
 | **General** | Launcher or original · your name · language · theme · time format · glass · navigation sounds · the TV's own settings |
-| **Home Screen** | The shelf · the round buttons at the top · recommendations · HDMI inputs · Bluetooth: show, rename, forget |
-| **Control Center** | Which tiles it shows |
+| **Home Screen** | The shelf · the round buttons at the top · greeting · recommendations · HDMI inputs · Bluetooth: show, rename, forget |
+| **Control Center** | Which tiles it shows, including extra ones that are off by default: screensaver, mute, network |
 | **Weather** | On or off · °C, °F or automatic · your city |
 | **Games** | On or off · your teams · championships by sport |
-| **Screensaver** | Preview · your photos · shuffle · interval · brightness · clock · date and weather |
+| **Screensaver** | Preview · your photos · shuffle · interval · brightness (six levels, from brightest to darkest and matte) · slow zoom · clock · date and weather |
+| **Performance** | Memory in use now · recommendations, weather, games, zoom and greeting on or off · all of them off in one step |
 | **Remote Buttons** | The app each button opens, and the buttons you teach it |
 | **About** | Version · measured numbers · notices · credits |
 
-### The TMDB key
+### Optional extras, step by step
 
-Only for the picks, free, two minutes: create an account at [themoviedb.org](https://www.themoviedb.org/signup), open [Settings → API](https://www.themoviedb.org/settings/api) and request a developer key. Paste it after `tmdb_key=` in `config.properties` and build again. It's yours: that file stays out of git.
+**Picks (the three tabs with trending titles): the free TMDB key.** Without it everything else works; with it the home screen shows trending titles from the streaming apps you have.
 
-### Photos from your phone
+1. Go to [themoviedb.org](https://www.themoviedb.org/signup), create a free account and confirm your email.
+2. Open your profile picture (top right) → *Settings* → *API* (in the menu on the left).
+3. Click to request a key and choose **Developer**. Accept the terms and fill in the form (name, email, and for the use say "personal use, a TV home screen").
+4. When it's approved, the page shows two things: *API Key* and **API Read Access Token** (a very long text). Copy the **API Read Access Token**.
+5. In the project folder, open the file `config.properties` with any text editor (Notepad is fine). It's created by the first `./build.sh`. Find the line `tmdb_key=` and paste the token right after the `=`, with no spaces or quotes:
+   `tmdb_key=eyJhbGciOi...`
+6. Build and install again: `./build.sh`, then `adb install -r GBHomeTV.apk` (use your TV's address with `adb connect` first, as in the install). Or ask your AI assistant: *"Rebuild GB Home TV and install it on my TV at 192.168.1.50."*
+
+That key is yours: don't share it. `config.properties` never goes to GitHub.
+
+**AirPlay (send your iPhone, iPad or Mac screen to the TV): the free receiver app.** GB Home TV only adds the button; the receiver is a separate free app.
+
+1. Download the latest `.apk` from [android-airplay-server → Releases](https://github.com/jqssun/android-airplay-server/releases).
+2. With your computer connected to the TV (`adb connect 192.168.1.50:5555`, your own address), run: `adb install -r the-file-you-downloaded.apk`. Or ask your AI assistant: *"Install this AirPlay receiver APK on my TV at 192.168.1.50."*
+3. Open the **Control Center** (info button on the remote): a new **AirPlay** button appears. On your iPhone, iPad or Mac, open the AirPlay menu and pick the TV.
+
+**Games: no key at all.** *Settings → Games*: turn it on, add your team and tick the championships. The data comes from ESPN's public pages.
+
+**Weather: no key at all.** It uses Open-Meteo, and your city is guessed from the TV's time zone (change it in *Settings → Weather*).
+
+### Photos from your phone (optional)
 
 *Settings → Screensaver → Photos from your phone.* The TV shows a QR code, and below it the address and a PIN. Scan the code with your phone (same Wi-Fi) and choose photos; the PIN is already in it. On a computer, which has no camera, open the address and type the PIN. Photos are turned upright and saved again for the TV, without their GPS tags. The server runs only while that screen is open, and the PIN locks after a few wrong tries.
 
