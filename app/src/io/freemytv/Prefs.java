@@ -334,6 +334,11 @@ final class Prefs {
             out.add("tennis/atp");
             return out;
         }
+        if (!sp().contains("sportsLeagues")) {
+            String lang = Ui.language;
+            out.add(lang.startsWith("pt") ? "soccer/bra.1" : lang.startsWith("es") ? "soccer/esp.1" : "basketball/nba");
+            return out;
+        }
         for (String p : sp().getString("sportsLeagues", "").split(",")) if (!p.isEmpty()) out.add(p);
         return out;
     }

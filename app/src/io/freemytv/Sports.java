@@ -256,7 +256,7 @@ final class Sports {
             else if (individual(sportOf(path))) {
                 circuits.add(path);
                 wholeCircuits.add(path);
-            } else scoreboard(out, seen, path, range);
+            } else scoreboard(out, seen, path, now);
         }
         String longRange = stamp(now) + "-" + stamp(now + 60 * DAY);
         for (String path : circuits) {
@@ -273,8 +273,9 @@ final class Sports {
         List<Game> upcoming = new ArrayList<>();
         for (Game g : out) if (g.when >= now - 3 * 3600_000L) upcoming.add(g);
         List<Game> keep = new ArrayList<>();
+        for (Game g : upcoming) if (g.live) keep.add(g);
         int mine = 0;
-        for (Game g : upcoming) if (g.mine && mine < 2 * Math.max(1, Prefs.sportsTeams().size())) { keep.add(g); mine++; }   // theirs lead
+        for (Game g : upcoming) if (g.mine && !keep.contains(g) && mine < Math.max(1, Prefs.sportsTeams().size())) { keep.add(g); mine++; }
         for (Game g : upcoming) if (!keep.contains(g) && keep.size() < KEEP) keep.add(g);
         return keep;
     }
@@ -355,10 +356,15 @@ final class Sports {
         return g;
     }
 
-    private void scoreboard(List<Game> out, Set<String> seen, String path, String range) {
-        JSONObject json = get(API + path + "/scoreboard?dates=" + range + "&limit=200");
+    private void scoreboard(List<Game> out, Set<String> seen, String path, long now) {
+        JSONObject json = get(API + path + "/scoreboard");
         JSONArray events = json == null ? null : json.optJSONArray("events");
         for (int i = 0; events != null && i < events.length(); i++) add(out, seen, events.optJSONObject(i), path, null);
+        for (int d = 1; d <= 2; d++) {
+            JSONObject next = get(API + path + "/scoreboard?dates=" + stamp(now + d * DAY));
+            JSONArray nextEvents = next == null ? null : next.optJSONArray("events");
+            for (int i = 0; nextEvents != null && i < nextEvents.length(); i++) add(out, seen, nextEvents.optJSONObject(i), path, null);
+        }
     }
 
     /** One event with a pair of teams; `mine` is the followed team's name (the game leads the list), or null. */

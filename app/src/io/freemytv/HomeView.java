@@ -3044,18 +3044,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
 
         // Left column: the heading.
-        float left = cell.left + 48 * k, top = cell.top + 56 * k;
-        Symbols.draw(getContext(), c, "sports", left + 20 * k, top + 18 * k, 34 * k, green);
+        float left = cell.left + 48 * k;
+        Symbols.draw(getContext(), c, "sports", left + 24 * k, cell.centerY() - 28 * k, 48 * k, green);
         fitPaint.set(lTitle);
         fitPaint.setTextSize(38 * k);
         fitPaint.setColor(ink);
-        c.drawText(Ui.tr("Upcoming Games"), left, top + 92 * k, fitPaint);
-        fitPaint.set(lCardMeta);
-        fitPaint.setTextSize(22 * k);
-        fitPaint.setColor(dim);
-        c.drawText(Ui.tr("Followed teams and championships"), left, top + 130 * k, fitPaint);
-        fitPaint.setColor(green);
-        c.drawText(Ui.tr("Follow teams and championships in Settings"), left, cell.bottom - 44 * k, fitPaint);
+        fitPaint.setTextAlign(Paint.Align.LEFT);
+        c.drawText(Ui.tr("Upcoming Games"), left, cell.centerY() + 32 * k, fitPaint);
 
         float divider = cell.left + 440 * k;
         border.setColor(blend(0x20000000, 0x25FFFFFF, night));
