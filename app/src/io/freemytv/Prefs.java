@@ -194,7 +194,7 @@ final class Prefs {
     static boolean dreamMotion() { return sp().getBoolean("dreamMotion", true); }
     static void setDreamMotion(boolean on) { put("dreamMotion", on); }
 
-    /** The greeting at the top of the home screen (off: the time there instead). */
+    /** The greeting at the top of the home screen (off: "For You" there instead). */
     static boolean greeting() { return sp().getBoolean("greeting", true); }
     static void setGreeting(boolean on) { put("greeting", on); }
 

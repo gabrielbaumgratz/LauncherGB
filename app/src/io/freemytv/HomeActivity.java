@@ -83,7 +83,8 @@ public class HomeActivity extends Activity {
 
     @Override public void onTrimMemory(int level) {
         super.onTrimMemory(level);
-        if (level >= TRIM_MEMORY_COMPLETE) Recs.get(this).trim();
+        if (level >= TRIM_MEMORY_MODERATE) Recs.get(this).trim();
+        if (level >= TRIM_MEMORY_COMPLETE || !Prefs.recommendations()) Recs.get(this).clearMemory();
     }
 
     @Override public boolean dispatchKeyEvent(KeyEvent event) {

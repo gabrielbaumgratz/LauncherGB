@@ -29,6 +29,10 @@ import android.view.inputmethod.EditorInfo;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -203,7 +207,7 @@ public class SettingsActivity extends Activity {
         private boolean editingTop;
         private int pickFor, pickCurrent, pickScroll;   // pickFor: the remote button (index + 1)
         private final List<String[]> cities = new ArrayList<>(), teamResults = new ArrayList<>();
-        private String cityStatus = "", teamStatus = "";
+        private String cityStatus = "", teamStatus = "", teamSearchSport = "";
         private int customCode, customScan;   // the taught button being set up
         private final Runnable learnPoll = new Runnable() {
             @Override public void run() {
@@ -560,23 +564,33 @@ public class SettingsActivity extends Activity {
                 case P_GAMES: {
                     toggle(Ui.tr("Games widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
-                    header(Ui.tr("My teams"));
-                    for (String[] team : Prefs.sportsTeams()) {
-                        link(team[3], () -> Sports.leagueName(team[0] + "/" + team[1]), () -> openTeam(team));
-                    }
-                    link(Ui.tr("Add a team"), () -> !teamStatus.isEmpty() ? teamStatus : "", this::askTeam);
-                    String lastSport = "";
+                    List<String[]> allTeams = Prefs.sportsTeams();
+                    List<String> distinctSports = new ArrayList<>();
                     for (String[] league : Sports.LEAGUES) {
-                        String sport = Sports.sportOf(league[0]);
-                        if (!sport.equals(lastSport)) {
-                            header(Sports.sportName(sport));
-                            lastSport = sport;
+                        String s = Sports.sportOf(league[0]);
+                        if (!distinctSports.contains(s)) distinctSports.add(s);
+                    }
+                    for (String[] t : allTeams) {
+                        if (!distinctSports.contains(t[0])) distinctSports.add(t[0]);
+                    }
+                    for (String sport : distinctSports) {
+                        header(Sports.sportName(sport));
+                        for (String[] team : allTeams) {
+                            if (team[0].equals(sport)) {
+                                link(team[3], () -> Sports.leagueName(team[0] + "/" + team[1]), () -> openTeam(team));
+                            }
                         }
-                        toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
-                            List<String> paths = Prefs.sportsLeagues();
-                            if (!paths.remove(league[0])) paths.add(league[0]);
-                            Prefs.setSportsLeagues(paths);
-                        });
+                        final String s = sport;
+                        link(Ui.tr("Add a team"), () -> (!teamStatus.isEmpty() && s.equals(teamSearchSport)) ? teamStatus : "", () -> askTeam(s));
+                        for (String[] league : Sports.LEAGUES) {
+                            if (Sports.sportOf(league[0]).equals(sport)) {
+                                toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
+                                    List<String> paths = Prefs.sportsLeagues();
+                                    if (!paths.remove(league[0])) paths.add(league[0]);
+                                    Prefs.setSportsLeagues(paths);
+                                });
+                            }
+                        }
                     }
                     break;
                 }
@@ -693,10 +707,34 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Credits"));
                     info("Free My TV", () -> "github.com/simbasjungles/free-my-tv");
                     info("AirPlay", () -> "github.com/jqssun/android-airplay-server");
+                    link(Ui.tr("Licenses"), () -> "MIT", this::openLicenses);
                     break;
                 }
             }
             clampFocus();
+        }
+
+        private void openLicenses() {
+            openDetail(Ui.tr("Licenses"), () -> {
+                header("GB Home TV");
+                info(Ui.tr("License"), () -> "MIT");
+                note(licenseText());
+                header("Material Symbols");
+                info(Ui.tr("License"), () -> "Apache 2.0");
+                note("Copyright Google LLC\nLicensed under the Apache License, Version 2.0.");
+            });
+        }
+
+        private String licenseText() {
+            try (InputStream in = getContext().getAssets().open("LICENSE.txt");
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[1024];
+                int n;
+                while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+                return new String(out.toByteArray(), StandardCharsets.UTF_8).trim();
+            } catch (IOException e) {
+                return "MIT License\n\nCopyright (c) 2026 Gabriel Baumgratz\nCopyright (c) 2026 Free My TV contributors";
+            }
         }
 
         private void clampFocus() {
@@ -787,31 +825,39 @@ public class SettingsActivity extends Activity {
             });
         }
 
-        private void askTeam() {
+        private void askTeam(String sport) {
             if (Ui.tr("Searching…").equals(teamStatus)) return;
+            teamSearchSport = sport;
             Prompt.ask(activity, Ui.tr("Add a team"), Ui.tr("A team of any sport, or a player, driver or fighter by name."), Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
-                    Ui.tr("Search"), this::searchTeam);
+                    Ui.tr("Search"), name -> searchTeam(name, sport));
         }
 
-        private void searchTeam(String name) {
+        private void searchTeam(String name, final String sport) {
             if (name.trim().isEmpty()) return;
             teamStatus = Ui.tr("Searching…");
+            teamSearchSport = sport;
             invalidate();
             new Thread(() -> {
                 List<String[]> found = Sports.findTeam(name);
+                if (sport != null && !sport.isEmpty() && !found.isEmpty()) {
+                    List<String[]> matched = new ArrayList<>();
+                    for (String[] t : found) if (sport.equals(t[0])) matched.add(t);
+                    if (!matched.isEmpty()) found = matched;
+                }
                 String message = found.isEmpty() ? Ui.tr("No team with that name.") : "";
+                final List<String[]> res = found;
                 handler.post(() -> {
                     teamStatus = message;
-                    if (!found.isEmpty() && screen == PAGE) {
+                    if (!res.isEmpty() && screen == PAGE) {
                         teamResults.clear();
-                        teamResults.addAll(found);
+                        teamResults.addAll(res);
                         openPicker(PICK_TEAM);
                         spoken.focusMoved();
                     }
                     invalidate();
-                    if (!message.isEmpty()) handler.postDelayed(() -> { teamStatus = ""; invalidate(); }, 4000);
+                    if (!message.isEmpty()) handler.postDelayed(() -> { teamStatus = ""; teamSearchSport = ""; invalidate(); }, 4000);
                 });
-            }).start();
+            }, "searchTeam").start();
         }
 
         // MARK: - Layout of a page
@@ -1547,7 +1593,12 @@ public class SettingsActivity extends Activity {
 
         /** What a taught button is called: the name the person gave it, or its key. */
         private static String customLabel(String[] k) {
-            return !k[3].isEmpty() ? k[3] : Ui.trf("Button {name}", "name", keyName(Integer.parseInt(k[0]), Integer.parseInt(k[1])));
+            String name = !k[3].isEmpty() ? k[3].trim() : keyName(Integer.parseInt(k[0]), Integer.parseInt(k[1]));
+            String prefix = Ui.trf("Button {name}", "name", "").trim();
+            if (!prefix.isEmpty() && name.toLowerCase(Locale.ROOT).startsWith(prefix.toLowerCase(Locale.ROOT))) {
+                return name;
+            }
+            return Ui.trf("Button {name}", "name", name);
         }
 
         private void askButtonName(final int code, final int scan, String now) {
@@ -1573,11 +1624,29 @@ public class SettingsActivity extends Activity {
             return new String[] {Ui.tr("Brightest"), Ui.tr("Brighter"), Ui.tr("Standard"), Ui.tr("Dim"), Ui.tr("Dark"), Ui.tr("Darkest and matte")};
         }
 
+        private static volatile long cachedMemoryMb = 0;
+        private static volatile long lastMemoryCheck = 0;
+        private static volatile boolean checkingMemory = false;
+
         /** This process's memory (the home screen, the settings and the screensaver live in it), in MB. */
         private static long memoryMb() {
-            android.os.Debug.MemoryInfo info = new android.os.Debug.MemoryInfo();
-            android.os.Debug.getMemoryInfo(info);
-            return info.getTotalPss() / 1024;
+            long now = SystemClock.uptimeMillis();
+            if ((now - lastMemoryCheck > 3000 || cachedMemoryMb == 0) && !checkingMemory) {
+                lastMemoryCheck = now;
+                checkingMemory = true;
+                new Thread(() -> {
+                    try {
+                        android.os.Debug.MemoryInfo info = new android.os.Debug.MemoryInfo();
+                        android.os.Debug.getMemoryInfo(info);
+                        cachedMemoryMb = info.getTotalPss() / 1024;
+                    } catch (Throwable ignored) {
+                    } finally {
+                        checkingMemory = false;
+                    }
+                }, "memoryMb").start();
+            }
+            if (cachedMemoryMb > 0) return cachedMemoryMb;
+            return (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
         }
 
         /** "TCL 32S5K": who made the TV and which model it is, as the TV says. */

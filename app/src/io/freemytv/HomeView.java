@@ -2764,7 +2764,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 retarget(false);
             }
         }
-        for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
+        if (!picksOn()) {
+            recs.clearMemory();
+        } else {
+            for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
+        }
         // Without picks on the screen (none, or turned off): the photo from the phone, or the default background.
         boolean noPicks = cards.isEmpty() || !picksOn();
         Backdrop b = noPicks ? wallpaperBackdrop() : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
@@ -2825,7 +2829,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             drawClock(c);
             return;
         }
-        String hello = !Prefs.greeting() ? clockText : greetingText.isEmpty() ? Ui.greeting() : greetingText;
+        String hello = !Prefs.greeting() ? Ui.tr("For You") : greetingText.isEmpty() ? Ui.greeting() : greetingText;
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // The time and date stay on screen, small, left of the buttons.
         float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[3].left - 36 * k;

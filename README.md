@@ -22,11 +22,11 @@ English · [Português](README.pt.md) · [Español](README.es.md)
 
 | | |
 |---|---|
-| 🚫 **No ads** | No sponsored rows, banners or videos that start on their own. |
-| ⚡ **Faster** | On a real TV: 154 ms to show the home screen, against 217 ms for the original. |
-| 🪄 **Ready out of the box** | Uses your TV's language, theme, units and clock. Change it later if you like. |
-| 🛟 **Reversible** | Uninstalls nothing. *Launcher → Original* brings everything back, and after 3 crashes it goes back by itself. |
-| 🔓 **Free and open** | No account, no subscription. |
+| **No ads** | No sponsored rows, banners or videos that start on their own. |
+| **Faster** | On a real TV: 154 ms to show the home screen, against 217 ms for the original. |
+| **Ready out of the box** | Uses your TV's language, theme, units and clock. Change it later if you like. |
+| **Reversible** | Uninstalls nothing. *Launcher → Original* brings everything back, and after 3 crashes it goes back by itself. |
+| **Free and open** | No account, no subscription. |
 
 ## Install
 
@@ -130,14 +130,14 @@ Every remote is different, so nothing is tied to a button. To open something wit
 
 | | |
 |---|---|
-| 🎛️ **Control Center** | You pick which blocks show. |
-| ⚽ **Games** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
-| 🌙 **Screensaver** | Full-screen photos, clock, date and weather. Six brightness levels. |
-| 🎬 **Highlights** | Trending titles from your streaming apps. |
-| 🎧 **Bluetooth** | Choose, rename and forget devices. |
-| 🎮 **Remote buttons** | Teach any button to open an app or a screen, name it, and restore every button to default in one click. |
-| 🌗 **Light, dark or automatic theme** | Automatic follows the sun where you live; you can also pick one for good. |
-| 🌍 **English, Portuguese, Spanish** | Follows the TV unless you choose. |
+| **Control Center** | You pick which blocks show. |
+| **Games** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
+| **Screensaver** | Full-screen photos, clock, date and weather. Six brightness levels. |
+| **Highlights** | Trending titles from your streaming apps. |
+| **Bluetooth** | Choose, rename and forget devices. |
+| **Remote buttons** | Teach any button to open an app or a screen, name it, and restore every button to default in one click. |
+| **Light, dark or automatic theme** | Automatic follows the sun where you live; you can also pick one for good. |
+| **English, Portuguese, Spanish** | Follows the TV unless you choose. |
 
 ## Screenshots
 

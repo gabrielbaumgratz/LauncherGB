@@ -22,11 +22,11 @@ Um clique troca. Outro clique traz a original de volta.
 
 | | |
 |---|---|
-| 🚫 **Sem anúncios** | Nada de linhas patrocinadas, banners ou vídeos que começam sozinhos. |
-| ⚡ **Mais rápida** | Numa TV de verdade: 154 ms para mostrar a tela inicial, contra 217 ms da original. |
-| 🪄 **Já vem pronta** | Usa o idioma, o tema, as unidades e o relógio da TV. Você muda depois, se quiser. |
-| 🛟 **Reversível** | Não desinstala nada. *Launcher → Original* volta tudo, e se ela travar 3 vezes, volta sozinha. |
-| 🔓 **Grátis e aberta** | Sem conta, sem assinatura. |
+| **Sem anúncios** | Nada de linhas patrocinadas, banners ou vídeos que começam sozinhos. |
+| **Mais rápida** | Numa TV de verdade: 154 ms para mostrar a tela inicial, contra 217 ms da original. |
+| **Já vem pronta** | Usa o idioma, o tema, as unidades e o relógio da TV. Você muda depois, se quiser. |
+| **Reversível** | Não desinstala nada. *Launcher → Original* volta tudo, e se ela travar 3 vezes, volta sozinha. |
+| **Grátis e aberta** | Sem conta, sem assinatura. |
 
 ## Instalar
 
@@ -130,14 +130,14 @@ Cada controle é diferente, então nada vem preso a um botão. Para abrir algo c
 
 | | |
 |---|---|
-| 🎛️ **Central de Controle** | Você escolhe quais blocos aparecem. |
-| ⚽ **Jogos** | Seus times, seus atletas pelo nome (tenistas, golfistas, pilotos de Fórmula 1, lutadores do UFC) e campeonatos, com dados da ESPN (sem chave). O tênis mostra o top 10 de cada ranking. |
-| 🌙 **Tela de descanso** | Fotos em tela cheia, relógio, data e clima. Seis níveis de brilho. |
-| 🎬 **Destaques** | Títulos em alta dos seus apps de streaming. |
-| 🎧 **Bluetooth** | Escolha, renomeie e esqueça dispositivos. |
-| 🎮 **Botões do controle** | Ensine qualquer botão a abrir um app ou uma tela, dê nome a ele e restaure todos ao padrão com um clique. |
-| 🌗 **Tema claro, escuro ou automático** | O automático segue o sol de onde você mora; você também pode fixar um. |
-| 🌍 **Português, inglês e espanhol** | Segue a TV, a menos que você escolha. |
+| **Central de Controle** | Você escolhe quais blocos aparecem. |
+| **Jogos** | Seus times, seus atletas pelo nome (tenistas, golfistas, pilotos de Fórmula 1, lutadores do UFC) e campeonatos, com dados da ESPN (sem chave). O tênis mostra o top 10 de cada ranking. |
+| **Tela de descanso** | Fotos em tela cheia, relógio, data e clima. Seis níveis de brilho. |
+| **Destaques** | Títulos em alta dos seus apps de streaming. |
+| **Bluetooth** | Escolha, renomeie e esqueça dispositivos. |
+| **Botões do controle** | Ensine qualquer botão a abrir um app ou uma tela, dê nome a ele e restaure todos ao padrão com um clique. |
+| **Tema claro, escuro ou automático** | O automático segue o sol de onde você mora; você também pode fixar um. |
+| **Português, inglês e espanhol** | Segue a TV, a menos que você escolha. |
 
 ## Capturas
 

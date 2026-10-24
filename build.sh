@@ -20,7 +20,8 @@ JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac"
 KEYTOOL="${JAVA_HOME:+$JAVA_HOME/bin/}keytool"
 command -v "$JAVAC" >/dev/null 2>&1 || { echo "JDK not found. Install JDK 17 and set JAVA_HOME."; exit 1; }
 
-# --- Settings: config.properties -> Config.java
+# --- License and settings: config.properties -> Config.java
+cp LICENSE app/assets/LICENSE.txt
 if [ ! -f config.properties ]; then
   cp config.example.properties config.properties
   echo "Created config.properties: add your TMDB key and your city there (optional), then build again."
