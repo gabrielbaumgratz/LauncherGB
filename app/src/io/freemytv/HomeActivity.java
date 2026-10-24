@@ -50,10 +50,7 @@ public class HomeActivity extends Activity {
             recreate();   // a new language or city: draw everything again
             return;
         }
-        if (home != null) {
-            home.refreshNow();
-            home.resume();
-        }
+        if (home != null) home.resume();
     }
 
     @Override protected void onPause() {
