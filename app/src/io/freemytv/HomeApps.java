@@ -218,7 +218,7 @@ final class HomeApps {
         switch (key) {
             case TOP_LIVE: return action(LIVE_TV, TOP_LIVE, Ui.tr("light|Live TV"), "live_tv");
             case TOP_INPUTS: return action(INPUTS, TOP_INPUTS, Ui.tr("HDMI Inputs"), "hdmi");
-            case TOP_CONTROL: return action(CONTROL, TOP_CONTROL, Ui.tr("Control Center"), "speaker");
+            case TOP_CONTROL: return action(CONTROL, TOP_CONTROL, Ui.tr("Control Center"), "control_center");
             case TOP_SAVER: return action(SAVER, TOP_SAVER, Ui.tr("Screensaver"), "bedtime");
             default: return action(SETTINGS, TOP_SETTINGS, Ui.tr("light|Settings"), "settings");
         }

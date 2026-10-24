@@ -1,92 +1,144 @@
 # GB Launcher
 
-> **Launcher minimalista, ultrarrápido, sem anúncios e com estética refinada (inspirada na Apple TV) para Google TV e Android TV.**
+English | [Português](README.pt.md)
 
-![GB Launcher Tela Inicial](docs/assets/home.png)
+**A clean, fast, ad-free Apple TV style launcher for Google TV and Android TV.**
 
-O **GB Launcher** substitui a tela inicial padrão cheia de anúncios e lentidão das Smart TVs por uma experiência fluida, limpa e moderna. Construído em Java nativo sem frameworks pesados, ele foi desenvolvido para rodar travado a 60 FPS com baixo consumo de memória.
+![GB Launcher Home](docs/assets/home.png)
 
----
+GB Launcher replaces the cluttered, slow, ad-heavy interface on your Smart TV with a clean, fluid, and responsive experience inspired by Apple TV and tvOS. Built in pure native Java with zero heavy frameworks, it runs locked at 60 FPS while protecting your privacy.
 
-## ✨ Principais Funcionalidades
-
-### 1. 🎛️ Central de Controle Integrada (Side Panel)
-- **Controle de Fones Bluetooth em 1 clique:** Conecte ou desconecte fones e caixas de som Bluetooth diretamente pelo painel lateral sem navegar pelas configurações do sistema.
-- **Alternância Rápida de Tema:** Alterne entre os modos Escuro, Claro ou Automático (sincronizado com o nascer e pôr do sol).
-- **Controles Rápidos:** Sliders de volume integrados e perfis de imagem da TV.
-- **Acesso Instantâneo:** Sobrepõe-se com efeito de vidro translúcido sobre a tela inicial ou sobre qualquer aplicativo em execução.
-
-<p align="center">
-  <img src="docs/assets/control-center.png" alt="Central de Controle" width="80%">
-</p>
-
-### 2. 📺 Tipografia e Estética Apple TV
-- **San Francisco Pro (SF Pro):** Tipografia oficial com tamanhos ópticos calibrados (*SF Pro Display* para títulos, relógio e datas; *SF Pro Text* para metadados e rótulos).
-- **Dígitos Tabulares (`tnum`):** Relógio, temperaturas e cotações com números de largura fixa, eliminando qualquer trepidação ao mudar os dígitos.
-- **Shaders de Vidro Translúcido:** Efeitos visuais modernos em shaders AGSL acelerados por hardware.
-
-### 3. 🌤️ Previsão do Tempo e 📈 Mercados em Tempo Real
-- **Clima Completo:** Temperatura atual, condição climática, mínimas/máximas do dia e previsão hora a hora.
-- **Cotações Financeiras:** Preços e variação percentual 24h de ativos de mercado em tempo real.
-
-### 4. 🎬 Recomendações TMDB
-- Filmes e séries recomendados com pôsteres e informações de alta definição via TMDB, sem banners promocionais invasivos.
-
-### 5. 🖼️ Tela de Descanso Dinâmica (Screensaver)
-- Efeito *Ken Burns* (pan e zoom suave) alternando fotos em tela cheia com crossfade suave a cada 30 segundos.
-- Relógio com efeito de vidro e informações climáticas no canto da tela.
-- Servidor local integrado para envio direto de fotos do celular para a TV via Wi-Fi.
-
-### 6. ⚙️ Configurações Customizadas
-- Gerenciamento de estante de aplicativos, remapeamento dos botões de streaming do controle remoto e proteção contra falhas (Watchdog).
-
-<p align="center">
-  <img src="docs/assets/settings.png" alt="Configurações GB Launcher" width="80%">
-</p>
+Keywords: Apple TV Launcher, tvOS Launcher, Google TV Apple Style Launcher, Clean Android TV Launcher, Ad-Free TV Launcher.
 
 ---
 
-## 🚀 Como Instalar na sua TV
+## Comparison: What Changes on Your TV
 
-### Pré-requisitos
-- TV ou TV Box com **Google TV** ou **Android TV** (Android 8.0+ / API 26+).
-- Computador com **ADB** na mesma rede Wi-Fi da TV.
+| What You Gain | What You Lose | What Stops Tracking You |
+| :--- | :--- | :--- |
+| Clean, ad-free home screen | Full-screen video ads that play automatically | Continuous tracking of your viewing habits |
+| Smooth 60 FPS remote navigation | Lag, bloatware, and frozen screens | Constant telemetry sent to ad networks |
+| Slide-over Control Center | Cluttered sponsored content rows | Unwanted promotional banners |
+| Instant Bluetooth audio switching | Locked, unchangeable interface | Background usage logging |
+| Bottom drawer with HDMI inputs and weather | | |
+| Custom remote button remapping | | |
+| Safe 1-click restore to factory launcher | | |
 
-### Passo a Passo
+---
 
-1. **Ative a Depuração na TV:**
-   - Na sua TV: `Configurações` ➔ `Sistema` ➔ `Sobre` ➔ clique 7 vezes sobre `Número da Versão / Build`.
-   - Volte para `Sistema` ➔ `Opções do Desenvolvedor` ➔ ative **Depuração USB / Depuração de Rede**.
-   - Anote o endereço IP da TV (`Configurações` ➔ `Rede e Internet`).
+## Screenshots
 
-2. **Conecte e Instale:**
+### Home Screen
+Clean layout showing your favorite apps, clean tabs, and fluid navigation.
+
+![Home Screen](docs/assets/home.png)
+
+### Control Center
+Slide-over side panel accessible from anywhere. Connect or disconnect Bluetooth devices (headphones, soundbars, speakers), adjust volume, switch picture modes, or toggle Dark / Light themes without digging through TV system menus.
+
+![Control Center](docs/assets/control-center.png)
+
+### Bottom Drawer (Inputs, Shortcuts & Weather)
+Press Down on your remote to reveal HDMI inputs (with connected signal indicators), quick app shortcuts, and an accurate local weather forecast with high/low temperatures and hourly outlook.
+
+![Bottom Drawer](docs/assets/drawer.png)
+
+### iPad-Style Settings & Remote Button Remapping
+Organized in clean grouped cards. Customize app shelves, select screensavers, and remap the physical buttons on your TV remote to launch your preferred apps.
+
+![Settings](docs/assets/settings.png)
+
+---
+
+## Key Features
+
+### 1. Control Center
+* Bluetooth Audio: Quickly connect or disconnect Bluetooth headphones, earbuds, soundbars, or speakers.
+* Volume & Picture Mode: Instant volume slider control and quick TV picture profile adjustments.
+* Theme Toggle: Switch between Dark, Light, or Automatic mode (matches local sunrise and sunset).
+
+### 2. Bottom Drawer
+* HDMI Inputs: Displays all TV inputs (HDMI 1, HDMI 2, etc.) and highlights those receiving an active video signal.
+* Quick Shortcuts: Direct shortcuts to Live TV and system tools.
+* Weather Forecast: Accurate temperature, weather conditions, daily highs and lows, and upcoming hourly forecast without needing an API key.
+
+### 3. Remote Button Remapping
+* Remap physical remote buttons (such as Netflix, YouTube, Prime Video, or custom branded buttons) to open any installed app you prefer.
+* Configured directly in Settings > Remote Buttons.
+
+### 4. Safe 1-Click Restore
+* You can switch back to the TV's original factory home screen at any time with a single click inside Settings > Home Screen.
+* GB Launcher never damages or modifies system partitions.
+
+---
+
+## Supported Devices
+
+Compatible with TVs and streaming boxes running Android TV or Google TV (Android 8.0+ / API 26+), including:
+* TCL Google TVs
+* Sony Bravia (Google TV & Android TV)
+* Chromecast with Google TV (HD / 4K)
+* Xiaomi Mi Box / TV Stick
+* Philips Android TV
+* Onn Google TV Box
+* Nvidia Shield TV
+
+---
+
+## How to Install
+
+### Option A: Install via AI Assistant (Easiest)
+
+If you use an AI coding assistant (such as Antigravity, Claude Code, or Cursor), ensure your TV and computer are on the same Wi-Fi network and copy-paste this prompt:
+
+```text
+Install GB Launcher on my TV at <YOUR_TV_IP>. My TV has developer options and network debugging enabled.
+```
+
+The assistant will connect via ADB, install the APK, and guide you through selecting it.
+
+### Option B: Manual Installation via ADB
+
+1. Enable Developer Options on your TV:
+   * Go to Settings > System > About.
+   * Click on "Android TV OS build" (or "Build Number") 7 times until developer mode is unlocked.
+   * Go to Settings > System > Developer Options and turn on "USB debugging" (or "Network debugging").
+   * Check your TV IP address in Settings > Network & Internet.
+
+2. Connect and Install from your computer:
    ```bash
-   adb connect <IP_DA_TV>:5555
+   adb connect <YOUR_TV_IP>:5555
    adb install -r GBLauncher.apk
    ```
 
-3. **Inicie o GB Launcher:**
-   - Abra o **GB Launcher** na lista de aplicativos da sua TV.
-   - Siga as instruções na tela para ativá-lo como sua tela inicial padrão (você pode retornar à tela original a qualquer momento em Configurações).
+3. Open GB Launcher:
+   * Launch GB Launcher from your apps list.
+   * Select it as your default home screen (you can restore the original launcher at any time).
 
 ---
 
-## 🛠️ Compilação a partir do Código-Fonte
+## Building from Source
 
-O projeto utiliza um pipeline de compilação sem Gradle, direto via Android SDK:
+GB Launcher compiles directly using Android SDK command-line tools without Gradle bloat:
 
 ```bash
-# Definir o caminho do Android SDK
-export ANDROID_HOME="/caminho/para/android/sdk"
+# Set your Android SDK path
+export ANDROID_HOME="/path/to/android/sdk"
 
-# Compilar, zip-alinhar e assinar o APK
+# Compile, align, and sign the APK
 ./build.sh
 ```
 
-O arquivo `GBLauncher.apk` será gerado na raiz pronto para instalação.
+The compiled package `GBLauncher.apk` will be output directly in the project root directory.
 
 ---
 
-## 📄 Licença
+## Credits and Acknowledgments
 
-Distribuído sob a licença [MIT](LICENSE).
+GB Launcher is built upon and inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv). Full credit and sincere appreciation go to the original creators for their pioneering work on Gradle-free compilation, smooth Android TV rendering, and system launcher interaction mechanics.
+
+---
+
+## License
+
+Distributed under the [MIT](LICENSE) License.

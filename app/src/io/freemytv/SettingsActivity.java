@@ -765,12 +765,8 @@ public class SettingsActivity extends Activity {
         // MARK: - Home Settings and Remote Buttons
 
         private static final String[] UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
-        /** Home Settings: language, temperature, theme, sounds, weather, city, quotes, then one row per coin. */
-        private static final int CITY_ROW = 6, COIN_ROWS = 8;
-
-        private boolean dollar() {
-            return "BRL".equalsIgnoreCase(Config.CURRENCY.trim());
-        }
+        /** Home Settings: language, temperature, theme, sounds, weather, city. */
+        private static final int CITY_ROW = 6;
 
         /** Inputs the person can switch on or off for the home screen (listed after the other rows). */
         private List<HomeApps.Item> inputChoices;
@@ -792,18 +788,17 @@ public class SettingsActivity extends Activity {
             return inputStart() + inputChoices().size();
         }
 
-        /** First row of the inputs: after the city, and after the quotes and coins when they are in this build. */
+        /** First row of the inputs: after the city. */
         private int inputStart() {
-            return Config.SHOW_CRYPTO ? COIN_ROWS + 3 + (dollar() ? 1 : 0) : CITY_ROW + 1;
+            return CITY_ROW + 1;
         }
 
-        /** Where each group of rows starts (and the end): General, Weather, quotes, inputs and shortcuts, photos. */
+        /** Where each group of rows starts (and the end): General, Weather, inputs and shortcuts, photos. */
         private int[] groupBounds(int rows) {
             List<Integer> b = new ArrayList<>();
             b.add(0);
             b.add(4);
             b.add(CITY_ROW + 1);
-            if (Config.SHOW_CRYPTO) b.add(inputStart());
             b.add(deviceStart() + deviceChoices().size());
             b.add(rows);
             int[] out = new int[b.size()];
@@ -815,7 +810,6 @@ public class SettingsActivity extends Activity {
             List<String> t = new ArrayList<>();
             t.add(Ui.tr("General"));
             t.add(Ui.tr("Weather"));
-            if (Config.SHOW_CRYPTO) t.add(Ui.tr("Quotes widget"));
             t.add(Ui.tr("Inputs and shortcuts"));
             t.add(Ui.tr("Photos"));
             return t.toArray(new String[0]);
@@ -830,13 +824,6 @@ public class SettingsActivity extends Activity {
             l.add(Ui.tr("Temperature"));
             l.add(Ui.tr("Weather widget"));
             l.add(Ui.tr("City"));
-            if (Config.SHOW_CRYPTO) {
-                l.add(Ui.tr("Quotes widget"));
-                l.add("Bitcoin");
-                l.add("Ethereum");
-                l.add("Solana");
-                if (dollar()) l.add(Ui.tr("Dollar"));
-            }
             for (HomeApps.Item it : inputChoices()) l.add(Ui.trf("Shown on home: {name}", "name", it.label));
             for (BluetoothAudio.DeviceInfo d : deviceChoices()) l.add(Ui.trf("Shown on home: {name}", "name", d.name));
             l.add(Ui.tr("Photos from your phone"));
@@ -859,11 +846,6 @@ public class SettingsActivity extends Activity {
             v[2] = onOff(Prefs.sounds());
             v[5] = onOff(Prefs.weather());
             v[CITY_ROW] = !cityStatus.isEmpty() ? cityStatus : Prefs.city().isEmpty() ? "—" : Prefs.city();
-            if (Config.SHOW_CRYPTO) {
-                v[COIN_ROWS - 1] = onOff(Prefs.quotes());
-                // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
-                for (int i = COIN_ROWS; i < inputStart(); i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
-            }
             List<HomeApps.Item> inputs = inputChoices();
             for (int i = 0; i < inputs.size(); i++) v[inputStart() + i] = onOff(!Prefs.inputHidden(inputs.get(i).key));
             List<BluetoothAudio.DeviceInfo> devices = deviceChoices();
@@ -981,11 +963,7 @@ public class SettingsActivity extends Activity {
                 case 2: Prefs.setSounds(!Prefs.sounds()); break;
                 case 5: Prefs.setWeather(!Prefs.weather()); break;
                 case CITY_ROW: return;
-                case COIN_ROWS - 1: Prefs.setQuotes(!Prefs.quotes()); break;
-                default:
-                    if (!Prefs.quotes()) return;
-                    Prefs.setCoin(focus - COIN_ROWS, !Prefs.coin(focus - COIN_ROWS));
-                    break;
+                default: break;
             }
             HomeData.get(getContext()).settingsChanged();
         }
@@ -1236,9 +1214,7 @@ public class SettingsActivity extends Activity {
                 rowRect.set(LIST_X * k, y, LIST_R * k, y + LIST_ROW_H * k);
                 float f = drawRowBackground(c, i);
                 rowLabel.setColor(blend(0xF2FFFFFF, INK, f));
-                boolean locked = !keys && Config.SHOW_CRYPTO && i >= COIN_ROWS && i < inputStart() && !Prefs.quotes();
-                rowValue.setColor(blend(locked ? 0x59FFFFFF : 0xB3FFFFFF, locked ? 0x591C1C1E : 0xB31C1C1E, f));
-                if (locked) rowLabel.setColor(blend(0x73FFFFFF, 0x731C1C1E, f));
+                rowValue.setColor(blend(0xB3FFFFFF, 0xB31C1C1E, f));
                 float base = rowRect.centerY() + Ui.halfCap(rowLabel);
                 c.drawText(labels[i], rowRect.left + 30 * k, base, rowLabel);
                 c.drawText(values[i], rowRect.right - 30 * k, base, rowValue);
