@@ -284,7 +284,7 @@ public class ControlCenterActivity extends Activity {
     private final class PanelView extends View {
         private final float dp = getResources().getDisplayMetrics().density;
         private final List<Control> controls = new ArrayList<>();
-        private final RectF panel = new RectF(), body = new RectF();
+        private final RectF panel = new RectF(), body = new RectF(), pill = new RectF();
         private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
         private int focus;
         private RuntimeShader liquid;
@@ -466,7 +466,8 @@ public class ControlCenterActivity extends Activity {
             }
             panel.set(x - room, top - room, x + w + room, y - gap + room);
             // A long list would run off the screen: lift the whole panel (never above the top margin).
-            float over = panel.bottom - (getHeight() - 10 * dp), lift = Math.max(0, Math.min(over, panel.top - 10 * dp));
+            float bottomMargin = rounds > 0 ? 44 * dp : 10 * dp;
+            float over = panel.bottom - (getHeight() - bottomMargin), lift = Math.max(0, Math.min(over, panel.top - 10 * dp));
             if (lift > 0) {
                 panel.offset(0, -lift);
                 for (Control c : controls) c.rect.offset(0, -lift);
@@ -577,10 +578,25 @@ public class ControlCenterActivity extends Activity {
                 }
             }
             c.restore();
-            if (round && focused) {
-                Paint cap = Ui.text(Ui.regular, 11 * dp, dark ? 0xCCFFFFFF : 0xCC1C1C1E);
+            if (round && focused && !ctl.title.isEmpty()) {
+                Paint cap = Ui.text(Ui.displaySemibold, 11.5f * dp, dark ? 0xFFFFFFFF : 0xFF1C1C1E);
                 cap.setTextAlign(Paint.Align.CENTER);
-                c.drawText(ctl.title, panel.centerX(), panel.bottom + 18 * dp, cap);
+                float tw = cap.measureText(ctl.title);
+                float padH = 14 * dp;
+                float pillH = 26 * dp;
+                float pillW = tw + padH * 2;
+                float cx = panel.centerX();
+                float cy = panel.bottom + 20 * dp;
+                pill.set(cx - pillW / 2, cy - pillH / 2, cx + pillW / 2, cy + pillH / 2);
+
+                fill.setShader(null);
+                fill.setColor(dark ? 0xF21C1C20 : 0xF6F2F2F6);
+                fill.setShadowLayer(10 * dp, 0, 3 * dp, 0x88000000);
+                c.drawRoundRect(pill, pillH / 2, pillH / 2, fill);
+                fill.clearShadowLayer();
+
+                rim(c, pill, pillH / 2, dark ? 0x66FFFFFF : 0x88FFFFFF, dark ? 0x22FFFFFF : 0x22FFFFFF, 1f * dp);
+                c.drawText(ctl.title, cx, cy + Ui.halfCap(cap), cap);
             }
         }
 

@@ -32,6 +32,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -313,7 +315,7 @@ public class SettingsActivity extends Activity {
                 if (i < 0 || i >= rows.size()) return "";
                 Row r = rows.get(i);
                 String v = r.value == null ? "" : r.value.get();
-                if (r.kind == TOGGLE) v = onOff(r.on.getAsBoolean());
+                if (r.kind == TOGGLE && v.isEmpty()) v = onOff(r.on.getAsBoolean());
                 return v.isEmpty() ? r.label : r.label + ", " + v;
             }
             int i = id - 1;
@@ -476,6 +478,7 @@ public class SettingsActivity extends Activity {
                     String busyText = busyText(), error = state.optString("error");
                     boolean allow = busy() && busyText.equals(Ui.tr("Accept “Allow USB debugging?” on the TV (tick “Always allow”)."));
                     note(allow ? Ui.tr("On the TV: tick “Always allow” and press OK.") : !busy() ? error : "");
+                    link(Ui.tr("Update launcher"), () -> updateStatus.isEmpty() ? (freeActive() ? Ui.tr("Protected") : "") : updateStatus, this::openUpdate);
                     header(Ui.tr("Personal"));
                     value(Ui.tr("Your name"), () -> Prefs.userName().isEmpty() ? Ui.tr("Not set") : Prefs.userName(), this::askName);
                     value(Ui.tr("Language"), () -> {
@@ -575,8 +578,8 @@ public class SettingsActivity extends Activity {
                         note(Ui.tr("Follow your favorite teams, tennis players, drivers or fighters."));
                     }
 
-                    header(Ui.tr("My championships"));
-                    link(Ui.tr("Championships I follow"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openMyLeagues);
+                    header(Ui.tr("Championships"));
+                    link(Ui.tr("Championships"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openLeagues);
                     note(Ui.tr("Choose the leagues, tours and circuits you want to follow."));
                     break;
                 }
@@ -667,6 +670,7 @@ public class SettingsActivity extends Activity {
                 default: {
                     header("GB Home TV");
                     info(Ui.tr("Version"), () -> versionName(c).replace("GB Home TV ", ""));
+                    link(Ui.tr("Update launcher"), () -> updateStatus.isEmpty() ? (freeActive() ? Ui.tr("Protected") : "") : updateStatus, this::openUpdate);
                     header(Ui.tr("Comparison"));
                     JSONObject metrics = state.optJSONObject("metrics");
                     JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
@@ -721,6 +725,98 @@ public class SettingsActivity extends Activity {
             } catch (IOException e) {
                 return "MIT License\n\nCopyright (c) 2026 Gabriel Baumgratz\nCopyright (c) 2026 Free My TV contributors";
             }
+        }
+
+        private String updateStatus = "";
+        private String githubUpdateStatus = "";
+
+        private void openUpdate() {
+            openDetail(Ui.tr("Update launcher"), () -> {
+                Context c = getContext();
+                header("GB Home TV");
+                info(Ui.tr("Current version"), () -> versionName(c).replace("GB Home TV ", ""));
+                info(Ui.tr("Launcher status"), () -> freeActive() ? Ui.tr("Active and protected") : Ui.tr("Inactive (Original)"));
+
+                header(Ui.tr("System update"));
+                link(Ui.tr("Check and reapply"), () -> updateStatus.isEmpty() ? Ui.tr("Run now") : updateStatus, this::runCheckAndUpdate);
+                note(Ui.tr("If your TV received a system update from the manufacturer, tap to verify and reapply ad blocking and launcher settings."));
+
+                header(Ui.tr("Online updates"));
+                link(Ui.tr("Check GitHub"), () -> githubUpdateStatus.isEmpty() ? Ui.tr("Check") : githubUpdateStatus, this::checkGithubUpdates);
+                info(Ui.tr("Repository"), () -> "github.com/gabrielbaumgratz/LauncherGB");
+                note(Ui.tr("Checks for newer releases and updates on GitHub."));
+            });
+        }
+
+        private void runCheckAndUpdate() {
+            if (busy()) return;
+            updateStatus = Ui.tr("Verifying…");
+            invalidate();
+            new Thread(() -> {
+                try {
+                    HomeMode.verify(activity);
+                    HomeMode.ensureRemoteServiceNow(activity);
+                    Thread.sleep(700);
+                    activity.runOnUiThread(() -> {
+                        updateStatus = Ui.tr("All settings reapplied");
+                        invalidate();
+                    });
+                } catch (Exception e) {
+                    activity.runOnUiThread(() -> {
+                        updateStatus = Ui.tr("Check failed");
+                        invalidate();
+                    });
+                }
+            }).start();
+        }
+
+        private void checkGithubUpdates() {
+            if (Ui.tr("Checking…").equals(githubUpdateStatus)) return;
+            githubUpdateStatus = Ui.tr("Checking…");
+            invalidate();
+            new Thread(() -> {
+                try {
+                    HttpURLConnection conn = (HttpURLConnection) new URL("https://api.github.com/repos/gabrielbaumgratz/LauncherGB/releases/latest").openConnection();
+                    conn.setRequestProperty("User-Agent", "GBHomeTV");
+                    conn.setConnectTimeout(8000);
+                    conn.setReadTimeout(8000);
+                    int code = conn.getResponseCode();
+                    if (code == 200) {
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        byte[] buf = new byte[4096];
+                        int r;
+                        InputStream in = conn.getInputStream();
+                        while ((r = in.read(buf)) != -1) out.write(buf, 0, r);
+                        JSONObject rel = new JSONObject(out.toString("UTF-8"));
+                        String tag = rel.optString("tag_name", "");
+                        activity.runOnUiThread(() -> {
+                            githubUpdateStatus = tag.isEmpty() ? Ui.tr("Up to date") : tag;
+                            invalidate();
+                        });
+                    } else {
+                        HttpURLConnection c2 = (HttpURLConnection) new URL("https://api.github.com/repos/gabrielbaumgratz/LauncherGB/commits/main").openConnection();
+                        c2.setRequestProperty("User-Agent", "GBHomeTV");
+                        c2.setConnectTimeout(8000);
+                        c2.setReadTimeout(8000);
+                        if (c2.getResponseCode() == 200) {
+                            activity.runOnUiThread(() -> {
+                                githubUpdateStatus = Ui.tr("Up to date");
+                                invalidate();
+                            });
+                        } else {
+                            activity.runOnUiThread(() -> {
+                                githubUpdateStatus = Ui.tr("No updates found");
+                                invalidate();
+                            });
+                        }
+                    }
+                } catch (Exception e) {
+                    activity.runOnUiThread(() -> {
+                        githubUpdateStatus = Ui.tr("Check failed");
+                        invalidate();
+                    });
+                }
+            }).start();
         }
 
         private void clampFocus() {
@@ -816,8 +912,8 @@ public class SettingsActivity extends Activity {
             });
         }
 
-        private void openMyLeagues() {
-            openDetail(Ui.tr("Championships I follow"), () -> {
+        private void openLeagues() {
+            openDetail(Ui.tr("Championships"), () -> {
                 note(Ui.tr("Follow championships to see all upcoming games, races and fight cards on the home screen."));
                 String lastSport = "";
                 for (String[] league : Sports.LEAGUES) {
@@ -826,11 +922,12 @@ public class SettingsActivity extends Activity {
                         header(Sports.sportName(sport));
                         lastSport = sport;
                     }
-                    toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
+                    Row r = toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
                         List<String> paths = Prefs.sportsLeagues();
                         if (!paths.remove(league[0])) paths.add(league[0]);
                         Prefs.setSportsLeagues(paths);
                     });
+                    r.value = () -> Prefs.sportsLeagues().contains(league[0]) ? Ui.tr("Yes") : Ui.tr("No");
                 }
             });
         }
@@ -1209,6 +1306,10 @@ public class SettingsActivity extends Activity {
             float base = rowRect.centerY() + Ui.halfCap(rowLabel);
             float right = rowRect.right - 24 * k;
             if (r.kind == TOGGLE) {
+                if (r.value != null) {
+                    float textRight = right - 84 * k - 16 * k;
+                    c.drawText(r.value.get(), textRight, base, rowValue);
+                }
                 drawSwitch(c, right, rowRect.centerY(), r.on.getAsBoolean(), f);
             } else {
                 if (r.kind == LINK) {
