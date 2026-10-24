@@ -72,6 +72,10 @@ final class Prefs {
     // MARK: - Language and units
 
     /** "auto" or a language code as picked ("pt", "fr", "zh-CN"…); Ui.applyLanguage finds its catalogue. */
+    /** What the greeting calls the person ("Good morning, Ana"); empty for no name. */
+    static String userName() { return sp().getString("userName", "").trim(); }
+    static void setUserName(String v) { put("userName", v.trim()); }
+
     static String language() {
         String v = app == null ? Config.LANGUAGE : sp().getString("language", Config.LANGUAGE);
         v = v.trim();

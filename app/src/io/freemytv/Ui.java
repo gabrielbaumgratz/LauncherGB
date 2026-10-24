@@ -406,17 +406,14 @@ final class Ui {
         }
     }
 
-    /**
-     * Dynamic greeting by time of day:
-     * 05:00 - 11:59: "Bom dia, Gabriel"
-     * 12:00 - 18:59: "Boa tarde, Gabriel"
-     * 19:00 - 04:59: "Boa noite, Gabriel"
-     */
+    /** "Good morning, Ana" by the hour (05:00 to 11:59 morning, to 18:59 afternoon, then evening); no name, no comma. */
     static String greeting() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        if (hour >= 5 && hour < 12) return "Bom dia, Gabriel";
-        if (hour >= 12 && hour < 19) return "Boa tarde, Gabriel";
-        return "Boa noite, Gabriel";
+        String name = Prefs.userName();
+        boolean named = !name.isEmpty();
+        if (hour >= 5 && hour < 12) return named ? Ui.trf("Good morning, {name}", "name", name) : Ui.tr("Good morning");
+        if (hour >= 12 && hour < 19) return named ? Ui.trf("Good afternoon, {name}", "name", name) : Ui.tr("Good afternoon");
+        return named ? Ui.trf("Good evening, {name}", "name", name) : Ui.tr("Good evening");
     }
 
     /** "21:47" (in English, "9:47", like the iPhone in the US). */

@@ -120,6 +120,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     private int generation, slides;
     private Slide current, incoming, prepared;
     private Glass glass;
+    private final Paint tint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private String glassFor = "";
     private long startedAt, firstAt, lastFrame, lastSky;
     private int w, h;
@@ -551,6 +552,9 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         glassShader.setFloatUniform("specular", 0);
         glassShader.setFloatUniform("alpha", alpha);
         c.drawRect(g.x, g.y, g.x + g.cover.getWidth(), g.y + g.cover.getHeight(), glassPaint);
+        // A veil of white over the frosted digits, so the clock reads on a busy photo.
+        tint.setAlpha(Math.round(64 * alpha));
+        c.drawBitmap(g.cover, g.x, g.y, tint);
     }
 
     /** Builds the glass clock's digits in the background (once a minute) and swaps them in when they're ready. */
