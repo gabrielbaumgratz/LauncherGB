@@ -54,7 +54,13 @@ final class Sports {
             {"soccer/ger.1", "Bundesliga"}, {"soccer/fra.1", "Ligue 1"}, {"soccer/por.1", "Liga Portugal"},
             {"soccer/uefa.champions", "Champions League"}, {"soccer/uefa.europa", "Europa League"}, {"soccer/usa.1", "MLS"},
             {"basketball/nba", "NBA"}, {"basketball/wnba", "WNBA"}, {"football/nfl", "NFL"}, {"baseball/mlb", "MLB"},
-            {"hockey/nhl", "NHL"}, {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"}};
+            {"hockey/nhl", "NHL"}, {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"},
+            {"racing/f1", "Formula 1"}, {"golf/pga", "PGA Tour"}, {"mma/ufc", "UFC"}};
+
+    /** Sports of competitors, not teams: followed by name (a player, a driver, a fighter). */
+    static boolean individual(String sport) {
+        return sport.equals("tennis") || sport.equals("golf") || sport.equals("racing") || sport.equals("mma");
+    }
 
     /** "soccer" from "soccer/bra.1". */
     static String sportOf(String path) {
@@ -70,6 +76,9 @@ final class Sports {
             case "football": return Ui.tr("American football");
             case "baseball": return Ui.tr("Baseball");
             case "hockey": return Ui.tr("Hockey");
+            case "racing": return Ui.tr("Motorsport");
+            case "golf": return Ui.tr("Golf");
+            case "mma": return Ui.tr("MMA");
             default: return Ui.tr("Tennis");
         }
     }
@@ -82,6 +91,9 @@ final class Sports {
             case "baseball": return "baseball";
             case "hockey": return "hockey";
             case "tennis": return "tennis";
+            case "racing": return "motorsports";
+            case "golf": return "golf";
+            case "mma": return "mma";
             default: return "sports";
         }
     }
@@ -162,10 +174,14 @@ final class Sports {
                 JSONArray items = json == null ? null : json.optJSONArray("items");
                 for (int i = 0; items != null && i < items.length(); i++) {
                     JSONObject t = items.optJSONObject(i);
-                    if (t == null || t.optString("id").isEmpty() || t.optString("sport").isEmpty() || t.optString("league").isEmpty()) continue;
-                    if (type.equals("player") && !t.optString("sport").equals("tennis")) continue;
+                    if (t == null || t.optString("id").isEmpty() || t.optString("sport").isEmpty()) continue;
+                    String sport = t.optString("sport");
+                    if (type.equals("player") && !individual(sport)) continue;   // a player of a team sport is found through his team
+                    String league = t.optString("league");
+                    if (sport.equals("mma") && league.isEmpty()) league = "ufc";
+                    if (league.isEmpty()) continue;
                     if (t.optString("displayName").matches(".* U[0-9][0-9]")) continue;   // the youth teams
-                    out.add(new String[] {t.optString("sport"), t.optString("league"), t.optString("id"), t.optString("displayName")});
+                    out.add(new String[] {sport, league, t.optString("id"), t.optString("displayName")});
                 }
             }
         } catch (java.io.UnsupportedEncodingException ignored) {
@@ -192,11 +208,20 @@ final class Sports {
         long now = System.currentTimeMillis();
         String range = stamp(now) + "-" + stamp(now + 21 * DAY);
         Set<String> players = new HashSet<>();   // the tennis players followed, by name
+        java.util.Map<String, Set<String>> athletes = new java.util.HashMap<>();   // the golfers, drivers and fighters followed, by sport
         Set<String> tours = new HashSet<>();
+        Set<String> circuits = new java.util.LinkedHashSet<>();   // "golf/pga", "racing/f1", "mma/ufc"
+        Set<String> wholeCircuits = new HashSet<>();
         for (String[] team : Prefs.sportsTeams()) {   // {sport, league, id, name}
             if (team[0].equals("tennis")) {
                 players.add(team[3]);
                 tours.add(team[1]);
+                continue;
+            }
+            if (individual(team[0])) {
+                if (!athletes.containsKey(team[0])) athletes.put(team[0], new HashSet<String>());
+                athletes.get(team[0]).add(team[3]);
+                circuits.add(team[0] + "/" + team[1]);
                 continue;
             }
             team(out, seen, team[0], team[1], team[2], team[3]);
@@ -204,7 +229,15 @@ final class Sports {
         }
         for (String path : Prefs.sportsLeagues()) {
             if (path.equals("tennis/atp") || path.equals("tennis/wta")) tours.add(path.substring(7));
-            else scoreboard(out, seen, path, range);
+            else if (individual(sportOf(path))) {
+                circuits.add(path);
+                wholeCircuits.add(path);
+            } else scoreboard(out, seen, path, range);
+        }
+        String longRange = stamp(now) + "-" + stamp(now + 60 * DAY);
+        for (String path : circuits) {
+            Set<String> names = athletes.containsKey(sportOf(path)) ? athletes.get(sportOf(path)) : new HashSet<String>();
+            events(out, seen, path, longRange, names, wholeCircuits.contains(path));
         }
         for (String tour : tours) {   // the ranking's top, if the championship is followed; the players followed, always
             boolean followed = Prefs.sportsLeagues().contains("tennis/" + tour);
@@ -226,6 +259,76 @@ final class Sports {
         JSONObject json = get(API + sport + "/" + league + "/teams/" + id + "/schedule?fixture=true");
         JSONArray events = json == null ? null : json.optJSONArray("events");
         for (int i = 0; events != null && i < events.length(); i++) add(out, seen, events.optJSONObject(i), sport + "/" + league, name);
+    }
+
+    /**
+     * Golf, Formula 1 and UFC: the events are tournaments, race weekends and fight cards. `all` shows each event; a name
+     * followed shows the events it is in (a golfer in the field, a driver in the race) or, in UFC, its bout.
+     */
+    private void events(List<Game> out, Set<String> seen, String path, String range, Set<String> names, boolean all) {
+        JSONObject json = get(API + path + "/scoreboard?dates=" + range + "&limit=100");
+        JSONArray events = json == null ? null : json.optJSONArray("events");
+        String sport = sportOf(path);
+        for (int i = 0; events != null && i < events.length(); i++) {
+            JSONObject e = events.optJSONObject(i);
+            if (e == null || stateOf(e.optJSONObject("status")).equals("post")) continue;
+            long when = parse(e.optString("date"));
+            if (when == 0) continue;
+            String title = e.optString("name", e.optString("shortName"));
+            boolean live = stateOf(e.optJSONObject("status")).equals("in");
+            JSONArray comps = e.optJSONArray("competitions");
+            if (sport.equals("mma")) {
+                for (int c = 0; comps != null && c < comps.length(); c++) {
+                    JSONObject comp = comps.optJSONObject(c);
+                    if (comp == null || stateOf(comp.optJSONObject("status")).equals("post")) continue;
+                    List<String> fighters = new ArrayList<>();
+                    boolean mine = false;
+                    JSONArray cs = comp.optJSONArray("competitors");
+                    for (int k = 0; cs != null && k < cs.length(); k++) {
+                        JSONObject a = cs.optJSONObject(k) == null ? null : cs.optJSONObject(k).optJSONObject("athlete");
+                        if (a == null) continue;
+                        fighters.add(a.optString("displayName"));
+                        mine |= names.contains(a.optString("displayName"));
+                    }
+                    if (!mine || fighters.size() != 2 || !seen.add("u" + comp.optString("id") + fighters.get(0))) continue;
+                    Game g = new Game();
+                    g.when = parse(comp.optString("date"));
+                    if (g.when == 0) g.when = when;
+                    g.match = fighters.get(0) + " × " + fighters.get(1);
+                    g.tag = title.contains(":") ? title.substring(0, title.indexOf(':')) : title;
+                    g.sport = sport;
+                    g.mine = true;
+                    g.live = stateOf(comp.optJSONObject("status")).equals("in");
+                    out.add(g);
+                }
+                if (all && seen.add("e" + e.optString("id"))) out.add(eventGame(title, when, path, live, false));
+                continue;
+            }
+            // golf and racing: whoever is followed and in the field
+            String who = "";
+            JSONObject first = comps == null ? null : comps.optJSONObject(0);
+            JSONArray field = first == null ? null : first.optJSONArray("competitors");
+            for (int k = 0; field != null && k < field.length() && who.isEmpty(); k++) {
+                JSONObject a = field.optJSONObject(k) == null ? null : field.optJSONObject(k).optJSONObject("athlete");
+                if (a != null && names.contains(a.optString("displayName"))) who = a.optString("displayName");
+            }
+            // The grid of a race weekend isn't listed until it's near: a driver followed races them all.
+            if (who.isEmpty() && sport.equals("racing") && !names.isEmpty() && (field == null || field.length() == 0)) who = names.iterator().next();
+            if (!all && who.isEmpty()) continue;
+            if (!seen.add("e" + e.optString("id") + who)) continue;
+            out.add(eventGame(who.isEmpty() ? title : who + " · " + title, when, path, live, !who.isEmpty()));
+        }
+    }
+
+    private static Game eventGame(String match, long when, String path, boolean live, boolean mine) {
+        Game g = new Game();
+        g.when = when;
+        g.match = match;
+        g.tag = leagueName(path);
+        g.sport = sportOf(path);
+        g.live = live;
+        g.mine = mine;
+        return g;
     }
 
     private void scoreboard(List<Game> out, Set<String> seen, String path, String range) {

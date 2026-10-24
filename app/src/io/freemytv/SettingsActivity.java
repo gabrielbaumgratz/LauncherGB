@@ -611,8 +611,19 @@ public class SettingsActivity extends Activity {
                 }
                 case P_PERF: {
                     info(Ui.tr("Memory in use now"), () -> Ui.trf("{n} MB", "n", memoryMb()));
-                    note(Ui.tr("What the home screen, the settings and the screensaver use together. Turn off what you don't need."));
-                    header(Ui.tr("Use less memory"));
+                    note(Ui.tr("What the home screen, the settings and the screensaver use together."));
+                    header(Ui.tr("Mode"));
+                    value(Ui.tr("Mode"), () -> {
+                        int mode = perfMode();
+                        return mode == 0 ? Ui.tr("Full") : mode == 1 ? Ui.tr("Performance") : Ui.tr("Custom");
+                    }, () -> setPerfMode(perfMode() == 0 ? 1 : 0));
+                    header(Ui.tr("What each mode does"));
+                    info(Ui.tr("Full → Performance"), () -> "");
+                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather widget"), Ui.tr("Games widget"), Ui.tr("Slow zoom of the photos")}) {
+                        info(feature, () -> Ui.tr("On") + "  →  " + Ui.tr("Off"));
+                    }
+                    note(Ui.tr("Both modes keep your apps, the inputs, the clock, the Control Center and the settings."));
+                    header(Ui.tr("Fine tuning"));
                     toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
                         Prefs.setRecommendations(!Prefs.recommendations());
                         HomeData.get(c).settingsChanged();
@@ -624,22 +635,13 @@ public class SettingsActivity extends Activity {
                     toggle(Ui.tr("Games widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
                     toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
-                    header(Ui.tr("In one step"));
-                    link(Ui.tr("Turn all of these off"), () -> "", () -> {
-                        Prefs.setRecommendations(false);
-                        Prefs.setWeather(false);
-                        Prefs.setSportsOn(false);
-                        Prefs.setDreamMotion(false);
-                        HomeData.get(c).settingsChanged();
-                    });
-                    note(Ui.tr("The home screen then keeps only your apps, the inputs and the clock. Turn them back on here any time."));
                     break;
                 }
                 case P_REMOTE: {
                     if (appPkgs.isEmpty()) loadApps();
                     info(Ui.tr("Your TV"), SettingsView::tvName);
+                    header(Ui.tr("Buttons"));
                     if (RemoteKeys.supported()) {
-                        header(Ui.tr("Buttons this TV is known for"));
                         String[] labels = keyLabels();
                         for (int i = 0; i < labels.length; i++) {
                             final int key = i;
@@ -648,20 +650,18 @@ public class SettingsActivity extends Activity {
                                 return at >= 0 ? appLabels.get(at) : Ui.tr("Not installed");
                             }, () -> openPicker(key + 1));
                         }
-                        note(RemoteKeys.SONY ? Ui.tr("Sony default: the button opens what it always did.")
-                                : Ui.tr("A button that isn't here? Teach it below."));
-                    } else {
-                        note(Ui.tr("This TV's buttons aren't known yet. Teach it the ones you want below."));
                     }
-                    header(Ui.tr("Your own buttons"));
                     for (String[] k : Prefs.customKeys()) {
-                        link(Ui.trf("Button {name}", "name", keyName(Integer.parseInt(k[0]), Integer.parseInt(k[1]))), () -> {
+                        link(customLabel(k), () -> {
                             int at = appPkgs.indexOf(k[2]);
                             return at >= 0 ? appLabels.get(at) : k[2].isEmpty() ? Ui.tr("Nothing") : Ui.tr("Not installed");
                         }, () -> openCustom(k));
                     }
                     link(Ui.tr("Add a button"), () -> "", this::startLearn);
-                    note(Ui.tr("Press a button on your remote and choose what it opens. It works on any TV."));
+                    note(RemoteKeys.supported() ? Ui.tr("The first ones are this TV's own buttons; the others you added. Press OK on one to change what it opens.")
+                            : Ui.tr("This TV's buttons aren't known yet. Add the ones you want: press the button, then choose what it opens."));
+                    header(Ui.tr("Reset"));
+                    link(Ui.tr("Restore buttons to default"), () -> "", this::askRestoreButtons);
                     break;
                 }
                 default: {
@@ -789,7 +789,7 @@ public class SettingsActivity extends Activity {
 
         private void askTeam() {
             if (Ui.tr("Searching…").equals(teamStatus)) return;
-            Prompt.ask(activity, Ui.tr("Add a team"), Ui.tr("A team of any sport, or a tennis player."), Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
+            Prompt.ask(activity, Ui.tr("Add a team"), Ui.tr("A team of any sport, or a player, driver or fighter by name."), Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
                     Ui.tr("Search"), this::searchTeam);
         }
 
@@ -1528,6 +1528,47 @@ public class SettingsActivity extends Activity {
 
         // MARK: - Remote buttons
 
+        /** 0 full (everything on), 1 performance (the four that cost the most off), 2 custom (anything else). */
+        private static int perfMode() {
+            boolean[] on = {Prefs.recommendations(), Prefs.weather(), Prefs.sportsOn(), Prefs.dreamMotion()};
+            int count = 0;
+            for (boolean b : on) if (b) count++;
+            return count == 4 ? 0 : count == 0 ? 1 : 2;
+        }
+
+        private void setPerfMode(int mode) {
+            boolean full = mode == 0;
+            Prefs.setRecommendations(full);
+            Prefs.setWeather(full);
+            Prefs.setSportsOn(full);
+            Prefs.setDreamMotion(full);
+            HomeData.get(getContext()).settingsChanged();
+        }
+
+        /** What a taught button is called: the name the person gave it, or its key. */
+        private static String customLabel(String[] k) {
+            return !k[3].isEmpty() ? k[3] : Ui.trf("Button {name}", "name", keyName(Integer.parseInt(k[0]), Integer.parseInt(k[1])));
+        }
+
+        private void askButtonName(final int code, final int scan, String now) {
+            Prompt.ask(activity, Ui.tr("Name"), Ui.tr("Which button is it? Leave it empty for its number."),
+                    keyName(code, scan), now, EditorInfo.IME_ACTION_DONE, Ui.tr("Save"), text -> {
+                        Prefs.setCustomKeyName(code, scan, text);
+                        for (String[] k : Prefs.customKeys()) if (k[0].equals(String.valueOf(code)) && k[1].equals(String.valueOf(scan))) detailTitle = customLabel(k);
+                        rebuild();
+                        invalidate();
+                    });
+        }
+
+        private void askRestoreButtons() {
+            Prompt.confirm(activity, Ui.tr("Restore buttons to default"),
+                    Ui.tr("Every button opens what it opened at first, and the buttons you added are removed."), Ui.tr("Restore"), () -> {
+                        Prefs.restoreButtons();
+                        rebuild();
+                        invalidate();
+                    });
+        }
+
         private static String[] levelNames() {
             return new String[] {Ui.tr("Brightest"), Ui.tr("Brighter"), Ui.tr("Standard"), Ui.tr("Dim"), Ui.tr("Dark"), Ui.tr("Darkest and matte")};
         }
@@ -1558,7 +1599,15 @@ public class SettingsActivity extends Activity {
         /** A taught button: what it opens, or take it out. */
         private void openCustom(String[] key) {
             final int code = Integer.parseInt(key[0]), scan = Integer.parseInt(key[1]);
-            openDetail(Ui.trf("Button {name}", "name", keyName(code, scan)), () -> {
+            openDetail(customLabel(key), () -> {
+                value(Ui.tr("Name"), () -> {
+                    for (String[] k : Prefs.customKeys()) if (k[0].equals(key[0]) && k[1].equals(key[1])) return customLabel(k);
+                    return "";
+                }, () -> {
+                    String now = "";
+                    for (String[] k : Prefs.customKeys()) if (k[0].equals(key[0]) && k[1].equals(key[1])) now = k[3];
+                    askButtonName(code, scan, now);
+                });
                 link(Ui.tr("Opens"), () -> {
                     String pkg = "";
                     for (String[] k : Prefs.customKeys()) if (k[0].equals(key[0]) && k[1].equals(key[1])) pkg = k[2];

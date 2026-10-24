@@ -131,11 +131,12 @@ Every remote is different, so nothing is tied to a button. To open something wit
 | | |
 |---|---|
 | 🎛️ **Control Center** | You pick which blocks show. |
-| ⚽ **Games** | Your teams, tennis players and leagues, from ESPN (no key). |
+| ⚽ **Games** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
 | 🌙 **Screensaver** | Full-screen photos, clock, date and weather. Six brightness levels. |
 | 🎬 **Highlights** | Trending titles from your streaming apps. |
 | 🎧 **Bluetooth** | Choose, rename and forget devices. |
-| 🎮 **Remote buttons** | Teach any button to open an app or a screen. |
+| 🎮 **Remote buttons** | Teach any button to open an app or a screen, name it, and restore every button to default in one click. |
+| 🌗 **Light, dark or automatic theme** | Automatic follows the sun where you live; you can also pick one for good. |
 | 🌍 **English, Portuguese, Spanish** | Follows the TV unless you choose. |
 
 ## Screenshots
@@ -179,7 +180,7 @@ In motion: [Control Center](docs/assets/en/control-center.webp) · [Settings](do
    | AirPlay app closed | ~223 MB |
 
 2. **Switch to GB Home TV:** it turns off the manufacturer apps that keep running in the background (see above).
-3. **Turn off what you don't use:** *Settings → Performance → Turn all of these off* (recommendations, weather, games and zoom). Saves about 5 MB.
+3. **Switch to the Performance mode:** *Settings → Performance → Mode*. *Full* keeps everything; *Performance* turns off recommendations, the weather and games widgets and the slow zoom (the page lists what each mode does). Saves about 5 MB.
 
 No spin on the numbers: GB Home TV opens faster, but it draws everything itself and uses **more** memory than the stock screen (152 MB against 89 MB on a TCL 32S5K). The gain is speed and no ads, and turning off the manufacturer apps makes up for part of it. *Settings → About* measures it on your TV.
 

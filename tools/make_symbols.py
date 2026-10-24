@@ -23,6 +23,7 @@ MAP = {
     "basketball": ("sports_basketball", 1), "football": ("sports_football", 1), "baseball": ("sports_baseball", 1),
     "hockey": ("sports_hockey", 1), "tennis": ("sports_tennis", 1),
     "wifi": ("wifi", 1), "volume_off": ("volume_off", 1), "speed": ("speed", 1),
+    "golf": ("sports_golf", 1), "motorsports": ("sports_motorsports", 1), "mma": ("sports_mma", 1),
 }
 
 

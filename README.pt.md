@@ -131,11 +131,12 @@ Cada controle é diferente, então nada vem preso a um botão. Para abrir algo c
 | | |
 |---|---|
 | 🎛️ **Central de Controle** | Você escolhe quais blocos aparecem. |
-| ⚽ **Jogos** | Seus times, tenistas e campeonatos, com dados da ESPN (sem chave). |
+| ⚽ **Jogos** | Seus times, seus atletas pelo nome (tenistas, golfistas, pilotos de Fórmula 1, lutadores do UFC) e campeonatos, com dados da ESPN (sem chave). O tênis mostra o top 10 de cada ranking. |
 | 🌙 **Tela de descanso** | Fotos em tela cheia, relógio, data e clima. Seis níveis de brilho. |
 | 🎬 **Destaques** | Títulos em alta dos seus apps de streaming. |
 | 🎧 **Bluetooth** | Escolha, renomeie e esqueça dispositivos. |
-| 🎮 **Botões do controle** | Ensine qualquer botão a abrir um app ou uma tela. |
+| 🎮 **Botões do controle** | Ensine qualquer botão a abrir um app ou uma tela, dê nome a ele e restaure todos ao padrão com um clique. |
+| 🌗 **Tema claro, escuro ou automático** | O automático segue o sol de onde você mora; você também pode fixar um. |
 | 🌍 **Português, inglês e espanhol** | Segue a TV, a menos que você escolha. |
 
 ## Capturas
@@ -179,7 +180,7 @@ TVs de 1 GB (muitas TCL e Xiaomi/Redmi) têm pouca memória sobrando. O que mais
    | App de AirPlay fechado | ~223 MB |
 
 2. **Troque para o GB Home TV:** ele desliga os apps do fabricante que ficam rodando ao fundo (veja acima).
-3. **Desligue o que não usa:** *Configurações → Desempenho → Desligar tudo isso* (recomendações, clima, jogos e zoom). Economiza uns 5 MB.
+3. **Troque para o modo Desempenho:** *Configurações → Desempenho → Modo*. *Completo* mantém tudo; *Desempenho* desliga as recomendações, os widgets de clima e de jogos e o zoom lento (a página lista o que cada modo faz). Economiza uns 5 MB.
 
 Sem maquiar os números: o GB Home TV abre mais rápido, mas desenha tudo sozinho e usa **mais** memória que a tela original (152 MB contra 89 MB numa TCL 32S5K). O ganho é velocidade e ausência de anúncios, e o desligamento dos apps do fabricante compensa em parte. *Configurações → Sobre* mede na sua TV.
 

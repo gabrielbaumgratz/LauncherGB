@@ -360,14 +360,14 @@ final class Prefs {
     // MARK: - Remote buttons
 
     // Buttons the person taught the TV ("Add a button"): any remote, any brand. One line each in custom-keys.txt:
-    // keyCode:scanCode=package. Both processes read it; the service asks on every key, so it is read again only when
-    // the file changes.
+    // keyCode:scanCode=package, or keyCode:scanCode=package|name when the person named it. Both processes read it; the
+    // service asks on every key, so it is read again only when the file changes.
     private static File customFile() { return new File(app.getFilesDir(), "custom-keys.txt"); }
 
     private static List<String[]> customCache = new ArrayList<>();
     private static long customStamp = Long.MIN_VALUE;
 
-    /** {keyCode, scanCode, package} for each taught button. */
+    /** {keyCode, scanCode, package, name} for each taught button (the name is empty until the person gives one). */
     static synchronized List<String[]> customKeys() {
         File f = customFile();
         long stamp = f.exists() ? f.lastModified() : 0;
@@ -378,7 +378,11 @@ final class Prefs {
                 String line;
                 while ((line = in.readLine()) != null) {
                     int eq = line.indexOf('='), colon = line.indexOf(':');
-                    if (eq > colon && colon > 0) out.add(new String[] {line.substring(0, colon), line.substring(colon + 1, eq), line.substring(eq + 1)});
+                    if (eq > colon && colon > 0) {
+                        String rest = line.substring(eq + 1);
+                        int bar = rest.indexOf('|');
+                        out.add(new String[] {line.substring(0, colon), line.substring(colon + 1, eq), bar < 0 ? rest : rest.substring(0, bar), bar < 0 ? "" : rest.substring(bar + 1)});
+                    }
                 }
             } catch (IOException ignored) {
             }
@@ -396,14 +400,44 @@ final class Prefs {
         return null;
     }
 
+    /** Sets what a taught button opens (null: takes the button out); its name, if it has one, stays. */
     static void setCustomKey(int keyCode, int scanCode, String pkg) {
+        String name = "";
         List<String[]> all = new ArrayList<>();
-        for (String[] k : customKeys()) if (!(k[0].equals(String.valueOf(keyCode)) && k[1].equals(String.valueOf(scanCode)))) all.add(k);
-        if (pkg != null) all.add(new String[] {String.valueOf(keyCode), String.valueOf(scanCode), pkg});
+        for (String[] k : customKeys()) {
+            if (k[0].equals(String.valueOf(keyCode)) && k[1].equals(String.valueOf(scanCode))) name = k[3];
+            else all.add(k);
+        }
+        if (pkg != null) all.add(new String[] {String.valueOf(keyCode), String.valueOf(scanCode), pkg, name});
+        saveCustomKeys(all);
+    }
+
+    static void setCustomKeyName(int keyCode, int scanCode, String name) {
+        List<String[]> all = new ArrayList<>(customKeys());
+        for (int i = 0; i < all.size(); i++) {
+            String[] k = all.get(i);
+            if (k[0].equals(String.valueOf(keyCode)) && k[1].equals(String.valueOf(scanCode))) {
+                all.set(i, new String[] {k[0], k[1], k[2], name.replace('|', ' ').replace('\n', ' ').trim()});
+            }
+        }
+        saveCustomKeys(all);
+    }
+
+    private static void saveCustomKeys(List<String[]> all) {
         StringBuilder sb = new StringBuilder();
-        for (String[] k : all) sb.append(k[0]).append(':').append(k[1]).append('=').append(k[2]).append('\n');
+        for (String[] k : all) {
+            sb.append(k[0]).append(':').append(k[1]).append('=').append(k[2]);
+            if (!k[3].isEmpty()) sb.append('|').append(k[3]);
+            sb.append('\n');
+        }
         writeFile(customFile(), sb.toString());
         version++;
+    }
+
+    /** Every remote button as it was: the brand's buttons open their own apps again, and the taught ones are gone. */
+    static void restoreButtons() {
+        for (int key : KEYS) setKeyApp(key, defaultApp(key));
+        saveCustomKeys(new ArrayList<String[]>());
     }
 
     private static boolean writeFile(File target, String text) {

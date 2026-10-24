@@ -131,11 +131,12 @@ Cada control es distinto, así que nada viene atado a un botón. Para abrir algo
 | | |
 |---|---|
 | 🎛️ **Centro de control** | Tú eliges qué bloques se muestran. |
-| ⚽ **Partidos** | Tus equipos, tenistas y torneos, con datos de ESPN (sin clave). |
+| ⚽ **Partidos** | Tus equipos, tus deportistas por nombre (tenistas, golfistas, pilotos de Fórmula 1, luchadores de UFC) y torneos, con datos de ESPN (sin clave). El tenis muestra el top 10 de cada ranking. |
 | 🌙 **Protector de pantalla** | Fotos a pantalla completa, reloj, fecha y clima. Seis niveles de brillo. |
 | 🎬 **Destacados** | Títulos en tendencia de tus apps de streaming. |
 | 🎧 **Bluetooth** | Elige, renombra y olvida dispositivos. |
-| 🎮 **Botones del control** | Enseña a cualquier botón a abrir una app o una pantalla. |
+| 🎮 **Botones del control** | Enseña a cualquier botón a abrir una app o una pantalla, ponle nombre y restablece todos con un clic. |
+| 🌗 **Tema claro, oscuro o automático** | El automático sigue el sol de donde vives; también puedes fijar uno. |
 | 🌍 **Español, inglés y portugués** | Sigue a la TV, salvo que elijas. |
 
 ## Capturas
@@ -179,7 +180,7 @@ Las TVs de 1 GB (muchas TCL y Xiaomi/Redmi) tienen poca memoria libre. Lo que m�
    | App de AirPlay cerrada | ~223 MB |
 
 2. **Cambia a GB Home TV:** apaga las apps del fabricante que siguen corriendo en segundo plano (ver arriba).
-3. **Apaga lo que no uses:** *Ajustes → Rendimiento → Apagar todo esto* (recomendaciones, clima, partidos y zoom). Ahorra unos 5 MB.
+3. **Cambia al modo Rendimiento:** *Ajustes → Rendimiento → Modo*. *Completo* mantiene todo; *Rendimiento* apaga las recomendaciones, los widgets de clima y de partidos y el zoom lento (la página lista lo que hace cada modo). Ahorra unos 5 MB.
 
 Sin maquillar los números: GB Home TV abre más rápido, pero dibuja todo por su cuenta y usa **más** memoria que la pantalla original (152 MB contra 89 MB en una TCL 32S5K). La ganancia es velocidad y cero anuncios, y apagar las apps del fabricante compensa una parte. *Ajustes → Acerca de* lo mide en tu TV.
 
