@@ -19,7 +19,8 @@ import android.graphics.Shader;
  */
 final class Scene {
     final Shaders.Palette palette = new Shaders.Palette();
-    private RuntimeShader aurora, glass, liquid;
+    private RuntimeShader aurora, glass, liquid, steady;
+    private final Paint steadyPaint = new Paint();
     private final Frost frost = new Frost();
     private final Paint auroraPaint = new Paint();
     private final Paint glassPaint = new Paint();
@@ -47,6 +48,11 @@ final class Scene {
             aurora = new RuntimeShader(Shaders.AURORA);
             glass = new RuntimeShader(Shaders.GLASS);
             liquid = new RuntimeShader(Shaders.LIQUID);
+            steady = new RuntimeShader(Shaders.LIQUID);
+            steadyPaint.setShader(steady);
+            steady.setInputShader("imageA", linear(steadyImage(0xFFF4F4F8, 0xFFE0E0E6, 7)));
+            steady.setInputShader("imageB", linear(steadyImage(0xFF343438, 0xFF18181A, 10)));
+            steady.setFloatUniform("offset", 0, 0);
             auroraPaint.setShader(aurora);
             glassPaint.setShader(glass);
             liquidPaint.setShader(liquid);
@@ -55,11 +61,55 @@ final class Scene {
             aurora = null;
             glass = null;
             liquid = null;
+            steady = null;
         }
         auroraNode.setUseCompositingLayer(true, layerPaint);
         flatRim.setStyle(Paint.Style.STROKE);
         flatRim.setColor(0x33FFFFFF);
         flatRim.setStrokeWidth(1.5f);
+    }
+
+    private static final int STEADY_W = 64, STEADY_H = 36;
+
+    /** A small fixed picture for the shelf's glass: a soft vertical gradient with a lighter band in the middle. */
+    private static Bitmap steadyImage(int top, int bottom, int sheen) {
+        Bitmap b = Bitmap.createBitmap(STEADY_W, STEADY_H, Bitmap.Config.ARGB_8888);
+        for (int y = 0; y < STEADY_H; y++) {
+            float t = y / (float) (STEADY_H - 1);
+            for (int x = 0; x < STEADY_W; x++) {
+                float band = 1 - Math.abs(x / (float) (STEADY_W - 1) - 0.5f) * 2;
+                int color = 0xFF000000;
+                for (int shift = 16; shift >= 0; shift -= 8) {
+                    int from = (top >> shift) & 255, to = (bottom >> shift) & 255;
+                    color |= Math.min(255, Math.round(from + (to - from) * t + sheen * band * (1 - t))) << shift;
+                }
+                b.setPixel(x, y, color);
+            }
+        }
+        return b;
+    }
+
+    /**
+     * Glass that does not follow the background: it bends and lights a fixed picture (day and night versions, blended
+     * by `night`), so the shelf keeps one look whatever photo is behind it.
+     */
+    void liquidSteady(Canvas c, RectF r, float radius, int tint, float tintAlpha, float lift, float band, float refraction,
+                      float specular, float night) {
+        if (steady == null) {
+            glass(c, r, radius, tint, Math.max(0.5f, tintAlpha), 0, 0, lift, 1, 1);
+            return;
+        }
+        steady.setFloatUniform("imageScale", (float) STEADY_W / w, (float) STEADY_H / h);
+        steady.setFloatUniform("mixB", Math.max(0, Math.min(1, night)));
+        steady.setFloatUniform("center", r.centerX(), r.centerY());
+        steady.setFloatUniform("halfSize", r.width() / 2, r.height() / 2);
+        steady.setFloatUniform("radius", Math.min(radius, Math.min(r.width(), r.height()) / 2));
+        steady.setFloatUniform("tint", Color.red(tint) / 255f, Color.green(tint) / 255f, Color.blue(tint) / 255f, tintAlpha);
+        steady.setFloatUniform("lift", lift);
+        steady.setFloatUniform("band", Math.max(1, band));
+        steady.setFloatUniform("refraction", refraction);
+        steady.setFloatUniform("specular", specular);
+        c.drawRect(r.left - 1, r.top - 1, r.right + 1, r.bottom + 1, steadyPaint);
     }
 
     void setSize(int width, int height) {

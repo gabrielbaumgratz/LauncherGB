@@ -16,16 +16,18 @@ import android.widget.TextView;
  */
 public class HomeActivity extends Activity {
     private HomeView home;
+    private static HomeActivity current;   // the home screen behind the Control Center (same process)
     private int prefsVersion = Prefs.version;   // settings changed while we were away: start over
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Watchdog.install(this);
+        HomeMode.ensureRemoteServiceIfOff(this);
         if (Watchdog.crashedTooOften(this)) {
             // Don't try to draw again: only show a notice while the main process restores the original home screen.
             HomeMode.requestRevertHome(this);
             TextView t = new TextView(this);
-            t.setText(Ui.tr("Free My TV's home screen ran into a problem.\nGoing back to the TV's original home screen…"));
+            t.setText(Ui.tr("GB Launcher's home screen ran into a problem.\nGoing back to the TV's original home screen…"));
             t.setTextColor(Color.WHITE);
             t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
             t.setGravity(Gravity.CENTER);
@@ -34,6 +36,7 @@ public class HomeActivity extends Activity {
             return;
         }
         Ui.init(this);
+        current = this;
         home = new HomeView(this);
         setContentView(home);
         getWindow().setBackgroundDrawable(null);
@@ -61,7 +64,19 @@ public class HomeActivity extends Activity {
         if (home != null) home.reset(true);
     }
 
+    /** The Control Center changed the theme or the recommendations: the home screen behind it follows right away. */
+    static void refreshNow() {
+        final HomeActivity a = current;
+        if (a == null) return;
+        a.runOnUiThread(new Runnable() {
+            @Override public void run() {
+                if (a.home != null) a.home.refreshNow();
+            }
+        });
+    }
+
     @Override protected void onDestroy() {
+        if (current == this) current = null;
         if (home != null) home.destroy();
         super.onDestroy();
     }

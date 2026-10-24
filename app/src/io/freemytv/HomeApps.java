@@ -57,6 +57,12 @@ final class HomeApps {
     static final int APP = 0, LIVE_TV = 1, INPUT = 2, ALL_APPS = 3, SETTINGS = 4, ANDROID_SETTINGS = 5;
     /** The "HDMI Inputs" button: opens the bottom drawer on the inputs (the home screen handles it). */
     static final int INPUTS = 7;
+    /** The "Control Center" button: the quick panel (Bluetooth headphones) over whatever is on screen. */
+    static final int CONTROL = 8;
+    /** The "Screensaver" button: starts the screensaver right now (the preview in Home Settings). */
+    static final int SAVER = 10;
+    /** A paired Bluetooth headphone on the shortcuts: OK connects it (or disconnects it); `pkg` holds its address. */
+    static final int BT_DEVICE = 9;
     /** Image size of each card (16:9; on screen it shows up to ~330 px wide). */
     static final int TILE_W = 384, TILE_H = 216;
 
@@ -147,6 +153,7 @@ final class HomeApps {
                 if (it.logo == null) it.tile = appTile(c, d[0], d[2], 0xFF000000 | Integer.parseInt(d[3], 16));
                 if (it.logo != null) it.logoInk = ink(it.logo);
                 it.logoDark = ownLogoCached(c, d[0] + "-dark");
+                if (it.logoDark == null && it.logo != null && d[0].equals("youtube")) it.logoDark = whiteToDark(it.logo);
                 it.logoScale = Float.parseFloat(d[5]);
             }
             items.add(it);
@@ -187,8 +194,8 @@ final class HomeApps {
 
     // MARK: - Top buttons (the round ones at the top right)
 
-    static final String TOP_LIVE = "live", TOP_INPUTS = "inputs", TOP_SETTINGS = "settings";
-    static final List<String> TOP_DEFAULT = Collections.unmodifiableList(java.util.Arrays.asList(TOP_LIVE, TOP_INPUTS, TOP_SETTINGS));
+    static final String TOP_LIVE = "live", TOP_INPUTS = "inputs", TOP_SETTINGS = "settings", TOP_CONTROL = "control", TOP_SAVER = "saver";
+    static final List<String> TOP_DEFAULT = Collections.unmodifiableList(java.util.Arrays.asList(TOP_LIVE, TOP_INPUTS, TOP_CONTROL, TOP_SAVER, TOP_SETTINGS));
     static final int MAX_TOP = TOP_DEFAULT.size();
 
     /** The keys of the top buttons, in order (Settings > Top Buttons; by default Live TV, HDMI Inputs, Settings). */
@@ -211,6 +218,8 @@ final class HomeApps {
         switch (key) {
             case TOP_LIVE: return action(LIVE_TV, TOP_LIVE, Ui.tr("light|Live TV"), "live_tv");
             case TOP_INPUTS: return action(INPUTS, TOP_INPUTS, Ui.tr("HDMI Inputs"), "hdmi");
+            case TOP_CONTROL: return action(CONTROL, TOP_CONTROL, Ui.tr("Control Center"), "speaker");
+            case TOP_SAVER: return action(SAVER, TOP_SAVER, Ui.tr("Screensaver"), "bedtime");
             default: return action(SETTINGS, TOP_SETTINGS, Ui.tr("light|Settings"), "settings");
         }
     }
@@ -225,10 +234,10 @@ final class HomeApps {
     /** Live TV, the HDMI inputs with a device sending a signal, and All Apps. */
     static List<Item> shortcuts(Context c) {
         List<Item> items = new ArrayList<>();
-        if (liveTv(c) != null) {
+        if (liveTv(c) != null && !Prefs.inputHidden("live")) {
             items.add(shortcut(LIVE_TV, "live", Ui.tr("Live TV"), "tv"));
         }
-        items.addAll(inputs(c));
+        for (Item it : inputs(c)) if (!Prefs.inputHidden(it.key)) items.add(it);
         items.add(shortcut(ALL_APPS, "all", Ui.tr("All Apps"), "apps"));
         return items;
     }
@@ -247,7 +256,7 @@ final class HomeApps {
         return shortcut(kind, key, label, symbol);
     }
 
-    /** Free My TV settings, in the corner of the home screen. */
+    /** GB Launcher settings, in the corner of the home screen. */
     static Item settings() {
         return shortcut(SETTINGS, "settings", Ui.tr("Settings"), "settings");
     }
@@ -258,6 +267,12 @@ final class HomeApps {
         items.add(shortcut(ALL_APPS, "all", Ui.tr("All Apps"), "apps"));
         items.add(shortcut(SETTINGS, "settings", Ui.tr("Home Settings"), "settings"));
         items.add(shortcut(ANDROID_SETTINGS, "tv-settings", Ui.tr("TV Settings"), "tv_settings"));
+        for (BluetoothAudio.DeviceInfo d : BluetoothAudio.getPairedAudioDevices()) {
+            if (!Prefs.btShown(d.device.getAddress())) continue;
+            Item it = shortcut(BT_DEVICE, "bt:" + d.device.getAddress(), d.name, "speaker");
+            it.pkg = d.device.getAddress();
+            items.add(it);
+        }
         return items;
     }
 
@@ -279,6 +294,13 @@ final class HomeApps {
 
     /** For the bottom drawer: live TV and every HDMI input (the ones with no device are shown dimmed). */
     static List<Item> allInputs(Context c) {
+        List<Item> items = new ArrayList<>();
+        for (Item it : inputChoices(c)) if (!Prefs.inputHidden(it.key)) items.add(it);
+        return items;
+    }
+
+    /** Everything allInputs can show, hidden or not (Home Settings lists these to switch each one on or off). */
+    static List<Item> inputChoices(Context c) {
         List<Item> items = new ArrayList<>();
         if (liveTv(c) != null) items.add(shortcut(LIVE_TV, "live", Ui.tr("Live TV"), "tv"));
         items.addAll(inputs(c, true));
@@ -393,7 +415,7 @@ final class HomeApps {
         synchronized (HomeApps.class) {
             TILES.keySet().removeIf(k -> k.contains(".") && !seen.contains(k));
         }
-        items.add(special(c, SETTINGS, "freemytv-settings", "Free My TV", "sparkles"));
+        items.add(special(c, SETTINGS, "freemytv-settings", "GB Launcher", "tv"));
         return items;
     }
 
@@ -403,8 +425,30 @@ final class HomeApps {
         return it;
     }
 
+    /** Takes a small picture of the home screen for the Control Center's glass to bend, then opens it. */
+    private static void openControlCenter(final Activity a) {
+        final Intent intent = new Intent().setComponent(new ComponentName(a, ControlCenterActivity.class))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        final android.graphics.Bitmap shot = android.graphics.Bitmap.createBitmap(214, 120, android.graphics.Bitmap.Config.ARGB_8888);
+        try {
+            android.view.PixelCopy.request(a.getWindow(), shot, new android.view.PixelCopy.OnPixelCopyFinishedListener() {
+                @Override public void onPixelCopyFinished(int result) {
+                    ControlCenterActivity.backdrop = result == android.view.PixelCopy.SUCCESS ? shot : null;
+                    a.startActivity(intent);
+                }
+            }, new android.os.Handler(android.os.Looper.getMainLooper()));
+        } catch (RuntimeException e) {
+            ControlCenterActivity.backdrop = null;
+            a.startActivity(intent);
+        }
+    }
+
     /** Opens the item with the system zoom transition growing out of the card (the app starts opening right away). */
     static boolean open(Activity a, Item it, View from, int x, int y, int w, int h) {
+        if (it.kind == CONTROL) {
+            openControlCenter(a);
+            return true;
+        }
         Intent intent, plain = null;   // plain: the app's own home, when it won't take the title's address
         switch (it.kind) {
             case APP:
@@ -426,6 +470,12 @@ final class HomeApps {
                 break;
             case ANDROID_SETTINGS:
                 intent = new Intent(Settings.ACTION_SETTINGS);
+                break;
+            case CONTROL:
+                intent = new Intent().setComponent(new ComponentName(a, ControlCenterActivity.class));
+                break;
+            case SAVER:
+                intent = new Intent().setComponent(new ComponentName(a, SettingsActivity.class)).putExtra("screensaver", true);
                 break;
             default:
                 return false;
@@ -454,6 +504,9 @@ final class HomeApps {
      */
     static Intent liveTv(Context c) {
         PackageManager pm = c.getPackageManager();
+        // The live TV app the person chose to use instead of the TV's own (Uni TV, an IPTV app), when it is installed.
+        Intent preferred = launchIntent(pm, "com.global.unitviptv");
+        if (preferred != null) return preferred;
         // MediaTek OneWorld TV Center (KTC/NextStar) has one input per tuner mode (antenna, cable, satellite): tuning one
         // switches the TV to that mode and hides the other channel lists, so it opens as it is, on its own last channel.
         Intent oneWorld = launchIntent(pm, "com.mediatek.tv.oneworld.tvcenter");
@@ -526,6 +579,21 @@ final class HomeApps {
 
     /** Bump when the way logos are lifted changes (the ones saved on disk are redone). */
     private static final int LOGO_VERSION = 2;
+
+    /** The logo with its white parts (YouTube's lettering) dark, for a light card; the colored parts stay. */
+    private static Bitmap whiteToDark(Bitmap logo) {
+        int w = logo.getWidth(), h = logo.getHeight();
+        int[] px = new int[w * h];
+        logo.getPixels(px, 0, w, 0, 0, w, h);
+        for (int i = 0; i < px.length; i++) {
+            int p = px[i], r = (p >> 16) & 255, g = (p >> 8) & 255, b = p & 255;
+            int lo = Math.min(r, Math.min(g, b)), hi = Math.max(r, Math.max(g, b));
+            if (lo > 150 && hi - lo < 70) px[i] = (p & 0xFF000000) | 0x00282828;
+        }
+        Bitmap out = Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888);
+        out.setHasMipMap(true);
+        return out;
+    }
 
     private static Bitmap shelfLogo(Context c, String key, String pkg, String mode, boolean extract) {
         synchronized (LOGOS) {

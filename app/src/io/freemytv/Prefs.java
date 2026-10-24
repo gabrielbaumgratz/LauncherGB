@@ -15,14 +15,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Settings changed on the TV itself (Free My TV > Settings). config.properties only gives the first
+ * Settings changed on the TV itself (GB Launcher > Settings). config.properties only gives the first
  * values; anything the user changes here wins. Read from the :home process (home screen, screensaver, settings).
  */
 final class Prefs {
     private Prefs() {}
 
     /** Remote keys we handle, with the app each opens until the user picks another. Codes read from the TCL's log. */
-    static final int KEY_NETFLIX = 4062, KEY_YOUTUBE = 190, KEY_PRIME = 4099, KEY_TCL_CHANNEL = 4020;
+    static final int KEY_NETFLIX = 4062, KEY_YOUTUBE = 190, KEY_PRIME = 4099, KEY_TCL_CHANNEL = 4020, KEY_GUIDE = KeyEvent.KEYCODE_GUIDE;
     /** The Netflix button on Vestel TVs and Formovie projectors: STEM_1, which the TV hands to its Netflix key receiver (dumpsys window policy). */
     static final int KEY_STEM_NETFLIX = KeyEvent.KEYCODE_STEM_1;
     /** KTC's (NextStar) Tabii button: BUTTON_8, which the TV hands to its hot-key receiver (its log: "keycode = 195"). */
@@ -37,7 +37,7 @@ final class Prefs {
                     KEY_SONY_PLAY}
             : RemoteKeys.STEM_NETFLIX ? new int[] {KEY_STEM_NETFLIX}
             : RemoteKeys.KTC ? new int[] {KEY_KTC_TABII}
-            : new int[] {KEY_NETFLIX, KEY_YOUTUBE, KEY_PRIME, KEY_TCL_CHANNEL};
+            : new int[] {KEY_NETFLIX, KEY_YOUTUBE, KEY_PRIME, KEY_TCL_CHANNEL, KEY_GUIDE};
 
     /** Bumped by every change: screens compare it to know when to redraw. */
     static volatile int version;
@@ -96,6 +96,26 @@ final class Prefs {
 
     static void setTheme(String v) { put("theme", v); }
 
+    /** The same, without the "settings changed" restart: the home screen picks the theme up when it comes back. */
+    static void setThemeQuiet(String v) { sp().edit().putString("theme", v).apply(); }
+
+    /** The picks (recommendations) on the home screen; off hides them even with a TMDB key. */
+    static boolean recommendations() { return sp().getBoolean("recommendations", true); }
+    /** Quiet (no restart of the home screen): HomeActivity.refreshNow() applies it, even with the Control Center open. */
+    static void setRecommendations(boolean on) { sp().edit().putBoolean("recommendations", on).apply(); }
+
+    /** Paired Bluetooth devices (by address) the person put on the home screen's shortcuts. */
+    static boolean btShown(String address) {
+        return sp().getStringSet("btShown", java.util.Collections.<String>emptySet()).contains(address);
+    }
+
+    static void setBtShown(String address, boolean shown) {
+        java.util.Set<String> now = new java.util.HashSet<>(sp().getStringSet("btShown", java.util.Collections.<String>emptySet()));
+        if (shown) now.add(address); else now.remove(address);
+        sp().edit().putStringSet("btShown", now).apply();
+        version++;
+    }
+
     // MARK: - City
 
     static String city() { return sp().getString("city", Config.CITY).trim(); }
@@ -122,6 +142,53 @@ final class Prefs {
     static boolean coin(int i) { return sp().getBoolean("coin" + i, true); }
     static void setCoin(int i, boolean on) { put("coin" + i, on); }
 
+    // MARK: - Glass
+
+    /** How frosted the glass of the shelf and the Control Center is: 0 (clear) to 4 (very frosted). */
+    static int glass() { return Math.max(0, Math.min(4, sp().getInt("glass", 2))); }
+    static void setGlass(int level) { sp().edit().putInt("glass", Math.max(0, Math.min(4, level))).apply(); version++; }
+
+    /** Multiplies a glass tint's opacity by the chosen level (the middle one is the default look). */
+    private static final float[] FROST = {0.55f, 0.85f, 1.25f, 1.6f, 2f};
+
+    static float frost(float alpha) {
+        return Math.min(0.94f, alpha * FROST[glass()]);
+    }
+
+    // MARK: - Photos from the phone (Photos, UploadServer)
+
+    /** The photo (a name from Photos.list) used as the home screen's background, or "" for the default one. */
+    static String wallpaper() { return sp().getString("wallpaper", ""); }
+    static void setWallpaper(String name) { put("wallpaper", name); }
+
+    /** Seconds between photos: the screensaver, and the background when it rotates through all the photos. */
+    static final int[] PHOTO_SECONDS = {30, 60, 300, 900, 1800, 3600};
+    static int photoSeconds() { return sp().getInt("photoSeconds", 30); }
+    static void setPhotoSeconds(int s) { sp().edit().putInt("photoSeconds", s).apply(); version++; }
+
+    /** How much the screensaver dims (0 none, 1 a little, 2 more): a black veil of DIM_ALPHA over everything. */
+    static final int[] DIM_ALPHA = {0, 0x38, 0x66};
+    static int dreamDim() { return sp().getInt("dreamDim", 0); }
+    static void setDreamDim(int d) { sp().edit().putInt("dreamDim", d).apply(); version++; }
+
+    /** The screensaver shows the photos from the phone (when there are any) instead of the recommendations. */
+    static boolean ownPhotos() { return sp().getBoolean("ownPhotos", true); }
+    static void setOwnPhotos(boolean on) { put("ownPhotos", on); }
+
+    // MARK: - Inputs on the home screen
+
+    /** Inputs (HomeApps keys: "live", "hdmi2"...) the person took off the home screen. */
+    static boolean inputHidden(String key) {
+        return sp().getStringSet("hiddenInputs", java.util.Collections.<String>emptySet()).contains(key);
+    }
+
+    static void setInputHidden(String key, boolean hidden) {
+        java.util.Set<String> now = new java.util.HashSet<>(sp().getStringSet("hiddenInputs", java.util.Collections.<String>emptySet()));
+        if (hidden) now.add(key); else now.remove(key);
+        sp().edit().putStringSet("hiddenInputs", now).apply();
+        version++;
+    }
+
     // MARK: - Shelf
 
     /** Packages on the home shelf, in order; null until the user edits it (then the built-in list applies). */
@@ -142,7 +209,7 @@ final class Prefs {
     // MARK: - Top buttons
 
     /**
-     * The round buttons at the top right, in order: "live", "inputs" and/or "settings". null until the user edits
+     * The round buttons at the top right, in order: "live", "inputs", "control" and/or "settings". null until the user edits
      * them (then HomeApps.TOP_DEFAULT applies); empty when they took all three off.
      */
     static List<String> topButtons() {
@@ -166,7 +233,8 @@ final class Prefs {
             case KEY_NETFLIX: case KEY_STEM_NETFLIX: return "com.netflix.ninja";
             case KEY_YOUTUBE: return "com.google.android.youtube.tv";
             case KEY_PRIME: return "com.amazon.amazonvideo.livingroom";
-            case KEY_TCL_CHANNEL: return "";
+            case KEY_TCL_CHANNEL: return "";   // TCL's own button: the TV keeps doing what it does
+            case KEY_GUIDE: return "com.global.unitviptv";   // the CH button   // the TV's live TV app (RemoteKeys finds it); Remote Buttons can change it
             default: return "";
         }
     }
@@ -197,6 +265,11 @@ final class Prefs {
 
     /** Choices saved before they moved to the file (in SharedPreferences) are copied there once. */
     private static void migrateKeys() {
+        // Version 2: TCL's own button keeps its original job; the CH button (Guide) is the one for the live TV app.
+        if (!sp().getBoolean("keysV2", false)) {
+            sp().edit().putBoolean("keysV2", true).apply();
+            if (keysFile().exists() && !keyApp(KEY_TCL_CHANNEL).isEmpty()) setKeyApp(KEY_TCL_CHANNEL, "");
+        }
         if (keysFile().exists()) return;
         SharedPreferences old = sp();
         boolean any = false;

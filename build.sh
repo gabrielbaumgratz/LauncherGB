@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds FreeMyTV.apk without Gradle: aapt2 -> javac -> d8 -> zipalign -> apksigner.
+# Builds GBLauncher.apk without Gradle: aapt2 -> javac -> d8 -> zipalign -> apksigner.
 # Needs a JDK (17+) and the Android SDK command-line tools (build-tools 34+, platform android-34). See README.md.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -114,10 +114,21 @@ EOF
     ;;
 esac
 # On Windows javac separates paths with ";", and d8 and apksigner are .bat files.
-CPSEP=:; BAT=; case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) CPSEP=";"; BAT=.bat ;; esac
-"$JAVAC" -nowarn -Xlint:-options -source 8 -target 8 -bootclasspath "$AJ$CPSEP$BT/core-lambda-stubs.jar" -classpath "$AJ" \
+CPSEP=:; BAT=; AJ_CP="$AJ"; STUB_CP="$BT/core-lambda-stubs.jar"
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    CPSEP=";"
+    BAT=.bat
+    if command -v cygpath >/dev/null 2>&1; then
+      AJ_CP="$(cygpath -w "$AJ")"
+      STUB_CP="$(cygpath -w "$BT/core-lambda-stubs.jar")"
+    fi
+    ;;
+esac
+"$JAVAC" -nowarn -Xlint:-options -source 8 -target 8 -bootclasspath "$AJ_CP$CPSEP$STUB_CP" -classpath "$AJ_CP" \
   -encoding UTF-8 -d out/classes $(find app/src out/gen -name '*.java')
-"$BT/d8$BAT" --release --min-api 26 --lib "$AJ" --output out $(find out/classes -name '*.class')
+"${JAVA_HOME:+$JAVA_HOME/bin/}jar" -cf out/classes.jar -C out/classes .
+"$BT/d8$BAT" --release --min-api 26 --lib "$AJ" --output out out/classes.jar
 if command -v zip >/dev/null; then (cd out && zip -qj base.apk classes.dex)
 else "${JAVA_HOME:+$JAVA_HOME/bin/}jar" -u -M -f out/base.apk -C out classes.dex; fi # Git Bash has no zip
 "$BT/zipalign" -f -p 4 out/base.apk out/aligned.apk
@@ -125,7 +136,7 @@ else "${JAVA_HOME:+$JAVA_HOME/bin/}jar" -u -M -f out/base.apk -C out classes.dex
 # --- Sign with your own key (created once; updates need the same key, so keep freemytv.keystore)
 if [ ! -f freemytv.keystore ]; then
   "$KEYTOOL" -genkeypair -keystore freemytv.keystore -alias freemytv -keyalg RSA -keysize 2048 -validity 20000 \
-    -storepass freemytv -keypass freemytv -dname "CN=Free My TV" >/dev/null 2>&1
+    -storepass freemytv -keypass freemytv -dname "CN=GB Launcher" >/dev/null 2>&1
 fi
-"$BT/apksigner$BAT" sign --ks freemytv.keystore --ks-pass pass:freemytv --key-pass pass:freemytv --out FreeMyTV.apk out/aligned.apk
-echo "Built FreeMyTV.apk ($(du -h FreeMyTV.apk | cut -f1)). Install: adb install -r FreeMyTV.apk"
+"$BT/apksigner$BAT" sign --ks freemytv.keystore --ks-pass pass:freemytv --key-pass pass:freemytv --out GBLauncher.apk out/aligned.apk
+echo "Built GBLauncher.apk ($(du -h GBLauncher.apk | cut -f1)). Install: adb install -r GBLauncher.apk"

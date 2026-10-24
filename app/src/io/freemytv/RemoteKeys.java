@@ -43,10 +43,33 @@ final class RemoteKeys {
     /** Opens the app for this key on its first press. True if the key is ours and in use (it is then consumed). */
     static boolean onKey(Context c, KeyEvent e) {
         if (!supported()) return false;
-        // BUTTON_3 is also a game controller's button: keys from a gamepad or a joystick are left alone.
+        // BUTTON_3 is also a game controller's button: those keys from a gamepad or a joystick are left alone. (Only
+        // those: TCL's IR remote reports itself as a gamepad too, source 0x701, and its keys must still get through.)
         int source = e.getSource();
-        if ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
-                || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) return false;
+        int pressed = e.getKeyCode();
+        boolean buttonKey = pressed >= KeyEvent.KEYCODE_BUTTON_A && pressed <= KeyEvent.KEYCODE_BUTTON_MODE
+                || pressed >= KeyEvent.KEYCODE_BUTTON_1 && pressed <= KeyEvent.KEYCODE_BUTTON_16;
+        if (buttonKey && ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+                || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) return false;
+        // The Settings button of TCL's remote sends NOTIFICATION; with the stock home screen off nothing answers it:
+        // it opens the TV's settings.
+        int raw = e.getKeyCode();
+        if (TCL && (raw == KeyEvent.KEYCODE_NOTIFICATION || raw == KeyEvent.KEYCODE_SETTINGS)) {
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+                c.startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return true;
+        }
+        // The INFO ("i") button opens the Control Center, over whatever is on screen; in the live TV app it keeps showing
+        // the program's info.
+        if (raw == KeyEvent.KEYCODE_INFO) {
+            if (isLiveTv(foreground)) return false;
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+                c.startActivity(new Intent().setComponent(new android.content.ComponentName(c, ControlCenterActivity.class))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("fromKey", true));
+            }
+            return true;
+        }
         int keyCode = e.getKeyCode() == KEY_YOUTUBE_TCL ? Prefs.KEY_YOUTUBE : e.getKeyCode();
         // Sony sends BUTTON_9 for five app buttons (BUTTON_4 for Netflix, BUTTON_8 for Google Play): only the scan code
         // tells them apart.
@@ -61,10 +84,32 @@ final class RemoteKeys {
         if (pkg.isEmpty()) return false;   // "Nothing": the key goes on as if we weren't here
         if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
             Intent intent = launchIntent(c.getPackageManager(), pkg);
+            if (intent == null && (keyCode == Prefs.KEY_TCL_CHANNEL || keyCode == Prefs.KEY_GUIDE)) intent = liveTv(c.getPackageManager());   // the default app isn't here
             AppLog.w("remote key " + e.getKeyCode() + " -> " + pkg + (intent == null ? " (not installed)" : ""));
             if (intent != null) c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
         return true;
+    }
+
+    /** The app on screen, as the key service last heard it (that process only). */
+    static volatile String foreground = "";
+
+    private static boolean isLiveTv(String pkg) {
+        if (pkg == null) return false;
+        for (String live : LIVE_TV) if (live.equals(pkg)) return true;
+        return false;
+    }
+
+    /** The same live TV apps as HomeApps.LIVE_TV_APPS (copied: this process stays small). */
+    private static final String[] LIVE_TV = {"com.tcl.tv", "com.google.android.tv", "com.mediatek.wwtv.tvcenter", "com.sony.dtv.tvx",
+            "com.smartdevice.livetv", "com.mediatek.tv.oneworld.tvcenter"};
+
+    private static Intent liveTv(PackageManager pm) {
+        for (String pkg : LIVE_TV) {
+            Intent intent = launchIntent(pm, pkg);
+            if (intent != null) return intent;
+        }
+        return null;
     }
 
     /** The app's TV launcher, or its plain one (kept here, not in HomeApps, so the key process stays small). */

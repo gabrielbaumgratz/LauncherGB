@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,9 +32,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Fonts and text for the home screen, the screensaver and the settings. Font: Inter (variable, assets/fonts, SIL OFL),
- * with the "display" optical size for large text and the "text" size for small text; without it, the system font at a
- * similar weight.
+ * Fonts and text for the home screen, the screensaver and the settings. Font: San Francisco (SF Pro, variable,
+ * assets/fonts), with the "display" optical size (28) for large text and the "text" optical size (17) for small text;
+ * without it, the system font at a similar weight.
  */
 final class Ui {
     private Ui() {}
@@ -56,16 +57,16 @@ final class Ui {
         if (loaded) return;
         loaded = true;
         AssetManager a = c.getAssets();
-        thin = font(a, 32, 200);
-        light = font(a, 32, 300);
-        displayMedium = font(a, 32, 500);
-        displaySemibold = font(a, 32, 600);
-        regular = font(a, 14, 400);
-        medium = font(a, 14, 500);
-        semibold = font(a, 14, 600);
+        thin = font(a, 28, 200);
+        light = font(a, 28, 300);
+        displayMedium = font(a, 28, 500);
+        displaySemibold = font(a, 28, 600);
+        regular = font(a, 17, 400);
+        medium = font(a, 17, 500);
+        semibold = font(a, 17, 600);
     }
 
-    /** Inter at an optical size (14 = text, 32 = display) and weight; the system font if the file is missing. */
+    /** SF Pro at an optical size (17 = text, 28 = display) and weight; the system font if the file is missing. */
     private static Typeface font(AssetManager a, int opticalSize, int weight) {
         if (has(a, FONT)) {
             try {
@@ -87,7 +88,7 @@ final class Ui {
         }
     }
 
-    private static final String FONT = "fonts/InterVariable.ttf";
+    private static final String FONT = "fonts/SF-Pro.ttf";
 
     // MARK: - Text in the viewer's language
 
@@ -403,6 +404,19 @@ final class Ui {
         String format(long at) {
             return new SimpleDateFormat(text, locale).format(new Date(at));
         }
+    }
+
+    /**
+     * Dynamic greeting by time of day:
+     * 05:00 - 11:59: "Bom dia, Gabriel"
+     * 12:00 - 18:59: "Boa tarde, Gabriel"
+     * 19:00 - 04:59: "Boa noite, Gabriel"
+     */
+    static String greeting() {
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) return "Bom dia, Gabriel";
+        if (hour >= 12 && hour < 19) return "Boa tarde, Gabriel";
+        return "Boa noite, Gabriel";
     }
 
     /** "21:47" (in English, "9:47", like the iPhone in the US). */

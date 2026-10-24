@@ -13,7 +13,13 @@ public class RemoteKeyService extends AccessibilityService {
         return RemoteKeys.onKey(this, event);
     }
 
-    @Override public void onAccessibilityEvent(AccessibilityEvent event) {}
+    @Override public void onAccessibilityEvent(AccessibilityEvent event) {
+        CharSequence pkg = event.getPackageName();
+        if (pkg != null && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && !"io.freemytv".contentEquals(pkg) && !"com.android.systemui".contentEquals(pkg)) {
+            RemoteKeys.foreground = pkg.toString();
+        }
+    }
 
     @Override public void onInterrupt() {}
 }

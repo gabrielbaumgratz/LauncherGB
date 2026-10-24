@@ -77,8 +77,9 @@ final class Backdrop {
             int[] light = whiten(frost.clone(), 0.82f);
             int[] glass = reduce(out, GW, GH, 2, 2);
             int[] lightGlass = whiten(glass.clone(), 0.74f);
-            int[] night = darken(frost.clone(), 0.76f);
-            int[] nightGlass = darken(glass, 0.56f);
+            // At night the photo is pushed well toward black, so a bright cover can't light the whole screen up.
+            int[] night = darken(frost.clone(), 0.89f);
+            int[] nightGlass = darken(glass, 0.72f);
             out.recycle();
             return new Backdrop(null, frost, null, wide, tall, light, lightGlass, night, nightGlass);
         }
