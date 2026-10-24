@@ -106,16 +106,16 @@ O GB Home TV só adiciona o botão; quem recebe a tela é o app gratuito [androi
 
 *Configurações → Tela de Descanso → Fotos do seu celular.* Aponte a câmera para o QR code na TV (no computador, digite o endereço e o PIN) e escolha as fotos. Só na rede local, o PIN bloqueia depois de tentativas erradas, e o servidor só roda enquanto essa tela está aberta.
 
-### Clima e jogos
+### Clima e esportes
 
-Sem chave e sem instalação. *Configurações → Clima* e *Jogos*.
+Sem chave e sem instalação. *Configurações → Clima* e *Esportes*.
 
 ## Como usar
 
 | | |
 |---|---|
 | **Início** | Seus apps na prateleira de vidro e abas de destaques. |
-| **Para baixo** | A gaveta: entradas HDMI, atalhos, clima e jogos. |
+| **Para baixo** | A gaveta: entradas HDMI, atalhos, clima e esportes. |
 | **Primeiro botão redondo, no topo** | A Central de Controle: Bluetooth, volume, tema, imagem, AirPlay. |
 | **Engrenagem** | Configurações. *Launcher → Original* volta à tela da TV. |
 | **TV parada** | A tela de descanso, com as suas fotos. |
@@ -131,7 +131,7 @@ Cada controle é diferente, então nada vem preso a um botão. Para abrir algo c
 | | |
 |---|---|
 | **Central de Controle** | Você escolhe quais blocos aparecem. |
-| **Jogos** | Seus times, seus atletas pelo nome (tenistas, golfistas, pilotos de Fórmula 1, lutadores do UFC) e campeonatos, com dados da ESPN (sem chave). O tênis mostra o top 10 de cada ranking. |
+| **Esportes** | Seus times, seus atletas pelo nome (tenistas, golfistas, pilotos de Fórmula 1, lutadores do UFC) e campeonatos, com dados da ESPN (sem chave). O tênis mostra o top 10 de cada ranking. |
 | **Tela de descanso** | Fotos em tela cheia, relógio, data e clima. Seis níveis de brilho. |
 | **Destaques** | Títulos em alta dos seus apps de streaming. |
 | **Bluetooth** | Escolha, renomeie e esqueça dispositivos. |

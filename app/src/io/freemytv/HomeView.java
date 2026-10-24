@@ -1475,11 +1475,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawSports(Canvas c, RectF r) {
         float x = r.left + 34 * k, right = r.right - 34 * k;
-        c.drawText(Ui.tr("Games"), x, r.top + 54 * k, cardTitle);
+        c.drawText(Ui.tr("Sports"), x, r.top + 54 * k, cardTitle);
         List<Sports.Game> games = Sports.get(getContext()).games();
         if (games.isEmpty()) {
             boolean chosen = !Prefs.sportsTeams().isEmpty() || !Prefs.sportsLeagues().isEmpty();
-            c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Settings → Games."), x, r.top + 120 * k, cardDim);
+            c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Settings → Sports."), x, r.top + 120 * k, cardDim);
             return;
         }
         // Three games, two lines each: the match, then the day, the time and the championship. Same fonts as the weather card.

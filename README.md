@@ -106,9 +106,9 @@ GB Home TV only adds the button; the free app [android-airplay-server](https://g
 
 *Settings → Screensaver → Photos from your phone.* Point your camera at the QR code on the TV (on a computer, type the address and PIN) and pick photos. Local network only, the PIN locks after wrong tries, and the server runs only while that screen is open.
 
-### Weather and games
+### Weather and sports
 
-No key and no install. *Settings → Weather* and *Games*.
+No key and no install. *Settings → Weather* and *Sports*.
 
 ## How to use
 
@@ -131,7 +131,7 @@ Every remote is different, so nothing is tied to a button. To open something wit
 | | |
 |---|---|
 | **Control Center** | You pick which blocks show. |
-| **Games** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
+| **Sports** | Your teams, your athletes by name (tennis players, golfers, Formula 1 drivers, UFC fighters) and leagues, from ESPN (no key). Tennis shows the top 10 of each ranking. |
 | **Screensaver** | Full-screen photos, clock, date and weather. Six brightness levels. |
 | **Highlights** | Trending titles from your streaming apps. |
 | **Bluetooth** | Choose, rename and forget devices. |

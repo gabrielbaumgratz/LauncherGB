@@ -106,16 +106,16 @@ GB Home TV solo añade el botón; quien recibe la pantalla es la app gratuita [a
 
 *Ajustes → Protector de pantalla → Fotos de tu celular.* Apunta la cámara al código QR de la TV (en un computador, escribe la dirección y el PIN) y elige las fotos. Solo en la red local, el PIN se bloquea tras intentos fallidos, y el servidor funciona solo mientras esa pantalla está abierta.
 
-### Clima y partidos
+### Clima y deportes
 
-Sin clave y sin instalar nada. *Ajustes → Clima* y *Partidos*.
+Sin clave y sin instalar nada. *Ajustes → Clima* y *Deportes*.
 
 ## Cómo se usa
 
 | | |
 |---|---|
 | **Inicio** | Tus apps en el estante de cristal y pestañas de destacados. |
-| **Hacia abajo** | El cajón: entradas HDMI, atajos, clima y partidos. |
+| **Hacia abajo** | El cajón: entradas HDMI, atajos, clima y deportes. |
 | **Primer botón redondo, arriba** | El Centro de control: Bluetooth, volumen, tema, imagen, AirPlay. |
 | **Engranaje** | Ajustes. *Launcher → Original* vuelve a la pantalla de la TV. |
 | **TV en reposo** | El protector de pantalla, con tus fotos. |
@@ -131,7 +131,7 @@ Cada control es distinto, así que nada viene atado a un botón. Para abrir algo
 | | |
 |---|---|
 | **Centro de control** | Tú eliges qué bloques se muestran. |
-| **Partidos** | Tus equipos, tus deportistas por nombre (tenistas, golfistas, pilotos de Fórmula 1, luchadores de UFC) y torneos, con datos de ESPN (sin clave). El tenis muestra el top 10 de cada ranking. |
+| **Deportes** | Tus equipos, tus deportistas por nombre (tenistas, golfistas, pilotos de Fórmula 1, luchadores de UFC) y torneos, con datos de ESPN (sin clave). El tenis muestra el top 10 de cada ranking. |
 | **Protector de pantalla** | Fotos a pantalla completa, reloj, fecha y clima. Seis niveles de brillo. |
 | **Destacados** | Títulos en tendencia de tus apps de streaming. |
 | **Bluetooth** | Elige, renombra y olvida dispositivos. |
@@ -147,7 +147,7 @@ Cada control es distinto, así que nada viene atado a un botón. Para abrir algo
 | **Cajón** | <img src="docs/assets/es/drawer.png" width="440"> |
 | **Centro de control** | <img src="docs/assets/es/control-center.png" width="440"> |
 | **Ajustes** | <img src="docs/assets/es/settings.png" width="440"> |
-| **Partidos** | <img src="docs/assets/es/settings-games.png" width="440"> |
+| **Deportes** | <img src="docs/assets/es/settings-games.png" width="440"> |
 | **Protector de pantalla** | <img src="docs/assets/es/settings-screensaver.png" width="440"> |
 | **Rendimiento** | <img src="docs/assets/es/settings-performance.png" width="440"> |
 | **Botones del control** | <img src="docs/assets/es/settings-remote.png" width="440"> |

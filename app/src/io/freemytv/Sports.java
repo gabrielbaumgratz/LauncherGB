@@ -189,10 +189,34 @@ final class Sports {
         return out;
     }
 
-    /** "Flamengo · Brasileirão": a search result, as the list shows it. */
+    /** "Flamengo · Futebol (Brasileirão)": a search result, as the list shows it. */
     static String describe(String[] team) {
+        String sport = sportName(team[0]);
         String league = leagueName(team[0] + "/" + team[1]);
-        return league.isEmpty() ? team[3] : team[3] + " · " + league;
+        if (league.isEmpty() || league.equalsIgnoreCase(sport)) return team[3] + " · " + sport;
+        return team[3] + " · " + sport + " (" + league + ")";
+    }
+
+    static String addLabel(String sport) {
+        if (sport == null) return Ui.tr("Add a team or athlete");
+        switch (sport) {
+            case "tennis": return Ui.tr("Add a tennis player");
+            case "racing": return Ui.tr("Add a driver");
+            case "golf": return Ui.tr("Add a golfer");
+            case "mma": return Ui.tr("Add a fighter");
+            default: return Ui.tr("Add a team");
+        }
+    }
+
+    static String searchPrompt(String sport) {
+        if (sport == null) return Ui.tr("Name of the team or athlete");
+        switch (sport) {
+            case "tennis": return Ui.tr("Name of the tennis player");
+            case "racing": return Ui.tr("Name of the driver");
+            case "golf": return Ui.tr("Name of the golfer");
+            case "mma": return Ui.tr("Name of the fighter");
+            default: return Ui.tr("Name of the team");
+        }
     }
 
     static String leagueName(String path) {

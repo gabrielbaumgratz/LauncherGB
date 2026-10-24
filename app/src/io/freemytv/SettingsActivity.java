@@ -365,7 +365,7 @@ public class SettingsActivity extends Activity {
         // MARK: - Pages
 
         private String[] pageTitles() {
-            return new String[] {Ui.tr("General"), Ui.tr("Home Screen"), Ui.tr("Control Center"), Ui.tr("Weather"), Ui.tr("Games"),
+            return new String[] {Ui.tr("General"), Ui.tr("Home Screen"), Ui.tr("Control Center"), Ui.tr("Weather"), Ui.tr("Sports"),
                     Ui.tr("Screensaver"), Ui.tr("Performance"), Ui.tr("Remote Buttons"), Ui.tr("About")};
         }
 
@@ -562,36 +562,22 @@ public class SettingsActivity extends Activity {
                     break;
                 }
                 case P_GAMES: {
-                    toggle(Ui.tr("Games widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
+                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
+
+                    header(Ui.tr("My teams and athletes"));
                     List<String[]> allTeams = Prefs.sportsTeams();
-                    List<String> distinctSports = new ArrayList<>();
-                    for (String[] league : Sports.LEAGUES) {
-                        String s = Sports.sportOf(league[0]);
-                        if (!distinctSports.contains(s)) distinctSports.add(s);
+                    for (String[] team : allTeams) {
+                        link(team[3], () -> Sports.sportName(team[0]), () -> openTeam(team));
                     }
-                    for (String[] t : allTeams) {
-                        if (!distinctSports.contains(t[0])) distinctSports.add(t[0]);
+                    link(Ui.tr("Add a team or athlete"), () -> !teamStatus.isEmpty() ? teamStatus : "", () -> askTeam(null));
+                    if (allTeams.isEmpty()) {
+                        note(Ui.tr("Follow your favorite teams, tennis players, drivers or fighters."));
                     }
-                    for (String sport : distinctSports) {
-                        header(Sports.sportName(sport));
-                        for (String[] team : allTeams) {
-                            if (team[0].equals(sport)) {
-                                link(team[3], () -> Sports.leagueName(team[0] + "/" + team[1]), () -> openTeam(team));
-                            }
-                        }
-                        final String s = sport;
-                        link(Ui.tr("Add a team"), () -> (!teamStatus.isEmpty() && s.equals(teamSearchSport)) ? teamStatus : "", () -> askTeam(s));
-                        for (String[] league : Sports.LEAGUES) {
-                            if (Sports.sportOf(league[0]).equals(sport)) {
-                                toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
-                                    List<String> paths = Prefs.sportsLeagues();
-                                    if (!paths.remove(league[0])) paths.add(league[0]);
-                                    Prefs.setSportsLeagues(paths);
-                                });
-                            }
-                        }
-                    }
+
+                    header(Ui.tr("My championships"));
+                    link(Ui.tr("Championships I follow"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openMyLeagues);
+                    note(Ui.tr("Choose the leagues, tours and circuits you want to follow."));
                     break;
                 }
                 case P_SAVER: {
@@ -633,7 +619,7 @@ public class SettingsActivity extends Activity {
                     }, () -> setPerfMode(perfMode() == 0 ? 1 : 0));
                     header(Ui.tr("What each mode does"));
                     info(Ui.tr("Full → Performance"), () -> "");
-                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather widget"), Ui.tr("Games widget"), Ui.tr("Slow zoom of the photos")}) {
+                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather widget"), Ui.tr("Sports widget"), Ui.tr("Slow zoom of the photos")}) {
                         info(feature, () -> Ui.tr("On") + "  →  " + Ui.tr("Off"));
                     }
                     note(Ui.tr("Both modes keep your apps, the inputs, the clock, the Control Center and the settings."));
@@ -646,7 +632,7 @@ public class SettingsActivity extends Activity {
                         Prefs.setWeather(!Prefs.weather());
                         HomeData.get(c).settingsChanged();
                     });
-                    toggle(Ui.tr("Games widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
+                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
                     toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
                     break;
@@ -814,8 +800,13 @@ public class SettingsActivity extends Activity {
 
         private void openTeam(String[] team) {
             openDetail(team[3], () -> {
-                info(Ui.tr("Championship"), () -> Sports.leagueName(team[0] + "/" + team[1]));
-                header(Ui.tr("Team"));
+                info(Ui.tr("Sport"), () -> Sports.sportName(team[0]));
+                if (team[0].equals("soccer")) {
+                    info(Ui.tr("Competitions"), () -> Ui.tr("League, Libertadores, Copa do Brasil"));
+                } else if (Sports.individual(team[0])) {
+                    info(Ui.tr("Circuit"), () -> Sports.leagueName(team[0] + "/" + team[1]));
+                }
+                header(Sports.individual(team[0]) ? Ui.tr("Athlete") : Ui.tr("Team"));
                 link(Ui.tr("Stop following"), () -> "", () -> {
                     List<String[]> teams = Prefs.sportsTeams();
                     for (int i = teams.size() - 1; i >= 0; i--) if (teams.get(i)[2].equals(team[2]) && teams.get(i)[0].equals(team[0])) teams.remove(i);
@@ -825,10 +816,34 @@ public class SettingsActivity extends Activity {
             });
         }
 
+        private void openMyLeagues() {
+            openDetail(Ui.tr("Championships I follow"), () -> {
+                note(Ui.tr("Follow championships to see all upcoming games, races and fight cards on the home screen."));
+                String lastSport = "";
+                for (String[] league : Sports.LEAGUES) {
+                    String sport = Sports.sportOf(league[0]);
+                    if (!sport.equals(lastSport)) {
+                        header(Sports.sportName(sport));
+                        lastSport = sport;
+                    }
+                    toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
+                        List<String> paths = Prefs.sportsLeagues();
+                        if (!paths.remove(league[0])) paths.add(league[0]);
+                        Prefs.setSportsLeagues(paths);
+                    });
+                }
+            });
+        }
+
         private void askTeam(String sport) {
             if (Ui.tr("Searching…").equals(teamStatus)) return;
             teamSearchSport = sport;
-            Prompt.ask(activity, Ui.tr("Add a team"), Ui.tr("A team of any sport, or a player, driver or fighter by name."), Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
+            String title = Sports.addLabel(sport);
+            String subtitle = sport == null
+                    ? Ui.tr("A team of any sport, or a player, driver or fighter by name.")
+                    : Ui.tr("Search by name on ESPN.");
+            String hint = Sports.searchPrompt(sport);
+            Prompt.ask(activity, title, subtitle, hint, "", EditorInfo.IME_ACTION_SEARCH,
                     Ui.tr("Search"), name -> searchTeam(name, sport));
         }
 
@@ -844,7 +859,7 @@ public class SettingsActivity extends Activity {
                     for (String[] t : found) if (sport.equals(t[0])) matched.add(t);
                     if (!matched.isEmpty()) found = matched;
                 }
-                String message = found.isEmpty() ? Ui.tr("No team with that name.") : "";
+                String message = found.isEmpty() ? Ui.tr("No team or athlete found.") : "";
                 final List<String[]> res = found;
                 handler.post(() -> {
                     teamStatus = message;
