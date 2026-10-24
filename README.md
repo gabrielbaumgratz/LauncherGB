@@ -25,8 +25,10 @@ English · [Português](README.pt.md)
 - **A Control Center.** Press the info button on the remote (or the first round button at the top): Bluetooth headphones in one click, volume, light and dark theme, picture mode and AirPlay.
 - **A drawer one press down.** HDMI inputs with a live signal marker, shortcuts, and the weather with an hourly outlook, with no key.
 - **A screensaver you can read from the couch.** Full-screen photos, a frosted translucent clock at the top left, the date and the weather at the top right. Pick how much it dims for a dark room.
-- **Photos from your phone.** Open a web page on your phone, type the PIN shown on the TV, and send photos for the screensaver and the background. Local network only.
-- **Settings laid out like the iPad's.** Categories in a sidebar, grouped cards on the right: General, Home Screen, Weather, Screensaver, Remote Buttons, About.
+- **Photos from your phone.** Scan the QR code on the TV (or, on a computer, type the address and the PIN), and send photos for the screensaver and the background. Local network only.
+- **A games widget next to the weather.** Pick your team and the championships you follow (Brasileirão, Libertadores, Champions, Premier League, LaLiga, NBA, tennis and more) and the next games sit beside the forecast. The data comes from ESPN, with no key.
+- **Settings laid out like the iPad's.** Categories in a sidebar, grouped cards on the right: General, Home Screen, Weather, Games, Screensaver, Remote Buttons, About. The cards, the focus and the colors are the home screen's own: black or white by the theme.
+- **Bluetooth devices.** Choose which headphones show up on the home screen, give them a name of your own, or forget them for good.
 - **Your name.** "Good morning, Ana": type the name you want in Settings, or leave it empty.
 - **Remote buttons that open what you want.** Netflix, YouTube, Prime Video and the brand buttons (TCL, Sony, Vestel, KTC, Formovie) can open any installed app.
 - **English, Portuguese and Spanish.** Picked in Settings or taken from the TV.
@@ -111,11 +113,12 @@ Everything is on the TV, in *GB Launcher* (the gear at the top, or the app's ico
 | Category | What's in it |
 |---|---|
 | **General** | Switch between GB Launcher and the original home screen · your name · language · theme (light, dark, automatic) · glass · navigation sounds · the TV's own settings |
-| **Home Screen** | The shelf (apps and order) · the round buttons at the top · which HDMI inputs and Bluetooth headphones show up |
+| **Home Screen** | The shelf (apps and order) · the round buttons at the top · which HDMI inputs show up · Bluetooth headphones: show, rename, forget |
 | **Weather** | Weather widget on or off · °C, °F or automatic · your city |
+| **Games** | Games widget on or off · your teams · the championships to follow |
 | **Screensaver** | Preview · photos from your phone · mine or recommendations · photo interval · brightness (standard, dimmer, dimmest) |
 | **Remote Buttons** | The app each remote button opens |
-| **About** | Version · credits · memory and speed against the original home screen · recommendations status · notices |
+| **About** | Version · memory and speed against the original home screen · recommendations status · notices · credits |
 
 | `config.properties` key | What it does | Default |
 |---|---|---|
@@ -132,7 +135,7 @@ Free, two minutes: create an account at [themoviedb.org](https://www.themoviedb.
 
 ### Photos from your phone
 
-*Settings → Screensaver → Photos from your phone.* The TV shows an address and a PIN. On your phone (same Wi-Fi), open the address, type the PIN and choose photos. They're turned upright and saved again for the TV, without their GPS tags. The server runs only while that screen is open, and the PIN locks after a few wrong tries.
+*Settings → Screensaver → Photos from your phone.* The TV shows a QR code, and below it the address and a PIN. On your phone (same Wi-Fi), scan the code and choose photos; the PIN is already in it. On a computer, which has no camera, open the address and type the PIN. They're turned upright and saved again for the TV, without their GPS tags. The server runs only while that screen is open, and the PIN locks after a few wrong tries.
 
 ## Build it yourself
 

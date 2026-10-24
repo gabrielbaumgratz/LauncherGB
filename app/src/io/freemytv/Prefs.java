@@ -204,6 +204,47 @@ final class Prefs {
         put("shelf", sb.toString());
     }
 
+    // MARK: - Games widget (Sports) and Bluetooth names
+
+    static boolean sportsOn() { return sp().getBoolean("sportsOn", false); }
+    static void setSportsOn(boolean on) { put("sportsOn", on); }
+
+    /** The followed teams, as {sport, league, id, name}. */
+    static List<String[]> sportsTeams() {
+        List<String[]> out = new ArrayList<>();
+        for (String line : sp().getString("sportsTeams", "").split("\n")) {
+            String[] p = line.split("[|]", 4);
+            if (p.length == 4) out.add(p);
+        }
+        return out;
+    }
+
+    static void setSportsTeams(List<String[]> teams) {
+        StringBuilder sb = new StringBuilder();
+        for (String[] t : teams) sb.append(sb.length() == 0 ? "" : "\n").append(t[0]).append('|').append(t[1]).append('|').append(t[2]).append('|').append(t[3].replace('|', ' '));
+        put("sportsTeams", sb.toString());
+    }
+
+    /** The followed championships, as ESPN's paths ("soccer/bra.1"). */
+    static List<String> sportsLeagues() {
+        List<String> out = new ArrayList<>();
+        for (String p : sp().getString("sportsLeagues", "").split(",")) if (!p.isEmpty()) out.add(p);
+        return out;
+    }
+
+    static void setSportsLeagues(List<String> paths) {
+        StringBuilder sb = new StringBuilder();
+        for (String p : paths) sb.append(sb.length() == 0 ? "" : ",").append(p);
+        put("sportsLeagues", sb.toString());
+    }
+
+    /** Changes when what the widget follows does (the list is fetched again). */
+    static String sportsKey() { return sp().getString("sportsTeams", "") + "#" + sp().getString("sportsLeagues", ""); }
+
+    /** The name the person gave a Bluetooth device (empty: the device's own). */
+    static String btAlias(String address) { return sp().getString("btAlias_" + address, ""); }
+    static void setBtAlias(String address, String name) { put("btAlias_" + address, name.trim()); }
+
     // MARK: - Top buttons
 
     /**

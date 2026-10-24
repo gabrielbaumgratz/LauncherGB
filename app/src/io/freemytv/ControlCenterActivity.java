@@ -126,7 +126,24 @@ public class ControlCenterActivity extends Activity {
         if (id == 2) return Ui.tr("Sports");
         if (id == 10) return Ui.tr("Game");
         if (id == 3) return Ui.tr("Vivid");
-        return "—";
+        return Ui.trf("Mode {n}", "n", id);
+    }
+
+    /**
+     * Only a TV that keeps its picture mode in the picture_mode setting (TCL's) shows the row: elsewhere the setting is
+     * missing, and a row that does nothing would only get in the way. Its own modes, plus the current one if it isn't
+     * among the known five.
+     */
+    private boolean pictureSupported(int current) {
+        String maker = (Build.MANUFACTURER + " " + Build.BRAND).toLowerCase(java.util.Locale.ROOT);
+        return current >= 0 && maker.contains("tcl");
+    }
+
+    private int[] modeIds(int current) {
+        for (int id : MODE_IDS) if (id == current) return MODE_IDS;
+        int[] all = java.util.Arrays.copyOf(MODE_IDS, MODE_IDS.length + 1);
+        all[MODE_IDS.length] = current;
+        return all;
     }
 
     /** Changes the TV's picture mode through the TV's own ADB (the setting needs the shell's permission). */
@@ -336,12 +353,14 @@ public class ControlCenterActivity extends Activity {
                 }
             }
             int mode = pictureMode();
-            add(PICTURE, Ui.tr("Picture mode"), modeName(mode), "tv");
-            if (pictureOpen) {
-                for (int id : MODE_IDS) {
-                    Control m = add(MODE, modeName(id), "", "");
-                    m.modeId = id;
-                    m.on = id == mode;
+            if (pictureSupported(mode)) {
+                add(PICTURE, Ui.tr("Picture mode"), modeName(mode), "tv");
+                if (pictureOpen) {
+                    for (int id : modeIds(mode)) {
+                        Control m = add(MODE, modeName(id), "", "");
+                        m.modeId = id;
+                        m.on = id == mode;
+                    }
                 }
             }
             add(PAIR, Ui.tr("Pair a new device"), "", "sync");

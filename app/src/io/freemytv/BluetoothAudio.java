@@ -46,7 +46,8 @@ final class BluetoothAudio {
                 BluetoothClass bc = d.getBluetoothClass();
                 int major = bc != null ? bc.getMajorDeviceClass() : BluetoothClass.Device.Major.UNCATEGORIZED;
                 if (major == BluetoothClass.Device.Major.AUDIO_VIDEO || major == BluetoothClass.Device.Major.UNCATEGORIZED) {
-                    list.add(new DeviceInfo(d, d.getName(), isDeviceConnected(d)));
+                    String alias = Prefs.btAlias(d.getAddress());
+                    list.add(new DeviceInfo(d, alias.isEmpty() ? d.getName() : alias, isDeviceConnected(d)));
                 }
             }
 
@@ -61,6 +62,16 @@ final class BluetoothAudio {
             AppLog.w("bt: " + e.getMessage());
         }
         return list;
+    }
+
+    /** Unpairs the device (Android hides this call, so it goes by reflection); false if the system won't. */
+    static boolean forget(BluetoothDevice device) {
+        try {
+            return (Boolean) BluetoothDevice.class.getMethod("removeBond").invoke(device);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            AppLog.w("bt forget: " + e.getMessage());
+            return false;
+        }
     }
 
     private static boolean isDeviceConnected(BluetoothDevice device) {

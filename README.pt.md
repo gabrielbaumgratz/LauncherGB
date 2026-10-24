@@ -25,8 +25,10 @@ Inspirado no [Free My TV](https://github.com/simbasjungles/free-my-tv). Código 
 - **Uma Central de Controle.** Aperte o botão de informação do controle (ou o primeiro botão redondo no topo): fone Bluetooth com um clique, volume, tema claro e escuro, modo de imagem e AirPlay.
 - **Uma gaveta um toque abaixo.** Entradas HDMI com marcador de sinal, atalhos e o clima com previsão hora a hora, sem chave.
 - **Uma tela de descanso legível do sofá.** Fotos em tela cheia, um relógio fosco e translúcido no canto superior esquerdo, data e clima no canto superior direito. Você escolhe o quanto ela escurece para um quarto apagado.
-- **Fotos do celular.** Abra uma página no celular, digite o PIN que aparece na TV e envie fotos para a tela de descanso e o fundo. Só na rede local.
-- **Configurações no estilo do iPad.** Categorias numa barra lateral, cartões agrupados à direita: Geral, Início, Clima, Tela de Descanso, Botões do Controle, Sobre.
+- **Fotos do celular.** Aponte a câmera para o QR code na TV (ou, no computador, digite o endereço e o PIN) e envie fotos para a tela de descanso e o fundo. Só na rede local.
+- **Um widget de jogos ao lado do clima.** Escolha o seu time e os campeonatos que você segue (Brasileirão, Libertadores, Champions, Premier League, LaLiga, NBA, tênis e mais) e os próximos jogos ficam ao lado da previsão. Os dados vêm da ESPN, sem chave.
+- **Configurações no estilo do iPad.** Categorias numa barra lateral, cartões agrupados à direita: Geral, Início, Clima, Jogos, Tela de Descanso, Botões do Controle, Sobre. Os cartões, o foco e as cores são os da própria tela inicial: preto ou branco, conforme o tema.
+- **Dispositivos Bluetooth.** Escolha quais fones aparecem na tela inicial, dê a eles um nome seu ou esqueça de vez.
 - **Seu nome.** "Bom dia, Ana": digite o nome que quiser nas configurações, ou deixe vazio.
 - **Botões do controle que abrem o que você quer.** Netflix, YouTube, Prime Video e os botões das marcas (TCL, Sony, Vestel, KTC, Formovie) podem abrir qualquer app instalado.
 - **Português, inglês e espanhol.** Escolhidos nas configurações ou iguais aos da TV.
@@ -111,11 +113,12 @@ Tudo é feito na TV, em *GB Launcher* (a engrenagem no topo, ou o ícone do app)
 | Categoria | O que tem |
 |---|---|
 | **Geral** | Trocar entre o GB Launcher e a tela inicial original · seu nome · idioma · tema (claro, escuro, automático) · vidro · sons de navegação · as configurações da própria TV |
-| **Início** | A prateleira (apps e ordem) · os botões redondos do topo · quais entradas HDMI e fones Bluetooth aparecem |
+| **Início** | A prateleira (apps e ordem) · os botões redondos do topo · quais entradas HDMI aparecem · fones Bluetooth: mostrar, renomear, esquecer |
 | **Clima** | Widget de clima ligado ou desligado · °C, °F ou automático · sua cidade |
+| **Jogos** | Widget de jogos ligado ou desligado · seus times · os campeonatos a seguir |
 | **Tela de Descanso** | Ver agora · fotos do celular · minhas ou recomendações · intervalo das fotos · brilho (padrão, mais escuro, bem escuro) |
 | **Botões do Controle** | O app que cada botão do controle abre |
-| **Sobre** | Versão · créditos · memória e velocidade contra a tela inicial original · estado das recomendações · avisos |
+| **Sobre** | Versão · memória e velocidade contra a tela inicial original · estado das recomendações · avisos · créditos |
 
 | Chave do `config.properties` | O que faz | Padrão |
 |---|---|---|
@@ -132,7 +135,7 @@ Gratuita, dois minutos: crie uma conta em [themoviedb.org](https://www.themovied
 
 ### Fotos do celular
 
-*Configurações → Tela de Descanso → Fotos do seu celular.* A TV mostra um endereço e um PIN. No celular (mesmo Wi-Fi), abra o endereço, digite o PIN e escolha as fotos. Elas são endireitadas e salvas de novo para a TV, sem as marcas de GPS. O servidor só roda enquanto essa tela está aberta, e o PIN bloqueia depois de algumas tentativas erradas.
+*Configurações → Tela de Descanso → Fotos do seu celular.* A TV mostra um QR code e, abaixo, o endereço e um PIN. No celular (mesmo Wi-Fi), aponte a câmera para o código e escolha as fotos; o PIN já vai dentro dele. No computador, que não tem câmera, abra o endereço e digite o PIN. Elas são endireitadas e salvas de novo para a TV, sem as marcas de GPS. O servidor só roda enquanto essa tela está aberta, e o PIN bloqueia depois de algumas tentativas erradas.
 
 ## Compile você mesmo
 

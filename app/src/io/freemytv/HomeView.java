@@ -207,7 +207,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int drawerInputs;          // how many leading items are inputs (the rest are shortcuts)
     private Spring[] drawerFocus = new Spring[0];
     private RectF[] drawerRects = new RectF[0];
-    private final RectF weatherCard = new RectF();
+    private final RectF weatherCard = new RectF(), sportsCard = new RectF();
     private final Spring drawer = new Spring(0.46f, 0.92f, 0);
     private boolean drawerOpen;
     private int drawerIndex;
@@ -423,6 +423,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         recs.addListener(this);
         data.refreshIfStale();
         recs.refreshIfStale();
+        Sports.get(getContext()).setListener(sportsListener);
+        Sports.get(getContext()).refreshIfStale();
         if (tvInputs != null) tvInputs.registerCallback(inputCallback, handler);
         handler.postDelayed(tick, 15_000);
         checkNotices();
@@ -449,6 +451,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         handler.removeCallbacks(reloadSoon);
         data.removeListener(this);
         recs.removeListener(this);
+        Sports.get(getContext()).setListener(null);
         if (tvInputs != null) tvInputs.unregisterCallback(inputCallback);
     }
 
@@ -622,6 +625,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         cardTitle = Ui.text(Ui.semibold, 25 * k, 0xB3FFFFFF);
         cardText = Ui.text(Ui.medium, 29 * k, 0xF2FFFFFF);
         cardDim = Ui.numbers(Ui.medium, 23 * k, 0xADFFFFFF);
+        cardDimRight = Ui.text(Ui.medium, 23 * k, 0xADFFFFFF);
+        cardDimRight.setTextAlign(Paint.Align.RIGHT);
         bigTemp = Ui.numbers(Ui.light, 100 * k, 0xFFFFFFFF);
         hourPaint = Ui.numbers(Ui.medium, 22 * k, 0xADFFFFFF);
         hourPaint.setTextAlign(Paint.Align.CENTER);
@@ -1394,7 +1399,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             x += tw + gap;
         }
         float cardsTop = CARDS_TOP * k;
+        float cardX = left;
         weatherCard.set(left, cardsTop, Math.min(right, left + 870 * k), cardsTop + CARDS_H * k);
+        if (Prefs.weather()) cardX = weatherCard.right + 20 * k;
+        sportsCard.set(cardX, cardsTop, Math.min(right, cardX + 870 * k), cardsTop + CARDS_H * k);
         drawerDirty = true;
     }
 
@@ -1444,6 +1452,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
         cardText.setColor(drawerInk(0.95f));
         cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        cardDimRight.setColor(tone(L_DIM, 0xADFFFFFF));
         bigTemp.setColor(drawerInk(1));
         hourPaint.setColor(tone(L_DIM, 0xADFFFFFF));
         hourTemp.setColor(drawerInk(0.95f));
@@ -1455,6 +1464,45 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
+        if (Prefs.sportsOn()) drawSportsCard(c, sportsCard);
+    }
+
+    /** The followed teams' and championships' next games, beside the weather. */
+    private void drawSportsCard(Canvas c, RectF r) {
+        drawerCard(c, r);
+        if (Ui.LEGACY) sportsSnapshot.draw(c, r, drawerCardsKey() + "|" + Sports.get(getContext()).revision(), cc -> drawSports(cc, r));
+        else drawSports(c, r);
+    }
+
+    private void drawSports(Canvas c, RectF r) {
+        float x = r.left + 34 * k, right = r.right - 34 * k;
+        c.drawText(Ui.tr("Games"), x, r.top + 54 * k, cardTitle);
+        List<Sports.Game> games = Sports.get(getContext()).games();
+        if (games.isEmpty()) {
+            boolean chosen = !Prefs.sportsTeams().isEmpty() || !Prefs.sportsLeagues().isEmpty();
+            c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Settings → Games."), x, r.top + 120 * k, cardDim);
+            return;
+        }
+        float dayW = 156 * k;
+        for (int i = 0; i < games.size() && i < 5; i++) {
+            Sports.Game g = games.get(i);
+            float base = r.top + (104 + 48 * i) * k;
+            cardDim.setTextSize(21 * k);
+            c.drawText(g.live ? Ui.tr("LIVE") : g.day, x, base - 14 * k, cardDim);
+            c.drawText(g.time, x, base + 12 * k, cardDim);
+            cardDim.setTextSize(23 * k);
+            cardText.setTextSize(26 * k);
+            String tagText = g.tag;
+            float tagW = cardDim.measureText(tagText);
+            String match = TextUtils.ellipsize(g.match, new TextPaint(cardText), right - (x + dayW) - tagW - 24 * k, TextUtils.TruncateAt.END).toString();
+            cardText.setTypeface(g.mine ? Ui.semibold : Ui.medium);
+            c.drawText(match, x + dayW, base + 2 * k, cardText);
+            cardText.setTypeface(Ui.medium);
+            cardText.setTextSize(29 * k);
+            cardDimRight.setTextSize(21 * k);
+            c.drawText(tagText, right, base + 2 * k, cardDimRight);
+            cardDimRight.setTextSize(23 * k);
+        }
     }
 
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */
@@ -1590,7 +1638,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
-    private final Snapshot weatherSnapshot = new Snapshot();
+    private final Snapshot weatherSnapshot = new Snapshot(), sportsSnapshot = new Snapshot();
+    private final Sports.Listener sportsListener = new Sports.Listener() {
+        @Override public void onSports() {
+            handler.post(new Runnable() {
+                @Override public void run() {
+                    drawerDirty = true;
+                    drawerLayer.invalidate();
+                }
+            });
+        }
+    };
 
     // MARK: - Focus
 

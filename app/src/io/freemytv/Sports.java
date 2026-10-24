@@ -1,0 +1,372 @@
+package io.freemytv;
+
+import android.content.Context;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * The games widget next to the weather: the next games of the teams and championships the person follows (Settings →
+ * Games), from ESPN's public JSON (no key, no account; unofficial, so it can change: when it does, only this file needs a
+ * look). The followed teams' games lead the list; the rest follows by date. Refreshed every 3 hours in the background
+ * (and at once when the choice changes); the last list is kept on disk, so the widget is never empty on a bad day.
+ */
+final class Sports {
+    static final class Game {
+        long when;
+        String day = "", time = "", match = "", tag = "";
+        boolean live, mine;
+    }
+
+    /** A championship the person can follow: ESPN's path (sport/league) and its name. */
+    static final String[][] LEAGUES = {
+            {"soccer/bra.1", "Brasileirão"}, {"soccer/conmebol.libertadores", "Libertadores"},
+            {"soccer/conmebol.sudamericana", "Sudamericana"}, {"soccer/bra.copa_do_brazil", "Copa do Brasil"},
+            {"soccer/eng.1", "Premier League"}, {"soccer/esp.1", "LaLiga"}, {"soccer/ita.1", "Serie A"},
+            {"soccer/ger.1", "Bundesliga"}, {"soccer/fra.1", "Ligue 1"}, {"soccer/uefa.champions", "Champions League"},
+            {"soccer/uefa.europa", "Europa League"}, {"basketball/nba", "NBA"}, {"football/nfl", "NFL"},
+            {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"}};
+
+    interface Listener { void onSports(); }
+
+    private static final String API = "https://site.api.espn.com/apis/site/v2/sports/";
+    private static final long EVERY = 3 * 3600_000L, DAY = 24 * 3600_000L;
+    private static final int MAX_BODY = 4_000_000, KEEP = 12;
+    /** Where a soccer team can also play besides its own league: the continental and the national cups. */
+    private static final String[] SOCCER_CUPS = {"conmebol.libertadores", "conmebol.sudamericana", "uefa.champions", "uefa.europa",
+            "bra.copa_do_brazil", "esp.copa_del_rey", "eng.fa", "eng.league_cup", "ger.dfb_pokal", "ita.coppa_italia", "fra.coupe_de_france"};
+
+    private static Sports instance;
+
+    static synchronized Sports get(Context c) {
+        if (instance == null) instance = new Sports(c.getApplicationContext());
+        return instance;
+    }
+
+    private final Context context;
+    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private volatile List<Game> games = new ArrayList<>();
+    private volatile Listener listener;
+    private volatile int revision;
+    private long fetchedAt;
+    private String fetchedFor = "";
+    private boolean fetching;
+
+    private Sports(Context c) {
+        context = c;
+        games = load();
+    }
+
+    List<Game> games() { return games; }
+
+    /** Changes with every new list: the home screen redraws the card when it does. */
+    int revision() { return revision; }
+
+    void setListener(Listener l) { listener = l; }
+
+    /** Fetches again when the list is older than 3 hours or the choice changed (in the background; the listener hears). */
+    synchronized void refreshIfStale() {
+        if (!Prefs.sportsOn()) return;
+        final String config = Prefs.sportsKey();
+        long now = System.currentTimeMillis();
+        if (fetching || (config.equals(fetchedFor) && now - fetchedAt < EVERY)) return;
+        fetching = true;
+        io.execute(new Runnable() {
+            @Override public void run() {
+                try {
+                    List<Game> fresh = fetch();
+                    games = fresh;
+                    save(fresh);
+                    fetchedAt = System.currentTimeMillis();
+                    fetchedFor = config;
+                    revision++;
+                } catch (RuntimeException e) {
+                    AppLog.w("sports: " + e.getMessage());
+                } finally {
+                    synchronized (Sports.this) { fetching = false; }
+                    Listener l = listener;
+                    if (l != null) l.onSports();
+                }
+            }
+        });
+    }
+
+    // MARK: - Searching a team
+
+    /** Teams whose name matches (ESPN's search): {sport, league, id, name}. Slow: call it off the main thread. */
+    static List<String[]> findTeam(String name) {
+        List<String[]> out = new ArrayList<>();
+        try {
+            JSONObject json = get("https://site.web.api.espn.com/apis/common/v3/search?limit=12&type=team&query="
+                    + URLEncoder.encode(name.trim(), "UTF-8"));
+            JSONArray items = json == null ? null : json.optJSONArray("items");
+            for (int i = 0; items != null && i < items.length(); i++) {
+                JSONObject t = items.optJSONObject(i);
+                if (t == null || t.optString("id").isEmpty() || t.optString("sport").isEmpty() || t.optString("league").isEmpty()) continue;
+                if (t.optString("displayName").matches(".* U[0-9][0-9]")) continue;   // the youth teams
+                out.add(new String[] {t.optString("sport"), t.optString("league"), t.optString("id"), t.optString("displayName")});
+            }
+        } catch (java.io.UnsupportedEncodingException ignored) {
+        }
+        return out;
+    }
+
+    /** "Flamengo · Brasileirão": a search result, as the list shows it. */
+    static String describe(String[] team) {
+        String league = leagueName(team[0] + "/" + team[1]);
+        return league.isEmpty() ? team[3] : team[3] + " · " + league;
+    }
+
+    static String leagueName(String path) {
+        for (String[] l : LEAGUES) if (l[0].equals(path)) return l[1];
+        return path.substring(path.indexOf('/') + 1);
+    }
+
+    // MARK: - Fetching
+
+    private List<Game> fetch() {
+        List<Game> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        long now = System.currentTimeMillis();
+        String range = stamp(now) + "-" + stamp(now + 21 * DAY);
+        for (String[] team : Prefs.sportsTeams()) {   // {sport, league, id, name}
+            team(out, seen, team[0], team[1], team[2], team[3]);
+            if (team[0].equals("soccer")) for (String cup : SOCCER_CUPS) if (!cup.equals(team[1])) team(out, seen, team[0], cup, team[2], team[3]);
+        }
+        for (String path : Prefs.sportsLeagues()) {
+            if (path.equals("tennis/atp")) tennis(out, seen, "atp", now, 5);
+            else if (path.equals("tennis/wta")) tennis(out, seen, "wta", now, 3);
+            else scoreboard(out, seen, path, range);
+        }
+        Collections.sort(out, new Comparator<Game>() {
+            @Override public int compare(Game a, Game b) { return Long.compare(a.when, b.when); }
+        });
+        List<Game> upcoming = new ArrayList<>();
+        for (Game g : out) if (g.when >= now - 3 * 3600_000L) upcoming.add(g);
+        List<Game> keep = new ArrayList<>();
+        int mine = 0;
+        for (Game g : upcoming) if (g.mine && mine < 2 * Math.max(1, Prefs.sportsTeams().size())) { keep.add(g); mine++; }   // theirs lead
+        for (Game g : upcoming) if (!keep.contains(g) && keep.size() < KEEP) keep.add(g);
+        return keep;
+    }
+
+    private void team(List<Game> out, Set<String> seen, String sport, String league, String id, String name) {
+        JSONObject json = get(API + sport + "/" + league + "/teams/" + id + "/schedule?fixture=true");
+        JSONArray events = json == null ? null : json.optJSONArray("events");
+        for (int i = 0; events != null && i < events.length(); i++) add(out, seen, events.optJSONObject(i), sport + "/" + league, name);
+    }
+
+    private void scoreboard(List<Game> out, Set<String> seen, String path, String range) {
+        JSONObject json = get(API + path + "/scoreboard?dates=" + range + "&limit=200");
+        JSONArray events = json == null ? null : json.optJSONArray("events");
+        for (int i = 0; events != null && i < events.length(); i++) add(out, seen, events.optJSONObject(i), path, null);
+    }
+
+    /** One event with a pair of teams; `mine` is the followed team's name (the game leads the list), or null. */
+    private void add(List<Game> out, Set<String> seen, JSONObject e, String path, String mine) {
+        if (e == null) return;
+        JSONObject comp = first(e.optJSONArray("competitions"));
+        if (comp == null) return;
+        String state = stateOf(comp.optJSONObject("status"));
+        if (state.equals("post")) return;
+        String home = "", away = "";
+        JSONArray teams = comp.optJSONArray("competitors");
+        for (int i = 0; teams != null && i < teams.length(); i++) {
+            JSONObject t = teams.optJSONObject(i);
+            JSONObject team = t == null ? null : t.optJSONObject("team");
+            if (team == null) continue;
+            String name = team.optString("displayName", team.optString("name", ""));
+            if ("away".equals(t.optString("homeAway"))) away = name; else home = name;
+        }
+        if (home.isEmpty() || away.isEmpty()) return;
+        String id = e.optString("id");
+        if (!seen.add(id.isEmpty() ? home + away : id)) return;
+        Game g = new Game();
+        g.when = parse(e.optString("date"));
+        if (g.when == 0) return;
+        g.match = home + " × " + away;
+        g.tag = leagueName(path);
+        g.live = state.equals("in");
+        g.mine = mine != null && (home.equals(mine) || away.equals(mine));
+        fill(g);
+        out.add(g);
+    }
+
+    private void tennis(List<Game> out, Set<String> seen, String tour, long now, int topN) {
+        JSONObject ranking = get(API + "tennis/" + tour + "/rankings");
+        JSONArray blocks = ranking == null ? null : ranking.optJSONArray("rankings");
+        JSONObject block = blocks == null ? null : blocks.optJSONObject(0);
+        JSONArray ranks = block == null ? null : block.optJSONArray("ranks");
+        Set<String> top = new HashSet<>();
+        for (int i = 0; ranks != null && i < ranks.length() && i < topN; i++) {
+            JSONObject a = ranks.optJSONObject(i) == null ? null : ranks.optJSONObject(i).optJSONObject("athlete");
+            if (a != null) top.add(a.optString("displayName"));
+        }
+        if (top.isEmpty()) return;
+        for (int d = 0; d < 3; d++) {
+            JSONObject day = get(API + "tennis/" + tour + "/scoreboard?dates=" + stamp(now + d * DAY));
+            JSONArray events = day == null ? null : day.optJSONArray("events");
+            for (int i = 0; events != null && i < events.length(); i++) {
+                JSONObject event = events.optJSONObject(i);
+                JSONArray groups = event == null ? null : event.optJSONArray("groupings");
+                for (int j = 0; groups != null && j < groups.length(); j++) {
+                    JSONArray matches = groups.optJSONObject(j).optJSONArray("competitions");
+                    for (int m = 0; matches != null && m < matches.length(); m++) {
+                        match(out, seen, matches.optJSONObject(m), top, tour.toUpperCase(Locale.ROOT));
+                    }
+                }
+            }
+        }
+    }
+
+    private void match(List<Game> out, Set<String> seen, JSONObject comp, Set<String> top, String tour) {
+        if (comp == null) return;
+        String state = stateOf(comp.optJSONObject("status"));
+        if (state.equals("post")) return;
+        JSONArray players = comp.optJSONArray("competitors");
+        List<String> names = new ArrayList<>();
+        boolean star = false;
+        for (int i = 0; players != null && i < players.length(); i++) {
+            JSONObject p = players.optJSONObject(i);
+            JSONObject athlete = p == null ? null : p.optJSONObject("athlete");
+            if (athlete == null) continue;
+            String name = athlete.optString("displayName");
+            names.add(name);
+            star |= top.contains(name);
+        }
+        if (!star || names.size() != 2) return;
+        if (!seen.add("t" + comp.optString("id") + names.get(0))) return;
+        Game g = new Game();
+        g.when = parse(comp.optString("date"));
+        if (g.when == 0) return;
+        g.match = names.get(0) + " × " + names.get(1);
+        g.tag = tour;
+        g.live = state.equals("in");
+        fill(g);
+        out.add(g);
+    }
+
+    private static String stateOf(JSONObject status) {
+        return status == null || status.optJSONObject("type") == null ? "pre" : status.optJSONObject("type").optString("state", "pre");
+    }
+
+    // MARK: - Text
+
+    /** The day ("TODAY", "SAT 25/10") and the time, in the TV's time zone and language. */
+    private void fill(Game g) {
+        long now = System.currentTimeMillis();
+        SimpleDateFormat dayFormat = new SimpleDateFormat("yyyyMMdd", Locale.US);
+        String today = dayFormat.format(new Date(now)), that = dayFormat.format(new Date(g.when));
+        if (that.equals(today)) g.day = Ui.tr("TODAY");
+        else if (that.equals(dayFormat.format(new Date(now + DAY)))) g.day = Ui.tr("TOMORROW");
+        else g.day = new SimpleDateFormat("EEE dd/MM", Ui.locale()).format(new Date(g.when)).toUpperCase(Ui.locale()).replace(".", "");
+        g.time = DateFormat.getTimeInstance(DateFormat.SHORT, Ui.locale()).format(new Date(g.when));
+    }
+
+    private static String stamp(long when) {
+        SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd", Locale.US);
+        f.setTimeZone(TimeZone.getTimeZone("America/New_York"));   // ESPN's own day
+        return f.format(new Date(when));
+    }
+
+    private static long parse(String iso) {
+        try {
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'", Locale.US);
+            f.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return f.parse(iso).getTime();
+        } catch (java.text.ParseException | NullPointerException e) {
+            return 0;
+        }
+    }
+
+    private static JSONObject first(JSONArray a) {
+        return a == null ? null : a.optJSONObject(0);
+    }
+
+    // MARK: - Network and disk
+
+    /** One GET, or null (an answer that isn't JSON, a slow network, a league ESPN doesn't know). */
+    private static JSONObject get(String address) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(address).openConnection();
+            c.setConnectTimeout(8000);
+            c.setReadTimeout(12000);
+            if (c.getResponseCode() != 200) return null;
+            try (InputStream in = c.getInputStream()) {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                byte[] chunk = new byte[16384];
+                int n;
+                while ((n = in.read(chunk)) > 0) {
+                    buf.write(chunk, 0, n);
+                    if (buf.size() > MAX_BODY) return null;
+                }
+                return new JSONObject(new String(buf.toByteArray(), StandardCharsets.UTF_8));
+            }
+        } catch (IOException | JSONException e) {
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
+    private File file() { return new File(context.getFilesDir(), "sports.json"); }
+
+    private void save(List<Game> list) {
+        try (FileOutputStream out = new FileOutputStream(file())) {
+            JSONArray a = new JSONArray();
+            for (Game g : list) a.put(new JSONObject().put("w", g.when).put("m", g.match).put("t", g.tag).put("l", g.live).put("p", g.mine));
+            out.write(a.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException | JSONException e) {
+            AppLog.w("sports not saved: " + e.getMessage());
+        }
+    }
+
+    private List<Game> load() {
+        List<Game> list = new ArrayList<>();
+        try (InputStream in = new java.io.FileInputStream(file())) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int n;
+            while ((n = in.read(chunk)) > 0) buf.write(chunk, 0, n);
+            JSONArray a = new JSONArray(new String(buf.toByteArray(), StandardCharsets.UTF_8));
+            long now = System.currentTimeMillis();
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                Game g = new Game();
+                g.when = o.getLong("w");
+                if (g.when < now - 3 * 3600_000L) continue;
+                g.match = o.getString("m");
+                g.tag = o.getString("t");
+                g.live = o.optBoolean("l");
+                g.mine = o.optBoolean("p");
+                fill(g);
+                list.add(g);
+            }
+        } catch (IOException | JSONException ignored) {
+        }
+        return list;
+    }
+}
