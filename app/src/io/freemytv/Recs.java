@@ -152,7 +152,7 @@ final class Recs {
         File f = new File(c.getFilesDir(), "recs-status.json");
         if (!f.exists() || !hasKey(c)) return new JSONObject();
         try (FileInputStream in = new FileInputStream(f)) {
-            return new JSONObject(read(in));
+            return new JSONObject(Ui.readUtf8(in));
         } catch (Exception e) {
             return new JSONObject();
         }
@@ -304,6 +304,9 @@ final class Recs {
 
     void clearMemory() {
         synchronized (images) {
+            for (Backdrop b : images.values()) {
+                if (b != null) b.recycle();
+            }
             images.clear();
         }
     }
@@ -674,7 +677,7 @@ final class Recs {
         try {
             int code = c.getResponseCode();
             if (code != 200) throw new IOException("Watchmode returned HTTP " + code);
-            return read(c.getInputStream());
+            return Ui.readUtf8(c.getInputStream());
         } finally {
             c.disconnect();
         }
@@ -694,7 +697,7 @@ final class Recs {
             int code = c.getResponseCode();
             if (code == 401) throw new IOException("TMDB rejected the key");
             if (code != 200) throw new IOException("TMDB returned HTTP " + code);
-            return new JSONObject(read(c.getInputStream()));
+            return new JSONObject(Ui.readUtf8(c.getInputStream()));
         } finally {
             c.disconnect();
         }
@@ -752,8 +755,12 @@ final class Recs {
             Backdrop backdrop = Backdrop.make(b, forLight);
             if (forLight != light) return;   // the design changed midway: this one is stale
             synchronized (images) {
-                images.put(p.backdrop, backdrop);
-                while (images.size() > (forLight ? 10 : 4)) images.remove(images.keySet().iterator().next());
+                Backdrop old = images.put(p.backdrop, backdrop);
+                if (old != null && old != backdrop) old.recycle();
+                while (images.size() > (forLight ? 10 : 4)) {
+                    Backdrop removed = images.remove(images.keySet().iterator().next());
+                    if (removed != null) removed.recycle();
+                }
             }
             notifyListeners();
         } catch (IOException | RuntimeException | OutOfMemoryError e) {
@@ -768,7 +775,14 @@ final class Recs {
         java.util.Set<String> keep = new java.util.HashSet<>();
         for (Pick p : now(null)) if (p.backdrop != null) keep.add(p.backdrop);
         synchronized (images) {
-            images.keySet().retainAll(keep);
+            java.util.Iterator<Map.Entry<String, Backdrop>> it = images.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, Backdrop> entry = it.next();
+                if (!keep.contains(entry.getKey())) {
+                    if (entry.getValue() != null) entry.getValue().recycle();
+                    it.remove();
+                }
+            }
         }
     }
 
@@ -829,13 +843,5 @@ final class Recs {
             out.add(p);
         }
         return out;
-    }
-
-    private static String read(InputStream in) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[8192];
-        int n;
-        while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
-        return out.toString(StandardCharsets.UTF_8.name());
     }
 }

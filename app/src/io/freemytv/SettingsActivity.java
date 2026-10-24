@@ -528,6 +528,7 @@ public class SettingsActivity extends Activity {
                     });
                     toggle(Ui.tr("Sports"), Prefs::sportsOn, () -> {
                         Prefs.setSportsOn(!Prefs.sportsOn());
+                        if (Prefs.sportsOn()) Sports.get(c).refresh();
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
@@ -578,7 +579,12 @@ public class SettingsActivity extends Activity {
                     break;
                 }
                 case P_GAMES: {
-                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
+                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> {
+                        Prefs.setSportsOn(!Prefs.sportsOn());
+                        if (Prefs.sportsOn()) Sports.get(c).refresh();
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
 
                     header(Ui.tr("Display priority"));
@@ -662,7 +668,12 @@ public class SettingsActivity extends Activity {
                         Prefs.setWeather(!Prefs.weather());
                         HomeData.get(c).settingsChanged();
                     });
-                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> Prefs.setSportsOn(!Prefs.sportsOn()));
+                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> {
+                        Prefs.setSportsOn(!Prefs.sportsOn());
+                        if (Prefs.sportsOn()) Sports.get(c).refresh();
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
                     break;

@@ -101,7 +101,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
     private static String[] tabs;
     private static int tabsGeneration = -1;
-    private static boolean lastSportsOn;
+    private static boolean lastSportsOn, lastPicksOn;
     private static final int MAX_TABS = 4;
     private static final int TAB_EXPLORE = 0, TAB_MOVIES = 1, TAB_SHOWS = 2, TAB_SPORTS = 3;
     private static final String[] TAB_KIND = {null, "movie", "tv", "sports"};
@@ -492,7 +492,23 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         motionDirty = true;
     }
 
-    private static int tabsCount() {
+    private boolean picksOn() {
+        return Recs.hasKey(getContext()) && Prefs.recommendations();
+    }
+
+    private boolean contentOn() {
+        return picksOn() || Prefs.sportsOn();
+    }
+
+    private boolean isSportsTab() {
+        if (!Prefs.sportsOn()) return false;
+        if (!picksOn()) return true;
+        return tab == tabsCount() - 1;
+    }
+
+    private int tabsCount() {
+        if (!contentOn()) return 0;
+        if (!picksOn()) return 1;
         return Prefs.sportsOn() ? 4 : 3;
     }
 
@@ -503,7 +519,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         int tc = tabsCount();
         if (zone == Z_TOP && topIndex >= tc + lightButtons.size()) {
             topIndex = (tc - 1) + lightButtons.size();
-            if (topIndex < tc && !picksOn()) zone = Z_SHELF;   // without the picks the tabs can't hold focus
+            if (topIndex < tc && !contentOn()) zone = Z_SHELF;   // without content the tabs can't hold focus
             else if (topIndex < tc) selectTab(topIndex);
             retarget(true);
         }
@@ -512,14 +528,22 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     /** The tab names, made again only when the language or sports preference changes (they are drawn on every frame). */
-    private static String[] tabs() {
+    private String[] tabs() {
         boolean sports = Prefs.sportsOn();
-        if (tabsGeneration != Ui.generation || lastSportsOn != sports) {
-            tabs = sports
-                    ? new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows"), Ui.tr("Sports")}
-                    : new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows")};
+        boolean picks = picksOn();
+        if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks) {
+            if (!contentOn()) {
+                tabs = new String[0];
+            } else if (!picks) {
+                tabs = new String[] {Ui.tr("Sports")};
+            } else if (sports) {
+                tabs = new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows"), Ui.tr("Sports")};
+            } else {
+                tabs = new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows")};
+            }
             tabsGeneration = Ui.generation;
             lastSportsOn = sports;
+            lastPicksOn = picks;
         }
         return tabs;
     }
@@ -675,13 +699,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         long up = SystemClock.uptimeMillis();
 
         boolean tilesMoving = step(tileFocus, dt);
-        if (reorderAnim) tilesMoving |= stepReorder(dt, up);
+        boolean drawerItemsMoving = step(drawerFocus, dt);
+        if (reorderAnim) {
+            boolean rMoving = stepReorder(dt, up);
+            if (reorderZone == Z_SHELF) tilesMoving |= rMoving;
+            else if (reorderZone == Z_DRAWER) drawerItemsMoving |= rMoving;
+        }
         boolean statusMoving = step(statusFocus, dt);
         boolean heroMoving = heroFocus.step(dt);
         boolean topMoving = step(topFocus, dt), cardsMoving = step(cardFocus, dt);
         if (topMoving) status.invalidate();
         heroMoving |= topMoving | cardsMoving;
-        boolean drawerItemsMoving = step(drawerFocus, dt);
         boolean gridMoving = step(gridFocus, dt) | scroll.step(dt);
         boolean drawerMoving = drawer.step(dt);
         boolean sheetMoving = sheet.step(dt);
@@ -1549,7 +1577,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float r = 20 * k * s;
         c.save();
         if (l > 0.01f) {
-            c.rotate(wiggle * l, cx, cy);
+            c.rotate(wiggle * 1.8f * l, cx, cy);
             tmp.set(cell);
             tmp.offset(0, 16 * k * l);
             shadow.setColor(Ui.alpha(0xFF000000, 0.6f * l));
@@ -1725,7 +1753,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         heroFocus.target = !sheetOpen && zone == Z_HERO ? 1 : 0;
         if (snap) heroFocus.snap(heroFocus.target);
         boolean topChanged = aim(topFocus, !sheetOpen && zone == Z_TOP ? topIndex : -1, snap);
-        heroChanged |= aim(cardFocus, !sheetOpen && zone == Z_CARDS ? (tab == TAB_SPORTS ? 0 : cardIndex) : -1, snap) | topChanged;
+        heroChanged |= aim(cardFocus, !sheetOpen && zone == Z_CARDS ? (isSportsTab() ? 0 : cardIndex) : -1, snap) | topChanged;
         statusChanged |= topChanged;
         tilesDirty |= snap || tilesChanged;
         statusDirty |= snap || statusChanged;
@@ -2220,7 +2248,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             it = lightButtons.get(topIndex - tc);
             r = topRects[topIndex];
         } else if (zone == Z_CARDS) {
-            if (tab == TAB_SPORTS) {
+            if (isSportsTab()) {
                 Intent intent = new Intent(activity, SettingsActivity.class);
                 intent.putExtra("page", 4);
                 activity.startActivity(intent);
@@ -2368,9 +2396,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (reorderZone == Z_SHELF) {
             reorderOrigin = new ArrayList<>(shelf);
             liftIndex = shelfIndex;
+            tilesDirty = true;
         } else {
             reorderOrigin = new ArrayList<>(drawerItems);
             liftIndex = drawerIndex;
+            drawerDirty = true;
         }
         reorderAt = SystemClock.uptimeMillis();
         moveLift.target = 1;
@@ -2580,9 +2610,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             return;
         }
         int tc = tabsCount();
-        for (int i = picksOn() ? 0 : tc; i < tc + lightButtons.size(); i++) out.add(a11yId(Z_TOP, i));
-        if (tab == TAB_SPORTS) {
-            if (picksOn()) out.add(a11yId(Z_CARDS, 0));
+        for (int i = contentOn() ? 0 : tc; i < tc + lightButtons.size(); i++) out.add(a11yId(Z_TOP, i));
+        if (isSportsTab()) {
+            if (contentOn()) out.add(a11yId(Z_CARDS, 0));
         } else {
             for (int i = 0; i < Math.min(3, cards.size()); i++) out.add(a11yId(Z_CARDS, i));
         }
@@ -2603,7 +2633,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 return Ui.trf("{name}, tab {i} of {n}", "name", tabs()[i], "i", i + 1, "n", tc);
             }
             case Z_CARDS:
-                if (tab == TAB_SPORTS) {
+                if (isSportsTab()) {
                     List<Sports.Game> games = Sports.get(getContext()).games();
                     return Ui.tr("Sports") + ", " + (games.isEmpty() ? Ui.tr("No games soon.") : Ui.trf("{n} games", "n", games.size()));
                 }
@@ -2650,7 +2680,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 break;
             }
             case Z_CARDS:
-                if (tab == TAB_SPORTS) {
+                if (isSportsTab()) {
                     if (i != 0) return false;
                     a11yRect.set(sportsHeroCard);
                 } else {
@@ -2689,7 +2719,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (sheetOpen) return others.isEmpty() ? -1 : a11yId(GRID, gridIndex);
         switch (zone) {
             case Z_TOP: return a11yId(Z_TOP, topIndex);
-            case Z_CARDS: return tab == TAB_SPORTS ? a11yId(Z_CARDS, 0) : (cardIndex < cards.size() ? a11yId(Z_CARDS, cardIndex) : -1);
+            case Z_CARDS: return isSportsTab() ? a11yId(Z_CARDS, 0) : (cardIndex < cards.size() ? a11yId(Z_CARDS, cardIndex) : -1);
             case Z_SHELF: return shelf.isEmpty() ? -1 : a11yId(Z_SHELF, shelfIndex);
             case Z_DRAWER: return drawerItems.isEmpty() ? -1 : a11yId(Z_DRAWER, drawerIndex);
             case WIDGETS: return a11yId(WIDGETS, widgetIndex);
@@ -2737,14 +2767,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 break;
             case Z_TOP: {
                 int tc = tabsCount();
-                if (i >= tc + lightButtons.size() || (i < tc && !picksOn())) return;
+                if (i >= tc + lightButtons.size() || (i < tc && !contentOn())) return;
                 if (drawerOpen) closeDrawer();
                 topIndex = i;
                 if (i < tc) selectTab(i);
                 break;
             }
             case Z_CARDS:
-                if (tab == TAB_SPORTS) {
+                if (isSportsTab()) {
                     if (drawerOpen) closeDrawer();
                     cardIndex = 0;
                     break;
@@ -2878,8 +2908,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         checkNight(false);
         int tc = tabsCount();
         if (tab >= tc) selectTab(Math.max(0, tc - 1));
-        if (!picksOn() && zone == Z_TOP && topIndex < tc) topIndex = tc;
-        if (!picksOn() && zone == Z_CARDS) zone = Z_SHELF;
+        if (!contentOn() && zone == Z_TOP && topIndex < tc) topIndex = tc;
+        if (!contentOn() && zone == Z_CARDS) zone = Z_SHELF;
         updateCards();
         refreshHero(false);
         layoutLight();
@@ -2889,29 +2919,32 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The background follows the card in focus (the way it follows the first one when nothing is focused). */
     private void followCard() {
-        if (cards.isEmpty() || !picksOn() || tab == TAB_SPORTS) return;
+        if (cards.isEmpty() || !picksOn() || isSportsTab()) return;
         Backdrop b = recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (b != null) showBackdrop(b);
     }
 
     private void updateCards() {
-        List<Recs.Pick> list = recs.now(TAB_KIND[tab]);
-        if (!samePicks(list, cards)) {
-            cards = list;
-            cardIndex = Math.min(cardIndex, Math.max(0, list.size() - 1));
-            if (zone == Z_CARDS && list.isEmpty() && tab != TAB_SPORTS) {
-                zone = Z_SHELF;
-                retarget(false);
+        if (!isSportsTab() && tab < TAB_KIND.length) {
+            List<Recs.Pick> list = recs.now(TAB_KIND[tab]);
+            if (!samePicks(list, cards)) {
+                cards = list;
+                cardIndex = Math.min(cardIndex, Math.max(0, list.size() - 1));
+                if (zone == Z_CARDS && list.isEmpty()) {
+                    zone = Z_SHELF;
+                    retarget(false);
+                }
             }
+        } else {
+            cards = Collections.emptyList();
         }
         if (!picksOn()) {
-            cards = Collections.emptyList();
             recs.clearMemory();
         } else {
             for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
         }
         // Without picks on the screen (none, or turned off): the photo from the phone, or the default background.
-        boolean noPicks = cards.isEmpty() || !picksOn() || tab == TAB_SPORTS;
+        boolean noPicks = cards.isEmpty() || !picksOn() || isSportsTab();
         Backdrop b = noPicks ? wallpaperBackdrop() : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (noPicks || b != null) showBackdrop(b);
         heroDirty = true;
@@ -2967,7 +3000,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
-        if (!picksOn()) {
+        if (!contentOn()) {
             drawClock(c);
             return;
         }
@@ -3001,7 +3034,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (i == tab) lTabOn.setColor(blend(tone(L_INK, WHITE), L_INK, focus));   // always dark on the white pill
             c.drawText(tabs()[i], r.centerX() - p.measureText(tabs()[i]) / 2, r.centerY() + Ui.halfCap(p), p);
         }
-        if (tab == TAB_SPORTS) {
+        if (isSportsTab()) {
             drawGiantSportsCard(c);
         } else {
             int top = -1;
@@ -3130,10 +3163,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
-    private boolean picksOn() {
-        return Recs.hasKey(getContext()) && Prefs.recommendations();
-    }
-
     private void drawClock(Canvas c) {
         float x = MARGIN * k;
         c.drawText(dateText, x - Ui.leftBearing(lDate, dateText), L_DATE_BASE * k, lDate);
@@ -3258,8 +3287,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** No cards on screen: none loaded, or the recommendations are off (then they are loaded but hidden). */
     private boolean noCards() {
+        if (isSportsTab()) return false;
         if (!picksOn()) return true;
-        if (tab == TAB_SPORTS) return false;
         return cards.isEmpty();
     }
 
@@ -3269,12 +3298,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 // Up from an empty shelf too: move()'s older zones (the hero, the corner capsule) aren't drawn any more.
                 if (dy >= 0) return false;
                 if (noCards()) {
-                    if (!picksOn() && lightButtons.isEmpty()) return true;   // no tabs and no buttons above
+                    if (!contentOn() && lightButtons.isEmpty()) return true;   // no tabs and no buttons above
                     zone = Z_TOP;
-                    topIndex = picksOn() ? tab : tabsCount();
+                    topIndex = contentOn() ? tab : tabsCount();
                 } else {
                     zone = Z_CARDS;
-                    if (tab == TAB_SPORTS) {
+                    if (isSportsTab()) {
                         cardIndex = 0;
                     } else {
                         cardIndex = nearest(cardRects, cards.size(), shelf.isEmpty() ? w / 2f : tileRects[shelfIndex].centerX());
@@ -3282,7 +3311,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 break;
             case Z_CARDS:
-                if (tab == TAB_SPORTS) {
+                if (isSportsTab()) {
                     if (dy < 0) {
                         zone = Z_TOP;
                         topIndex = tab;
@@ -3310,7 +3339,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             case Z_TOP: {
                 int tc = tabsCount();
                 if (dx != 0) {
-                    int next = Math.max(picksOn() ? 0 : tc, Math.min((tc - 1) + lightButtons.size(), topIndex + dx));
+                    int next = Math.max(contentOn() ? 0 : tc, Math.min((tc - 1) + lightButtons.size(), topIndex + dx));
                     if (next == topIndex) return true;
                     topIndex = next;
                     if (topIndex < tc) selectTab(topIndex);   // like Apple TV tabs: focusing a tab selects it
@@ -3319,7 +3348,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                         zone = Z_SHELF;
                     } else {
                         zone = Z_CARDS;
-                        if (tab == TAB_SPORTS) {
+                        if (isSportsTab()) {
                             cardIndex = 0;
                         } else {
                             cardIndex = nearest(cardRects, cards.size(), topRects[topIndex].centerX());

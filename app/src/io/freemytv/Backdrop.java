@@ -62,6 +62,14 @@ final class Backdrop {
         nightImage = night == null ? null : Bitmap.createBitmap(night, FW, FH, Bitmap.Config.ARGB_8888);
     }
 
+    void recycle() {
+        if (image != null && !image.isRecycled()) image.recycle();
+        if (wide != null && !wide.isRecycled()) wide.recycle();
+        if (tall != null && !tall.isRecycled()) tall.recycle();
+        if (lightImage != null && !lightImage.isRecycled()) lightImage.recycle();
+        if (nightImage != null && !nightImage.isRecycled()) nightImage.recycle();
+    }
+
     static Backdrop make(Bitmap src, boolean forLight) {
         Bitmap out = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(out);

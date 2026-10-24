@@ -154,8 +154,10 @@ final class HomeData {
         JSONObject daily = o.getJSONObject("daily");
         w.max = daily.getJSONArray("temperature_2m_max").getDouble(0);
         w.min = daily.getJSONArray("temperature_2m_min").getDouble(0);
-        w.sunrise = localTime(daily.getJSONArray("sunrise").getString(0), zone);
-        w.sunset = localTime(daily.getJSONArray("sunset").getString(0), zone);
+        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
+        f.setTimeZone(zone);
+        w.sunrise = f.parse(daily.getJSONArray("sunrise").getString(0)).getTime();
+        w.sunset = f.parse(daily.getJSONArray("sunset").getString(0)).getTime();
         JSONObject hourly = o.optJSONObject("hourly");
         if (hourly != null) {
             JSONArray times = hourly.getJSONArray("time");
@@ -164,7 +166,7 @@ final class HomeData {
             JSONArray days = hourly.optJSONArray("is_day");
             long now = System.currentTimeMillis();
             for (int i = 0; i < times.length() && w.hours.size() < 6; i++) {
-                long at = localTime(times.getString(i), zone);
+                long at = f.parse(times.getString(i)).getTime();
                 if (at <= now) continue;
                 w.hours.add(at);
                 w.hourTemp.add(temps.getDouble(i));
@@ -173,12 +175,6 @@ final class HomeData {
             }
         }
         return w;
-    }
-
-    private static long localTime(String iso, TimeZone zone) throws ParseException {
-        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
-        f.setTimeZone(zone);
-        return f.parse(iso).getTime();
     }
 
     static List<String[]> findCity(String name) throws Exception {
@@ -210,13 +206,7 @@ final class HomeData {
         c.setRequestProperty("User-Agent", "GBHomeTV");
         try {
             if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
-            try (InputStream in = c.getInputStream()) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buffer = new byte[8192];
-                int n;
-                while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
-                return out.toString(StandardCharsets.UTF_8.name());
-            }
+            return Ui.readUtf8(c.getInputStream());
         } finally {
             c.disconnect();
         }

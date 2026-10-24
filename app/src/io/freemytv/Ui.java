@@ -272,15 +272,25 @@ final class Ui {
         return new Locale(lang);
     }
 
-    private static Map<String, String> load(String lang) {
-        Context c = Prefs.context();
-        if (c == null) return null;
-        try (InputStream in = c.getAssets().open("i18n/" + lang + ".json")) {
+    /** Reads the stream to a UTF-8 string and closes it. */
+    static String readUtf8(InputStream in) throws IOException {
+        if (in == null) return "";
+        try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buffer = new byte[8192];
             int n;
             while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
-            JSONObject o = new JSONObject(out.toString(StandardCharsets.UTF_8.name()));
+            return out.toString(StandardCharsets.UTF_8.name());
+        } finally {
+            try { in.close(); } catch (IOException ignored) {}
+        }
+    }
+
+    private static Map<String, String> load(String lang) {
+        Context c = Prefs.context();
+        if (c == null) return null;
+        try (InputStream in = c.getAssets().open("i18n/" + lang + ".json")) {
+            JSONObject o = new JSONObject(readUtf8(in));
             HashMap<String, String> map = new HashMap<>(o.length() * 2);
             for (java.util.Iterator<String> keys = o.keys(); keys.hasNext(); ) {
                 String key = keys.next();
@@ -395,14 +405,24 @@ final class Ui {
     static final class DatePattern {
         final String text;
         final Locale locale;
+        private final SimpleDateFormat format;
+        private final Date date = new Date();
 
         DatePattern(String text, Locale locale) {
             this.text = text;
             this.locale = locale;
+            SimpleDateFormat f;
+            try {
+                f = new SimpleDateFormat(text, locale);
+            } catch (Exception e) {
+                f = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            }
+            this.format = f;
         }
 
-        String format(long at) {
-            return new SimpleDateFormat(text, locale).format(new Date(at));
+        synchronized String format(long at) {
+            date.setTime(at);
+            return format.format(date);
         }
     }
 
