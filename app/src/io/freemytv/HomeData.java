@@ -90,6 +90,7 @@ final class HomeData {
     void removeListener(Listener l) { listeners.remove(l); }
 
     void refreshIfStale() {
+        guessPlace();
         long now = System.currentTimeMillis();
         if (!fetchingWeather && (now - weatherAt > WEATHER_EVERY || now < weatherAt) && !failedRecently(weatherFailedAt, now)) {
             fetchingWeather = true;
@@ -108,6 +109,30 @@ final class HomeData {
                 }
             });
         }
+    }
+
+    /**
+     * A new install knows no city: the TV's time zone ("America/Sao_Paulo") names one, and the geocoder finds it. Only a
+     * start; Settings → Weather → City changes it. Tried once.
+     */
+    private void guessPlace() {
+        if (Prefs.placeChosen()) return;
+        Prefs.markPlaceTried();
+        String zone = java.util.TimeZone.getDefault().getID();
+        int slash = zone.lastIndexOf('/');
+        if (slash < 0) return;
+        final String name = zone.substring(slash + 1).replace('_', ' ');
+        io.execute(() -> {
+            try {
+                List<String[]> found = findCity(name);
+                if (found.isEmpty()) return;
+                Prefs.setCity(found.get(0)[1], found.get(0)[2], found.get(0)[3]);
+                weatherAt = 0;
+                refreshIfStale();
+            } catch (Exception e) {
+                AppLog.w("city from the time zone: " + e.getMessage());
+            }
+        });
     }
 
     private static boolean failedRecently(long at, long now) {
@@ -182,7 +207,7 @@ final class HomeData {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(6000);
         c.setReadTimeout(6000);
-        c.setRequestProperty("User-Agent", "GBLauncher");
+        c.setRequestProperty("User-Agent", "GBHomeTV");
         try {
             if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
             try (InputStream in = c.getInputStream()) {

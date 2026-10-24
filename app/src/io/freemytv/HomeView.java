@@ -384,7 +384,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             v.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);   // TalkBack reads the items (Spoken)
             addView(v);
         }
-        setContentDescription("GB Launcher");
+        setContentDescription("GB Home TV");
         drawerLayer.setVisibility(INVISIBLE);
         for (int i = 0; i < topFocus.length; i++) {
             topFocus[i] = new Spring(0.26f, 0.85f, 0);
@@ -1489,11 +1489,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float textX = x + 56 * k, room = right - textX;
         for (int i = 0; i < games.size() && i < 3; i++) {
             Sports.Game g = games.get(i);
-            float top = r.top + (82 + 70 * i) * k;
-            Symbols.draw(getContext(), c, Sports.icon(g.sport), x + 17 * k, top + 36 * k, 30 * k, drawerInk(0.9f));
-            c.drawText(TextUtils.ellipsize(g.match, new TextPaint(cardText), room, TextUtils.TruncateAt.END).toString(), textX, top + 30 * k, cardText);
+            float top = r.top + (86 + 64 * i) * k;
+            Symbols.draw(getContext(), c, Sports.icon(g.sport), x + 17 * k, top + 32 * k, 30 * k, drawerInk(0.9f));
+            c.drawText(TextUtils.ellipsize(g.match, new TextPaint(cardText), room, TextUtils.TruncateAt.END).toString(), textX, top + 26 * k, cardText);
             String when = (g.live ? Ui.tr("LIVE") : g.day) + " · " + g.time + " · " + g.tag;
-            c.drawText(TextUtils.ellipsize(when, new TextPaint(cardDim), room, TextUtils.TruncateAt.END).toString(), textX, top + 58 * k, cardDim);
+            c.drawText(TextUtils.ellipsize(when, new TextPaint(cardDim), room, TextUtils.TruncateAt.END).toString(), textX, top + 54 * k, cardDim);
         }
         cardText.setTextSize(29 * k);
         cardDim.setTextSize(23 * k);
@@ -1552,10 +1552,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         String symbol = Symbols.weather(wx.code, wx.isDay);
         float sw = Symbols.width(getContext(), symbol, 52 * k);
         Symbols.draw(getContext(), c, symbol, x + sw / 2, r.top + 132 * k, 52 * k, drawerInk(0.95f));
+        float split = r.left + 392 * k, leftRoom = split - 24 * k - x;
+        // The big temperature shrinks if it would reach the divider ("-12°" in a big font).
+        float tempSize = bigTemp.getTextSize(), tempRoom = leftRoom - sw - 18 * k;
+        float tempWidth = bigTemp.measureText(nowTemp);
+        if (tempWidth > tempRoom) bigTemp.setTextSize(tempSize * tempRoom / tempWidth);
         c.drawText(nowTemp, x + sw + 18 * k - Ui.leftBearing(bigTemp, nowTemp), r.top + 170 * k, bigTemp);
-        c.drawText(HomeData.condition(wx.code, wx.isDay), x, r.top + 220 * k, cardText);
-        c.drawText(highLow, x, r.top + 258 * k, cardDim);
-        float split = r.left + 392 * k;
+        bigTemp.setTextSize(tempSize);
+        c.drawText(TextUtils.ellipsize(HomeData.condition(wx.code, wx.isDay), new TextPaint(cardText), leftRoom, TextUtils.TruncateAt.END).toString(),
+                x, r.top + 220 * k, cardText);
+        c.drawText(TextUtils.ellipsize(highLow, new TextPaint(cardDim), leftRoom, TextUtils.TruncateAt.END).toString(), x, r.top + 258 * k, cardDim);
         fill.setShader(null);
         fill.setColor(tone(0x1A000000, 0x24FFFFFF));
         c.drawRoundRect(split - k, r.top + 34 * k, split + k, r.bottom - 34 * k, k, k, fill);
@@ -1566,9 +1572,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             Symbols.draw(getContext(), c, Symbols.weather(wx.hourCode.get(i), wx.hourDay.get(i)), hc, r.top + 142 * k, 30 * k, drawerInk(0.9f));
             c.drawText(hourTempText[i], hc, r.top + 196 * k, hourTemp);
         }
-        float sx = hx, base = r.top + 258 * k;
-        if (wx.sunrise != 0) sx = sunItem(c, "sunrise", sunriseText, sx, base) + 36 * k;
-        if (wx.sunset != 0) sunItem(c, "sunset", sunsetText, sx, base);
+        // Sunrise and sunset share one line: if the two don't fit between the divider and the edge (a longer language,
+        // "5:19 AM"), the text gets smaller until they do.
+        float base = r.top + 258 * k, room = r.right - 30 * k - hx, gap = 36 * k;
+        float size = cardDim.getTextSize();
+        float need = (wx.sunrise != 0 ? sunWidth(sunriseText) : 0) + (wx.sunset != 0 && wx.sunrise != 0 ? gap : 0) + (wx.sunset != 0 ? sunWidth(sunsetText) : 0);
+        float scale = need > room ? Math.max(0.7f, room / need) : 1;
+        cardDim.setTextSize(size * scale);
+        float sx = hx;
+        if (wx.sunrise != 0) sx = sunItem(c, "sunrise", sunriseText, sx, base, scale) + gap * scale;
+        if (wx.sunset != 0) sunItem(c, "sunset", sunsetText, sx, base, scale);
+        cardDim.setTextSize(size);
     }
 
     private void refreshDrawerText() {
@@ -1590,11 +1604,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
-    private float sunItem(Canvas c, String symbol, String label, float x, float base) {
-        float size = 22 * k, sw = Symbols.width(getContext(), symbol, size);
+    /** The width of a sunrise or sunset item at the normal size: its symbol, a gap and the text. */
+    private float sunWidth(String label) {
+        return Symbols.width(getContext(), "sunrise", 22 * k) + 10 * k + cardDim.measureText(label);
+    }
+
+    private float sunItem(Canvas c, String symbol, String label, float x, float base, float scale) {
+        float size = 22 * k * scale, sw = Symbols.width(getContext(), symbol, size);
         Symbols.draw(getContext(), c, symbol, x + sw / 2, base - Ui.halfCap(cardDim), size, tone(L_DIM, 0xB3FFFFFF));
-        c.drawText(label, x + sw + 10 * k, base, cardDim);
-        return x + sw + 10 * k + cardDim.measureText(label);
+        c.drawText(label, x + sw + 10 * k * scale, base, cardDim);
+        return x + sw + 10 * k * scale + cardDim.measureText(label);
     }
 
     /**
@@ -2251,7 +2270,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 text = Ui.trf("Removed from the shelf: {app}", "app", it.label);
             } else {
                 if (shown >= HomeApps.MAX_SHELF) {
-                    handler.post(() -> showToast(Ui.tr("The shelf is full. Make room in GB Launcher › Shelf.")));
+                    handler.post(() -> showToast(Ui.tr("The shelf is full. Make room in GB Home TV › Shelf.")));
                     return;
                 }
                 list.add(it.pkg);

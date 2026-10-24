@@ -1,8 +1,8 @@
-# GB Launcher: notes for Claude
+# GB Home TV: notes for Claude
 
 A home screen for Google TV and Android TV that replaces the stock one, plus a settings app that switches between
-GB Launcher and the TV's original home screen. A plain Android app in Java, built without Gradle by `build.sh`.
-GB Launcher is Gabriel Baumgratz's launcher, inspired by Free My TV (github.com/simbasjungles/free-my-tv, MIT); its AirPlay
+GB Home TV and the TV's original home screen. A plain Android app in Java, built without Gradle by `build.sh`.
+GB Home TV is Gabriel Baumgratz's launcher, inspired by Free My TV (github.com/simbasjungles/free-my-tv, MIT); its AirPlay
 button opens a separate app, android-airplay-server by jqssun (GPL-3.0), when it is installed.
 The website in `docs/` is the old static Free My TV one (HTML, CSS and JS, no build step); `.github/workflows/pages.yml`
 publishes it to GitHub Pages when Pages is on. `docs/assets/en` and `docs/assets/pt` hold the README's screenshots.
@@ -28,9 +28,9 @@ before you do it, and let them do the taps on the TV.
    it. If they paste it in the chat anyway, put it only in `config.properties`.
    Without a key everything works except the picks and the screensaver photos.
    The same goes for the optional `watchmode_key` (free, watchmode.com; makes picks open the title's page): theirs, secret, only in `config.properties`.
-5. **Build:** `./build.sh` → `GBLauncher.apk`. Keep `freemytv.keystore`: updates must be signed with the same key.
+5. **Build:** `./build.sh` → `GBHomeTV.apk`. Keep `freemytv.keystore`: updates must be signed with the same key.
 6. **Install:** `adb connect <IP>:5555`. The TV asks *Allow USB debugging?*: tell them to accept and tick *Always
-   allow*. Then `adb install -r GBLauncher.apk`. On TCL, also `adb shell "appops set io.freemytv AUTO_START allow || appops set io.freemytv APP_AUTO_START allow"`
+   allow*. Then `adb install -r GBHomeTV.apk`. On TCL, also `adb shell "appops set io.freemytv AUTO_START allow || appops set io.freemytv APP_AUTO_START allow"`
    (some firmware calls the operation `APP_AUTO_START`; this tries both):
    TCL's `TclAppBoot` blocks background jobs by default, so the switch (and the watchdog) never run. The log shows
    `forbid bind service ... ModeJob`. Some TCL firmware has neither (a 2024 MediaTek Google TV, Android 14, has no
@@ -42,8 +42,8 @@ before you do it, and let them do the taps on the TV.
 7. **Tell them what the switch does** before they make it: the home screen and screensaver change, a short list of
    promo apps is turned off (never uninstalled), and *Original* brings it all back. On TCL, the remote's Netflix,
    YouTube and Prime buttons keep working through a small accessibility service that only reads those buttons
-   (*GB Launcher* → *Remote Buttons* picks what each opens); *Original* turns it off.
-8. **They switch on the TV:** *GB Launcher* → *General* → *Launcher* → *GB Launcher*. The app uses the TV's own ADB on
+   (*GB Home TV* → *Remote Buttons* picks what each opens); *Original* turns it off.
+8. **They switch on the TV:** *GB Home TV* → *General* → *Launcher* → *GB Home TV*. The app uses the TV's own ADB on
    127.0.0.1 with its own key, so the TV asks once more to allow debugging. Don't switch modes from the computer.
    If the TV's Wi-Fi was saved during its first setup, the switch stops before changing anything and asks them to
    forget the network and connect again in Settings (Network & Internet); then the switch goes through. Saved
@@ -78,9 +78,9 @@ Then, in the code:
   *Original* once and confirm everything returned.
 
 TVs that don't run Google TV or Android TV (LG, Samsung): the way is a Google TV streamer on
-HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set GB Launcher up on the streamer.
+HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set GB Home TV up on the streamer.
 
-**Uninstalled while in GB Launcher mode?** The apps it turned off stay off. Bring them back with
+**Uninstalled while in GB Home TV mode?** The apps it turned off stay off. Bring them back with
 `adb shell pm enable <package>` (the `DEBLOAT` list and the stock home screen), then
 `adb shell cmd package set-home-activity <stock home activity>` and
 `adb shell settings put secure screensaver_components <stock screensaver>`.
@@ -121,7 +121,7 @@ HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set
 - Settings come from `config.properties` through the generated `out/gen/io/freemytv/Config.java` (never edit that).
   What the person changes on the TV (`Prefs`: Home Settings, Shelf, Remote Buttons) wins over those first values.
 - The remote's app buttons (`RemoteKeys`, `RemoteKeyService`) use each brand's key codes: they run only on TCL,
-  Vestel, KTC (NextStar) and Sony TVs and Formovie projectors, the service is on only in GB Launcher mode, and *Original* takes it out of the enabled accessibility
+  Vestel, KTC (NextStar) and Sony TVs and Formovie projectors, the service is on only in GB Home TV mode, and *Original* takes it out of the enabled accessibility
   services. The system waits for the service on every key, so it lives alone in the `:keys` process: what it reads is
   in `remote-keys.txt` (`Prefs.keyApp`), never in SharedPreferences, and `onKeyEvent` does no heavy work.
   Vestel (F&U and other store brands; MediaTek, Android TV 14 tested) maps its Netflix button to `KEYCODE_STEM_1`, a
@@ -152,7 +152,14 @@ HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set
   chosen in Settings → Games (`Prefs.sportsOn/sportsTeams/sportsLeagues`) and drawn by `HomeView.drawSports` beside the
   weather card. `PhotosActivity` draws the QR code (`Qr`, byte mode, level M) of `http://ip:port/#PIN`.
 - Picture mode (Control Center) shows only on TVs that keep it in the `picture_mode` setting (TCL's).
-- After any change, `./build.sh` must end with `Built GBLauncher.apk`.
+- The product is called GB Home TV (the package stays `io.freemytv`). It adapts to the TV on its own: language (`Ui.resolve`),
+  light or dark by the sun, °C or °F, 12 or 24 h, the TMDB country (`Recs.REGION`) and, until a city is chosen, a city guessed
+  from the time zone (`HomeData.guessPlace`).
+- Questions in the settings (a name, a city, a team, forget a device) go through `Prompt`, which looks like the launcher; the
+  keyboard is the TV's. Taught remote buttons (Settings → Remote Buttons → Add a button) work on any brand: the key service
+  keeps the next key in `learned.txt` while `learn-on.txt` is fresh, and `custom-keys.txt` maps `keyCode:scanCode` to an app
+  (both processes read the files; see `Prefs.customKeys`, `RemoteKeys.onKey`).
+- After any change, `./build.sh` must end with `Built GBHomeTV.apk`.
 
 ## Always
 

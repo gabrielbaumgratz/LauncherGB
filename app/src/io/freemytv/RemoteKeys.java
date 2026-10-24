@@ -36,12 +36,39 @@ final class RemoteKeys {
         return TCL || STEM_NETFLIX || KTC || SONY;
     }
 
+    /** Whether the key service has work: the brand's buttons, or buttons the person taught the TV. */
+    static boolean needsService() {
+        return supported() || !Prefs.customKeys().isEmpty() || Prefs.learning();
+    }
+
     private static boolean is(String maker) {
         return maker.equalsIgnoreCase(Build.MANUFACTURER) || maker.equalsIgnoreCase(Build.BRAND);
     }
 
     /** Opens the app for this key on its first press. True if the key is ours and in use (it is then consumed). */
     static boolean onKey(Context c, KeyEvent e) {
+        int code = e.getKeyCode();
+        boolean navigation = code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN || code == KeyEvent.KEYCODE_DPAD_LEFT
+                || code == KeyEvent.KEYCODE_DPAD_RIGHT || code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER
+                || code == KeyEvent.KEYCODE_NUMPAD_ENTER || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_HOME
+                || code == KeyEvent.KEYCODE_POWER || code == KeyEvent.KEYCODE_VOLUME_UP || code == KeyEvent.KEYCODE_VOLUME_DOWN
+                || code == KeyEvent.KEYCODE_VOLUME_MUTE;
+        // "Add a button" is waiting: the next key is the one the person means (it goes to the settings, not to the TV).
+        if (!navigation && Prefs.learning()) {
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) Prefs.setLearned(code, e.getScanCode());
+            return true;
+        }
+        // A button the person taught the TV: any brand.
+        String taught = navigation ? null : Prefs.customKeyApp(code, e.getScanCode());
+        if (taught != null) {
+            if (taught.isEmpty()) return false;
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+                Intent intent = launchIntent(c.getPackageManager(), taught);
+                AppLog.w("taught key " + code + " -> " + taught + (intent == null ? " (not installed)" : ""));
+                if (intent != null) c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return true;
+        }
         if (!supported()) return false;
         // BUTTON_3 is also a game controller's button: those keys from a gamepad or a joystick are left alone. (Only
         // those: TCL's IR remote reports itself as a gamepad too, source 0x701, and its keys must still get through.)

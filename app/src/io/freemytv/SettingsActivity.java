@@ -2,7 +2,6 @@ package io.freemytv;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,7 +25,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,7 +39,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
- * GB Launcher's settings (the app's icon, "All Apps", or the gear on the home screen), laid out like the iPad's: the
+ * GB Home TV's settings (the app's icon, "All Apps", or the gear on the home screen), laid out like the iPad's: the
  * categories in a sidebar on the left and, on the right, the selected one in grouped cards, each under its own small
  * title. The cards, the focus and the colors are the home screen's own (glass, white focus, black or white ink by the
  * light or dark theme). ← goes back to the sidebar, OK or → opens or changes the focused row. "Launcher" opens the GB
@@ -135,7 +133,7 @@ public class SettingsActivity extends Activity {
 
     static final class SettingsView extends View implements Choreographer.FrameCallback {
         // What the pane shows: a category's page, or one of the lists that open from it.
-        private static final int PAGE = 0, HOME_CHOICE = 1, PICKER = 2, SHELF_EDIT = 3;
+        private static final int PAGE = 0, HOME_CHOICE = 1, PICKER = 2, SHELF_EDIT = 3, LEARN = 4;
         private static final int SIDE = 0, PANE = 1;
         private static final int P_GENERAL = 0, P_HOME = 1, P_CONTROL = 2, P_WEATHER = 3, P_GAMES = 4, P_SAVER = 5, P_REMOTE = 6, P_ABOUT = 7, PAGES = 8;
         private static final String[] ICONS = {"settings", "home", "control_center", "sunny", "sports", "bedtime", "remote", "info"};
@@ -152,7 +150,7 @@ public class SettingsActivity extends Activity {
         private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73;
         private static final float SHADOW_BLUR = 26;
         private static final int AMBER = 0xFFFFC266;
-        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2;
+        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2, PICK_CUSTOM = -3;
         private static final String[] UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
 
         private static final class Row {
@@ -204,6 +202,15 @@ public class SettingsActivity extends Activity {
         private int pickFor, pickCurrent, pickScroll;   // pickFor: the remote button (index + 1)
         private final List<String[]> cities = new ArrayList<>(), teamResults = new ArrayList<>();
         private String cityStatus = "", teamStatus = "";
+        private int customCode, customScan;   // the taught button being set up
+        private final Runnable learnPoll = new Runnable() {
+            @Override public void run() {
+                if (screen != LEARN) return;
+                int[] key = Prefs.learned();
+                if (key != null) gotButton(key[0], key[1]);
+                else handler.postDelayed(this, 250);
+            }
+        };
         private final RectF tmp = new RectF(), rowRect = new RectF(), box = new RectF();
         private JSONObject state = new JSONObject(), recs = new JSONObject();
         private boolean hasKey;
@@ -245,7 +252,7 @@ public class SettingsActivity extends Activity {
             activity = a;
             for (int i = 0; i < pop.length; i++) pop[i] = new Spring(0.28f, 0.85f, 0);
             setFocusable(true);
-            setContentDescription("GB Launcher");
+            setContentDescription("GB Home TV");
             // TalkBack: sidebar items are 1..PAGES, rows of a page 101.., the rows of a list 1...
             spoken = new Spoken(this, new Spoken.Source() {
                 @Override public void items(List<Integer> out) {
@@ -305,7 +312,7 @@ public class SettingsActivity extends Activity {
             }
             int i = id - 1;
             if (screen == HOME_CHOICE) {
-                String name = i == 0 ? "GB Launcher, " + Ui.tr("no ads, with the new screensaver")
+                String name = i == 0 ? "GB Home TV, " + Ui.tr("no ads, with the new screensaver")
                         : "Original, " + Ui.tr("the TV's factory home screen");
                 boolean inUse = (i == 0) == freeActive();
                 return name + (inUse ? Ui.tr(". In use") : "") + ", " + Ui.trf("{i} of {n}", "i", i + 1, "n", 2);
@@ -454,7 +461,7 @@ public class SettingsActivity extends Activity {
             }
             switch (page) {
                 case P_GENERAL: {
-                    Row home = link(Ui.tr("Launcher"), () -> busy() ? "" : (freeActive() ? "GB Launcher" : Ui.tr("Original")), () -> {
+                    Row home = link(Ui.tr("Launcher"), () -> busy() ? "" : (freeActive() ? "GB Home TV" : Ui.tr("Original")), () -> {
                         if (busy()) return;
                         screen = HOME_CHOICE;
                         focus = freeActive() ? 0 : 1;
@@ -602,25 +609,36 @@ public class SettingsActivity extends Activity {
                 }
                 case P_REMOTE: {
                     if (appPkgs.isEmpty()) loadApps();
-                    String[] labels = keyLabels();
-                    for (int i = 0; i < labels.length; i++) {
-                        final int key = i;
-                        link(labels[i], () -> {
-                            int at = appPkgs.indexOf(Prefs.keyApp(Prefs.KEYS[key]));
-                            return at >= 0 ? appLabels.get(at) : Ui.tr("Not installed");
-                        }, () -> openPicker(key + 1));
+                    info(Ui.tr("Your TV"), SettingsView::tvName);
+                    if (RemoteKeys.supported()) {
+                        header(Ui.tr("Buttons this TV is known for"));
+                        String[] labels = keyLabels();
+                        for (int i = 0; i < labels.length; i++) {
+                            final int key = i;
+                            link(labels[i], () -> {
+                                int at = appPkgs.indexOf(Prefs.keyApp(Prefs.KEYS[key]));
+                                return at >= 0 ? appLabels.get(at) : Ui.tr("Not installed");
+                            }, () -> openPicker(key + 1));
+                        }
+                        note(RemoteKeys.SONY ? Ui.tr("Sony default: the button opens what it always did.")
+                                : Ui.tr("A button that isn't here? Teach it below."));
+                    } else {
+                        note(Ui.tr("This TV's buttons aren't known yet. Teach it the ones you want below."));
                     }
-                    note(RemoteKeys.VESTEL ? Ui.tr("YouTube, Prime Video and Google Play: the TV itself controls those buttons.")
-                            : RemoteKeys.KTC ? Ui.tr("Netflix, YouTube and Prime Video: the TV itself controls those buttons.")
-                            : RemoteKeys.SONY ? Ui.tr("Sony default: the button opens what it always did.")
-                            : RemoteKeys.FORMOVIE ? Ui.tr("The other buttons: the TV itself controls them.")
-                            : RemoteKeys.supported() ? Ui.tr("Disney and Globoplay: the TV itself controls those buttons.")
-                            : Ui.tr("TCL remote buttons: on this TV they work as always."));
+                    header(Ui.tr("Your own buttons"));
+                    for (String[] k : Prefs.customKeys()) {
+                        link(Ui.trf("Button {name}", "name", keyName(Integer.parseInt(k[0]), Integer.parseInt(k[1]))), () -> {
+                            int at = appPkgs.indexOf(k[2]);
+                            return at >= 0 ? appLabels.get(at) : k[2].isEmpty() ? Ui.tr("Nothing") : Ui.tr("Not installed");
+                        }, () -> openCustom(k));
+                    }
+                    link(Ui.tr("Add a button"), () -> "", this::startLearn);
+                    note(Ui.tr("Press a button on your remote and choose what it opens. It works on any TV."));
                     break;
                 }
                 default: {
-                    header("GB Launcher");
-                    info(Ui.tr("Version"), () -> versionName(c).replace("GB Launcher ", ""));
+                    header("GB Home TV");
+                    info(Ui.tr("Version"), () -> versionName(c).replace("GB Home TV ", ""));
                     header(Ui.tr("Comparison"));
                     JSONObject metrics = state.optJSONObject("metrics");
                     JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
@@ -628,7 +646,7 @@ public class SettingsActivity extends Activity {
                     String[][] cmp = {{Ui.tr("Home button"), "homeMs"}, {Ui.tr("Free memory"), "memAvailableMB"},
                             {Ui.tr("Home screen memory"), "homePssMB"}};
                     for (String[] m : cmp) info(m[0], () -> metric(a, m[1]) + "  →  " + metric(b, m[1]));
-                    note(Ui.tr("Original") + "  →  GB Launcher");
+                    note(Ui.tr("Original") + "  →  GB Home TV");
                     header(Ui.tr("Recommendations"));
                     info(Ui.tr("Status"), this::recsLine);
                     if (hasKey) note(Ui.tr("This product uses the TMDB API but is not endorsed or certified by TMDB."));
@@ -638,7 +656,7 @@ public class SettingsActivity extends Activity {
                     for (int i = 0; notices != null && i < notices.length() && shown < 3; i++) {
                         JSONObject o = notices.optJSONObject(i);
                         if (o == null) continue;
-                        final String when = ago(o.optLong("at")), text = o.optString("text").replace("Free My TV", "GB Launcher");
+                        final String when = ago(o.optLong("at")), text = o.optString("text").replace("Free My TV", "GB Home TV").replace("GB Launcher", "GB Home TV");
                         info(text, () -> when);
                         shown++;
                     }
@@ -690,25 +708,9 @@ public class SettingsActivity extends Activity {
 
         private void askDeviceName(BluetoothAudio.DeviceInfo d) {
             final String address = d.device.getAddress();
-            EditText field = new EditText(activity);
-            field.setSingleLine(true);
-            field.setText(Prefs.btAlias(address));
-            field.setSelectAllOnFocus(true);
-            field.setHint(d.device.getName() == null ? "Bluetooth" : d.device.getName());
-            field.setImeOptions(EditorInfo.IME_ACTION_DONE);
-            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("Name"))
-                    .setMessage(Ui.tr("The name shown here and on the home screen. Leave it empty for the device's own."))
-                    .setView(field)
-                    .setPositiveButton(Ui.tr("Save"), (x, which) -> saveDeviceName(address, field.getText().toString()))
-                    .setNegativeButton(Ui.tr("Cancel"), null)
-                    .create();
-            field.setOnEditorActionListener((v, action, event) -> {
-                dialog.dismiss();
-                saveDeviceName(address, field.getText().toString());
-                return true;
-            });
-            dialog.show();
+            Prompt.ask(activity, Ui.tr("Name"), Ui.tr("The name shown here and on the home screen. Leave it empty for the device's own."),
+                    d.device.getName() == null ? "Bluetooth" : d.device.getName(), Prefs.btAlias(address), EditorInfo.IME_ACTION_DONE,
+                    Ui.tr("Save"), text -> saveDeviceName(address, text));
         }
 
         private void saveDeviceName(String address, String name) {
@@ -719,12 +721,8 @@ public class SettingsActivity extends Activity {
         }
 
         private void askForget(BluetoothAudio.DeviceInfo d) {
-            new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("Forget this device"))
-                    .setMessage(Ui.trf("{name} will be unpaired. To use it again, pair it again.", "name", d.name))
-                    .setPositiveButton(Ui.tr("Forget"), (x, which) -> forget(d))
-                    .setNegativeButton(Ui.tr("Cancel"), null)
-                    .show();
+            Prompt.confirm(activity, Ui.tr("Forget this device"),
+                    Ui.trf("{name} will be unpaired. To use it again, pair it again.", "name", d.name), Ui.tr("Forget"), () -> forget(d));
         }
 
         private void forget(BluetoothAudio.DeviceInfo d) {
@@ -762,22 +760,8 @@ public class SettingsActivity extends Activity {
 
         private void askTeam() {
             if (Ui.tr("Searching…").equals(teamStatus)) return;
-            EditText field = new EditText(activity);
-            field.setSingleLine(true);
-            field.setHint(Ui.tr("Type the team's name"));
-            field.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
-            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("Add a team"))
-                    .setView(field)
-                    .setPositiveButton(Ui.tr("Search"), (x, which) -> searchTeam(field.getText().toString()))
-                    .setNegativeButton(Ui.tr("Cancel"), null)
-                    .create();
-            field.setOnEditorActionListener((v, action, event) -> {
-                dialog.dismiss();
-                searchTeam(field.getText().toString());
-                return true;
-            });
-            dialog.show();
+            Prompt.ask(activity, Ui.tr("Add a team"), "", Ui.tr("Type the team's name"), "", EditorInfo.IME_ACTION_SEARCH,
+                    Ui.tr("Search"), this::searchTeam);
         }
 
         private void searchTeam(String name) {
@@ -1015,7 +999,7 @@ public class SettingsActivity extends Activity {
 
             c.drawColor(dark ? 0xFF141416 : 0xFFEBEBF0);
             drawSidebar(c);
-            String title = onPage ? (detail != null ? detailTitle : pageTitles()[page])
+            String title = screen == LEARN ? Ui.tr("Add a button") : onPage ? (detail != null ? detailTitle : pageTitles()[page])
                     : screen == HOME_CHOICE ? Ui.tr("Launcher")
                     : screen == PICKER ? pickerTitle()
                     : editingTop ? Ui.tr("Top Buttons") : Ui.tr("Shelf");
@@ -1025,12 +1009,13 @@ public class SettingsActivity extends Activity {
             if (onPage) drawPage(c, seconds);
             else if (screen == HOME_CHOICE) drawChoice(c);
             else if (screen == PICKER) drawPicker(c);
+            else if (screen == LEARN) drawLearn(c, seconds);
             else drawShelfEditor(c);
         }
 
         private String pickerTitle() {
             return pickFor == PICK_CITY ? Ui.tr("City") : pickFor == PICK_LANGUAGE ? Ui.tr("Language")
-                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : keyLabels()[pickFor - 1];
+                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : pickFor == PICK_CUSTOM ? Ui.tr("What should it open?") : keyLabels()[pickFor - 1];
         }
 
         private void drawSidebar(Canvas c) {
@@ -1045,10 +1030,10 @@ public class SettingsActivity extends Activity {
             c.drawText(name.isEmpty() ? "GB" : name.substring(0, 1).toUpperCase(Locale.ROOT), (SIDE_L + 64) * k,
                     124 * k + Ui.halfCap(initial), initial);
             Paint who = Ui.text(Ui.semibold, 31 * k, ink());
-            c.drawText(TextUtils.ellipsize(name.isEmpty() ? "GB Launcher" : name, new TextPaint(who), 380 * k, TextUtils.TruncateAt.END).toString(),
+            c.drawText(TextUtils.ellipsize(name.isEmpty() ? "GB Home TV" : name, new TextPaint(who), 380 * k, TextUtils.TruncateAt.END).toString(),
                     (SIDE_L + 120) * k, 118 * k, who);
             sideSmall.setColor(dimInk());
-            c.drawText(name.isEmpty() ? versionName(getContext()).replace("GB Launcher ", "v") : "GB Launcher", (SIDE_L + 120) * k, 152 * k, sideSmall);
+            c.drawText(name.isEmpty() ? versionName(getContext()).replace("GB Home TV ", "v") : "GB Home TV", (SIDE_L + 120) * k, 152 * k, sideSmall);
 
             String[] titles = pageTitles();
             for (int i = 0; i < PAGES; i++) {
@@ -1182,10 +1167,28 @@ public class SettingsActivity extends Activity {
             glass(c, card, 30 * k, 0.72f, 0x1A000000, 10 * k);
         }
 
-        /** Home screen choice: GB Launcher or the original, with a check on the one in use. */
+        /** "Press a button on your remote": a card, the remote's symbol and a spinner while the TV listens. */
+        private void drawLearn(Canvas c, float seconds) {
+            RectF card = new RectF(PANE_L * k, SUB_TOP * k, PANE_R * k, (SUB_TOP + 520) * k);
+            glass(c, card, 30 * k, 0.72f, 0x1A000000, 10 * k);
+            float cx = (PANE_L + PANE_R) / 2 * k;
+            Symbols.draw(getContext(), c, "remote", cx, (SUB_TOP + 150) * k, 110 * k, ink());
+            Paint big = Ui.text(Ui.displaySemibold, 40 * k, ink());
+            big.setTextAlign(Paint.Align.CENTER);
+            c.drawText(Ui.tr("Press a button on your remote"), cx, (SUB_TOP + 290) * k, big);
+            hint.setColor(dimInk());
+            hint.setTextAlign(Paint.Align.CENTER);
+            c.drawText(Ui.tr("Arrows, OK and Back can't be used."), cx, (SUB_TOP + 340) * k, hint);
+            hint.setTextAlign(Paint.Align.LEFT);
+            spinner.setColor(dimInk());
+            Ui.spinner(c, cx, (SUB_TOP + 420) * k, 16 * k, seconds * 1.3f, spinner);
+            invalidate();
+        }
+
+        /** Home screen choice: GB Home TV or the original, with a check on the one in use. */
         private void drawChoice(Canvas c) {
             subCard(c, 2, CHOICE_H);
-            String[][] options = {{"GB Launcher", Ui.tr("No ads, with the new screensaver")},
+            String[][] options = {{"GB Home TV", Ui.tr("No ads, with the new screensaver")},
                     {Ui.tr("Original"), Ui.tr("The TV's factory home screen")}};
             int current = freeActive() ? 0 : 1;
             for (int i = 0; i < 2; i++) {
@@ -1268,9 +1271,9 @@ public class SettingsActivity extends Activity {
 
         private static String versionName(Context c) {
             try {
-                return "GB Launcher " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+                return "GB Home TV " + c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
             } catch (PackageManager.NameNotFoundException e) {
-                return "GB Launcher";
+                return "GB Home TV";
             }
         }
 
@@ -1328,6 +1331,10 @@ public class SettingsActivity extends Activity {
                     spoken.focusMoved();
                     return true;
                 default:
+                    if (screen == LEARN && down && e.getRepeatCount() == 0) {
+                        gotButton(e.getKeyCode(), e.getScanCode());   // a key the TV let through to us
+                        return true;
+                    }
                     return false;
             }
         }
@@ -1365,6 +1372,7 @@ public class SettingsActivity extends Activity {
 
         /** Back from a list to its page, from a page that opened from a row to the row, or from the page to the sidebar. */
         private void back() {
+            if (screen == LEARN) Prefs.stopLearning();
             if (screen != PAGE) {
                 screen = PAGE;
                 zone = PANE;
@@ -1391,6 +1399,11 @@ public class SettingsActivity extends Activity {
                 Prefs.setCity(city[1], city[2], city[3]);
                 HomeData.get(getContext()).settingsChanged();
                 back();
+            } else if (screen == PICKER && pickFor == PICK_CUSTOM) {
+                Prefs.setCustomKey(customCode, customScan, appPkgs.get(pickScroll + focus));
+                back();
+            } else if (screen == LEARN) {
+                return;
             } else if (screen == PICKER && pickFor == PICK_TEAM) {
                 String[] team = teamResults.get(pickScroll + focus);
                 List<String[]> teams = Prefs.sportsTeams();
@@ -1422,25 +1435,8 @@ public class SettingsActivity extends Activity {
         // MARK: - Name, city, language
 
         private void askName() {
-            EditText field = new EditText(activity);
-            field.setSingleLine(true);
-            field.setText(Prefs.userName());
-            field.setSelectAllOnFocus(true);
-            field.setHint(Ui.tr("Type your name"));
-            field.setImeOptions(EditorInfo.IME_ACTION_DONE);
-            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("Your name"))
-                    .setMessage(Ui.tr("The home screen greets you with it. Leave it empty for no name."))
-                    .setView(field)
-                    .setPositiveButton(Ui.tr("Save"), (d, which) -> saveName(field.getText().toString()))
-                    .setNegativeButton(Ui.tr("Cancel"), null)
-                    .create();
-            field.setOnEditorActionListener((v, action, event) -> {
-                dialog.dismiss();
-                saveName(field.getText().toString());
-                return true;
-            });
-            dialog.show();
+            Prompt.ask(activity, Ui.tr("Your name"), Ui.tr("The home screen greets you with it. Leave it empty for no name."),
+                    Ui.tr("Type your name"), Prefs.userName(), EditorInfo.IME_ACTION_DONE, Ui.tr("Save"), this::saveName);
         }
 
         private void saveName(String name) {
@@ -1452,22 +1448,8 @@ public class SettingsActivity extends Activity {
 
         private void askCity() {
             if (Ui.tr("Searching…").equals(cityStatus)) return;
-            EditText field = new EditText(activity);
-            field.setSingleLine(true);
-            field.setHint(Ui.tr("Type the city's name"));
-            field.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
-            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("City"))
-                    .setView(field)
-                    .setPositiveButton(Ui.tr("Search"), (d, which) -> searchCity(field.getText().toString()))
-                    .setNegativeButton(Ui.tr("Cancel"), null)
-                    .create();
-            field.setOnEditorActionListener((v, action, event) -> {
-                dialog.dismiss();
-                searchCity(field.getText().toString());
-                return true;
-            });
-            dialog.show();
+            Prompt.ask(activity, Ui.tr("City"), "", Ui.tr("Type the city's name"), "", EditorInfo.IME_ACTION_SEARCH,
+                    Ui.tr("Search"), this::searchCity);
         }
 
         private void searchCity(String name) {
@@ -1511,6 +1493,64 @@ public class SettingsActivity extends Activity {
         }
 
         // MARK: - Remote buttons
+
+        /** "TCL 32S5K": who made the TV and which model it is, as the TV says. */
+        private static String tvName() {
+            String maker = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
+            String model = Build.MODEL == null ? "" : Build.MODEL;
+            if (!maker.isEmpty()) maker = maker.substring(0, 1).toUpperCase(Locale.ROOT) + maker.substring(1);
+            return model.toLowerCase(Locale.ROOT).startsWith(maker.toLowerCase(Locale.ROOT)) ? model : (maker + " " + model).trim();
+        }
+
+        /** A key's name for the list: "Info", or its number when Android has no name for it. */
+        private static String keyName(int code, int scan) {
+            String name = KeyEvent.keyCodeToString(code);
+            name = name.startsWith("KEYCODE_") ? name.substring(8).replace('_', ' ').toLowerCase(Locale.ROOT) : String.valueOf(code);
+            if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
+            return scan > 0 ? name + " · " + scan : name;
+        }
+
+        /** A taught button: what it opens, or take it out. */
+        private void openCustom(String[] key) {
+            final int code = Integer.parseInt(key[0]), scan = Integer.parseInt(key[1]);
+            openDetail(Ui.trf("Button {name}", "name", keyName(code, scan)), () -> {
+                link(Ui.tr("Opens"), () -> {
+                    String pkg = "";
+                    for (String[] k : Prefs.customKeys()) if (k[0].equals(key[0]) && k[1].equals(key[1])) pkg = k[2];
+                    int at = appPkgs.indexOf(pkg);
+                    return at >= 0 ? appLabels.get(at) : pkg.isEmpty() ? Ui.tr("Nothing") : Ui.tr("Not installed");
+                }, () -> {
+                    customCode = code;
+                    customScan = scan;
+                    openPicker(PICK_CUSTOM);
+                });
+                header(Ui.tr("Button"));
+                link(Ui.tr("Remove this button"), () -> "", () -> {
+                    Prefs.setCustomKey(code, scan, null);
+                    closeDetail();
+                });
+            });
+        }
+
+        /** "Add a button": the TV listens for the next key, and the page says so. */
+        private void startLearn() {
+            Prefs.startLearning();
+            HomeMode.ensureRemoteService(getContext(), 0);
+            screen = LEARN;
+            handler.removeCallbacks(learnPoll);
+            handler.postDelayed(learnPoll, 400);
+        }
+
+        /** The key was pressed: now, what should it open? */
+        private void gotButton(int code, int scan) {
+            Prefs.stopLearning();
+            customCode = code;
+            customScan = scan;
+            if (appPkgs.isEmpty()) loadApps();
+            openPicker(PICK_CUSTOM);
+            spoken.focusMoved();
+            invalidate();
+        }
 
         private String[] keyLabels() {
             if (RemoteKeys.STEM_NETFLIX) return new String[] {Ui.tr("Netflix button")};
@@ -1564,6 +1604,10 @@ public class SettingsActivity extends Activity {
             } else if (which == PICK_TEAM) {
                 for (String[] team : teamResults) pickLabels.add(Sports.describe(team));
                 pickCurrent = -1;
+            } else if (which == PICK_CUSTOM) {
+                pickLabels.addAll(appLabels);
+                String now = Prefs.customKeyApp(customCode, customScan);
+                pickCurrent = now == null ? -1 : appPkgs.indexOf(now);
             } else if (which == PICK_LANGUAGE) {
                 String[] choices = languageChoices();
                 for (String code : choices) {

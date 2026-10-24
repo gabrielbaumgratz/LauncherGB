@@ -27,7 +27,7 @@ public class HomeActivity extends Activity {
             // Don't try to draw again: only show a notice while the main process restores the original home screen.
             HomeMode.requestRevertHome(this);
             TextView t = new TextView(this);
-            t.setText(Ui.tr("GB Launcher's home screen ran into a problem.\nGoing back to the TV's original home screen…"));
+            t.setText(Ui.tr("GB Home TV's home screen ran into a problem.\nGoing back to the TV's original home screen…"));
             t.setTextColor(Color.WHITE);
             t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
             t.setGravity(Gravity.CENTER);

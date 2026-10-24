@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Settings changed on the TV itself (GB Launcher > Settings). config.properties only gives the first
+ * Settings changed on the TV itself (GB Home TV > Settings). config.properties only gives the first
  * values; anything the user changes here wins. Read from the :home process (home screen, screensaver, settings).
  */
 final class Prefs {
@@ -125,6 +125,10 @@ final class Prefs {
     static String city() { return demo() ? "New York" : sp().getString("city", Config.CITY).trim(); }
     static String latitude() { return demo() ? "40.7128" : sp().getString("latitude", Config.LATITUDE); }
     static String longitude() { return demo() ? "-74.0060" : sp().getString("longitude", Config.LONGITUDE); }
+
+    /** The person (or config.properties) chose a city; if not, the home screen guesses one from the TV's time zone, once. */
+    static boolean placeChosen() { return !Config.CITY.trim().isEmpty() || sp().contains("city") || sp().getBoolean("placeTried", false); }
+    static void markPlaceTried() { sp().edit().putBoolean("placeTried", true).apply(); }
 
     static void setCity(String name, String latitude, String longitude) {
         sp().edit().putString("city", name).putString("latitude", latitude).putString("longitude", longitude).apply();
@@ -300,13 +304,111 @@ final class Prefs {
 
     // MARK: - Remote buttons
 
+    // Buttons the person taught the TV ("Add a button"): any remote, any brand. One line each in custom-keys.txt:
+    // keyCode:scanCode=package. Both processes read it; the service asks on every key, so it is read again only when
+    // the file changes.
+    private static File customFile() { return new File(app.getFilesDir(), "custom-keys.txt"); }
+
+    private static List<String[]> customCache = new ArrayList<>();
+    private static long customStamp = Long.MIN_VALUE;
+
+    /** {keyCode, scanCode, package} for each taught button. */
+    static synchronized List<String[]> customKeys() {
+        File f = customFile();
+        long stamp = f.exists() ? f.lastModified() : 0;
+        if (stamp != customStamp) {
+            customStamp = stamp;
+            List<String[]> out = new ArrayList<>();
+            try (java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(f), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    int eq = line.indexOf('='), colon = line.indexOf(':');
+                    if (eq > colon && colon > 0) out.add(new String[] {line.substring(0, colon), line.substring(colon + 1, eq), line.substring(eq + 1)});
+                }
+            } catch (IOException ignored) {
+            }
+            customCache = out;
+        }
+        return customCache;
+    }
+
+    /** The app of a taught button (empty: the key goes on as if we weren't here), or null if the key isn't one of them. */
+    static String customKeyApp(int keyCode, int scanCode) {
+        for (String[] k : customKeys()) {
+            if (!k[0].equals(String.valueOf(keyCode))) continue;
+            if (k[1].equals("0") || k[1].equals(String.valueOf(scanCode))) return k[2];
+        }
+        return null;
+    }
+
+    static void setCustomKey(int keyCode, int scanCode, String pkg) {
+        List<String[]> all = new ArrayList<>();
+        for (String[] k : customKeys()) if (!(k[0].equals(String.valueOf(keyCode)) && k[1].equals(String.valueOf(scanCode)))) all.add(k);
+        if (pkg != null) all.add(new String[] {String.valueOf(keyCode), String.valueOf(scanCode), pkg});
+        StringBuilder sb = new StringBuilder();
+        for (String[] k : all) sb.append(k[0]).append(':').append(k[1]).append('=').append(k[2]).append('\n');
+        writeFile(customFile(), sb.toString());
+        version++;
+    }
+
+    private static boolean writeFile(File target, String text) {
+        File tmp = new File(app.getFilesDir(), target.getName() + "." + android.os.Process.myPid() + ".tmp");
+        try (FileOutputStream out = new FileOutputStream(tmp)) {
+            out.write(text.getBytes(StandardCharsets.UTF_8));
+            out.getFD().sync();
+        } catch (IOException e) {
+            //noinspection ResultOfMethodCallIgnored
+            tmp.delete();
+            return false;
+        }
+        return tmp.renameTo(target);
+    }
+
+    private static File learnFile() { return new File(app.getFilesDir(), "learn-on.txt"); }
+    private static File learnedFile() { return new File(app.getFilesDir(), "learned.txt"); }
+
+    /** "Add a button": for a minute the key service keeps the next key (any but the arrows, OK and Back) for the settings. */
+    static void startLearning() {
+        //noinspection ResultOfMethodCallIgnored
+        learnedFile().delete();
+        writeFile(learnFile(), String.valueOf(System.currentTimeMillis()));
+    }
+
+    static void stopLearning() {
+        //noinspection ResultOfMethodCallIgnored
+        learnFile().delete();
+        //noinspection ResultOfMethodCallIgnored
+        learnedFile().delete();
+    }
+
+    static boolean learning() {
+        File f = learnFile();
+        return f.exists() && System.currentTimeMillis() - f.lastModified() < 90_000;
+    }
+
+    static void setLearned(int keyCode, int scanCode) {
+        writeFile(learnedFile(), keyCode + ":" + scanCode);
+    }
+
+    /** {keyCode, scanCode} of the key that was pressed, or null yet. */
+    static int[] learned() {
+        File f = learnedFile();
+        if (!f.exists()) return null;
+        try (java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(f), StandardCharsets.UTF_8))) {
+            String[] p = in.readLine().split(":");
+            return new int[] {Integer.parseInt(p[0]), Integer.parseInt(p[1])};
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
     private static String defaultApp(int keyCode) {
         switch (keyCode) {
             case KEY_NETFLIX: case KEY_STEM_NETFLIX: return "com.netflix.ninja";
             case KEY_YOUTUBE: return "com.google.android.youtube.tv";
             case KEY_PRIME: return "com.amazon.amazonvideo.livingroom";
             case KEY_TCL_CHANNEL: return "";   // TCL's own button: the TV keeps doing what it does
-            case KEY_GUIDE: return "com.global.unitviptv";   // the CH button   // the TV's live TV app (RemoteKeys finds it); Remote Buttons can change it
+            case KEY_GUIDE: return "";   // the CH button: the TV keeps doing what it does until a live TV app is picked
             default: return "";
         }
     }

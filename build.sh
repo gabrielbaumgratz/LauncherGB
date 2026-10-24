@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds GBLauncher.apk without Gradle: aapt2 -> javac -> d8 -> zipalign -> apksigner.
+# Builds GBHomeTV.apk without Gradle: aapt2 -> javac -> d8 -> zipalign -> apksigner.
 # Needs a JDK (17+) and the Android SDK command-line tools (build-tools 34+, platform android-34). See README.md.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -51,7 +51,7 @@ final class Config {
 
     static final String TMDB_KEY = "$(prop tmdb_key '')";
     static final String WATCHMODE_KEY = "$(prop watchmode_key '')";
-    static final String TMDB_REGION = "$(prop tmdb_region US)";
+    static final String TMDB_REGION = "$(prop tmdb_region '')";
     static final String LATITUDE = "$LAT";
     static final String LONGITUDE = "$LON";
     static final String CITY = "$(prop city '')";
@@ -133,7 +133,7 @@ else "${JAVA_HOME:+$JAVA_HOME/bin/}jar" -u -M -f out/base.apk -C out classes.dex
 # --- Sign with your own key (created once; updates need the same key, so keep freemytv.keystore)
 if [ ! -f freemytv.keystore ]; then
   "$KEYTOOL" -genkeypair -keystore freemytv.keystore -alias freemytv -keyalg RSA -keysize 2048 -validity 20000 \
-    -storepass freemytv -keypass freemytv -dname "CN=GB Launcher" >/dev/null 2>&1
+    -storepass freemytv -keypass freemytv -dname "CN=GB Home TV" >/dev/null 2>&1
 fi
-"$BT/apksigner$BAT" sign --ks freemytv.keystore --ks-pass pass:freemytv --key-pass pass:freemytv --out GBLauncher.apk out/aligned.apk
-echo "Built GBLauncher.apk ($(du -h GBLauncher.apk | cut -f1)). Install: adb install -r GBLauncher.apk"
+"$BT/apksigner$BAT" sign --ks freemytv.keystore --ks-pass pass:freemytv --key-pass pass:freemytv --out GBHomeTV.apk out/aligned.apk
+echo "Built GBHomeTV.apk ($(du -h GBHomeTV.apk | cut -f1)). Install: adb install -r GBHomeTV.apk"
