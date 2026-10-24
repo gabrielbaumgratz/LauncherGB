@@ -105,8 +105,26 @@ final class Prefs {
 
     /** The picks (recommendations) on the home screen; off hides them even with a TMDB key. */
     static boolean recommendations() { return sp().getBoolean("recommendations", true); }
-    /** Quiet (no restart of the home screen): HomeActivity.refreshNow() applies it, even with the Control Center open. */
-    static void setRecommendations(boolean on) { sp().edit().putBoolean("recommendations", on).apply(); }
+    static void setRecommendations(boolean on) { put("recommendations", on); }
+
+    static int recsTab() { return sp().getInt("recsTab", 0); }
+    static void setRecsTab(int tab) { sp().edit().putInt("recsTab", tab).apply(); }
+
+    /** Custom order of shortcuts and inputs in the bottom drawer. */
+    static java.util.List<String> drawerOrder() {
+        String s = sp().getString("drawerOrder", "");
+        if (s.isEmpty()) return java.util.Collections.emptyList();
+        return java.util.Arrays.asList(s.split(","));
+    }
+
+    static void setDrawerOrder(java.util.List<String> keys) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < keys.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(keys.get(i));
+        }
+        sp().edit().putString("drawerOrder", sb.toString()).apply();
+    }
 
     /** Paired Bluetooth devices (by address) the person put on the home screen's shortcuts. */
     static boolean btShown(String address) {

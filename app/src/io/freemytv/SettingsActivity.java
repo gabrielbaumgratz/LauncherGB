@@ -517,7 +517,11 @@ public class SettingsActivity extends Activity {
                     link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
                     header(Ui.tr("Content"));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
-                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> Prefs.setRecommendations(!Prefs.recommendations()));
+                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
+                        Prefs.setRecommendations(!Prefs.recommendations());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
                     List<HomeApps.Item> inputs = inputChoices();
                     if (!inputs.isEmpty()) {
@@ -630,6 +634,7 @@ public class SettingsActivity extends Activity {
                     toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
                         Prefs.setRecommendations(!Prefs.recommendations());
                         HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
                     });
                     toggle(Ui.tr("Weather widget"), Prefs::weather, () -> {
                         Prefs.setWeather(!Prefs.weather());
@@ -1705,6 +1710,7 @@ public class SettingsActivity extends Activity {
             Prefs.setSportsOn(full);
             Prefs.setDreamMotion(full);
             HomeData.get(getContext()).settingsChanged();
+            HomeActivity.refreshNow();
         }
 
         /** What a taught button is called: the name the person gave it, or its key. */

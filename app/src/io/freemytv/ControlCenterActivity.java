@@ -224,6 +224,7 @@ public class ControlCenterActivity extends Activity {
             }
             case RECS:
                 Prefs.setRecommendations(!Prefs.recommendations());
+                HomeData.get(this).settingsChanged();
                 HomeActivity.refreshNow();
                 view.build();
                 break;

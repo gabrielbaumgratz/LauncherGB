@@ -3,6 +3,7 @@ package io.freemytv;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
@@ -38,6 +39,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +101,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
     private static String[] tabs;
     private static int tabsGeneration = -1;
-    private static final String[] TAB_KIND = {null, "movie", "tv"};
+    private static final int TABS_COUNT = 4;
+    private static final int TAB_EXPLORE = 0, TAB_MOVIES = 1, TAB_SHOWS = 2, TAB_SPORTS = 3;
+    private static final String[] TAB_KIND = {null, "movie", "tv", "sports"};
     private static final int Z_TOP = 4, Z_CARDS = 5;
 
     private final Activity activity;
@@ -139,11 +143,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int tab, topIndex, cardIndex;
     private int widgetIndex;    // with TalkBack on, the drawer's weather (0) card can take the focus
     private List<Recs.Pick> cards = new ArrayList<>();
-    // The three tabs, then the round buttons at the top right (up to HomeApps.MAX_TOP).
-    private final Spring[] topFocus = new Spring[3 + HomeApps.MAX_TOP];
-    private final RectF[] topRects = new RectF[3 + HomeApps.MAX_TOP];
+    // The tabs, then the round buttons at the top right (up to HomeApps.MAX_TOP).
+    private final Spring[] topFocus = new Spring[TABS_COUNT + HomeApps.MAX_TOP];
+    private final RectF[] topRects = new RectF[TABS_COUNT + HomeApps.MAX_TOP];
     private final Spring[] cardFocus = new Spring[3];
     private final RectF[] cardRects = new RectF[3];
+    private final RectF sportsHeroCard = new RectF();
     private final List<HomeApps.Item> lightButtons = new ArrayList<>();
     private Paint lMini, lTitle, lTab, lTabOn, lCardTitle, lCardMeta, lTip, lDate, lClock, lWeather;
     private Shader lightGradient;
@@ -175,6 +180,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final long HOLD_MS = 500, WIGGLE_MS = 300;
     private static final float LIFT_GROW = 0.08f, WIGGLE_DEG = 1.5f;
     private boolean reordering, reorderAnim, okHeld, holdArmed;
+    private int reorderZone = Z_SHELF;
     private int liftIndex = -1;
     private long reorderAt;
     private float wiggle;
@@ -479,7 +485,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             pickIndex = 0;
             updatePicks();
         }
-        if (tab != 0) selectTab(0);
+        int targetTab = Math.max(0, Math.min(TABS_COUNT - 1, Prefs.recsTab()));
+        if (tab != targetTab) selectTab(targetTab);
         retarget(!animated);
         motionDirty = true;
     }
@@ -488,10 +495,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void setLightButtons(List<HomeApps.Item> list) {
         lightButtons.clear();
         lightButtons.addAll(list);
-        if (zone == Z_TOP && topIndex >= 3 + lightButtons.size()) {
-            topIndex = 2 + lightButtons.size();
-            if (topIndex < 3 && !picksOn()) zone = Z_SHELF;   // without the picks the tabs can't hold focus
-            else if (topIndex < 3) selectTab(topIndex);
+        if (zone == Z_TOP && topIndex >= TABS_COUNT + lightButtons.size()) {
+            topIndex = (TABS_COUNT - 1) + lightButtons.size();
+            if (topIndex < TABS_COUNT && !picksOn()) zone = Z_SHELF;   // without the picks the tabs can't hold focus
+            else if (topIndex < TABS_COUNT) selectTab(topIndex);
             retarget(true);
         }
         layoutLight();
@@ -501,7 +508,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The tab names, made again only when the language changes (they are drawn on every frame). */
     private static String[] tabs() {
         if (tabsGeneration != Ui.generation) {
-            tabs = new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows")};
+            tabs = new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows"), Ui.tr("Sports")};
             tabsGeneration = Ui.generation;
         }
         return tabs;
@@ -512,8 +519,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         updatePalette();
         checkNight(true);
         layoutStatus();
-        heroDirty = statusDirty = drawerDirty = true;
-        platter.invalidate();
+        refreshNow();
     }
 
     @Override public void onRecs() {
@@ -848,7 +854,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         bgTo = b;
         bgFadeAt = up;
         nightPair = false;
-        if (b == null || glassOf(b) == null) return;
+        if (b == null || glassOf(b) == null) {
+            neutralGlass();
+            return;
+        }
         if (bgFrom == null || glassOf(bgFrom) == null) {
             scene.setFrost(frostOf(b));
             scene.setGlassImage(glassOf(b));
@@ -1363,6 +1372,18 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void setDrawerItems(List<HomeApps.Item> list) {
+        List<String> order = Prefs.drawerOrder();
+        if (!order.isEmpty()) {
+            List<HomeApps.Item> sorted = new ArrayList<>(list);
+            Collections.sort(sorted, (a, b) -> {
+                int ia = order.indexOf(a.key), ib = order.indexOf(b.key);
+                if (ia < 0 && ib < 0) return 0;
+                if (ia < 0) return 1;
+                if (ib < 0) return -1;
+                return Integer.compare(ia, ib);
+            });
+            list = sorted;
+        }
         int inputs = 0;
         while (inputs < list.size() && (list.get(inputs).kind == HomeApps.INPUT || list.get(inputs).kind == HomeApps.LIVE_TV)) inputs++;
         boolean same = list.size() == drawerItems.size();
@@ -1459,7 +1480,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (drawerInputs > 0) c.drawText(Ui.tr("Inputs"), drawerRects[0].left + 4 * k, titleBase, rowTitle);
         if (drawerInputs < drawerItems.size()) c.drawText(Ui.tr("Shortcuts"), drawerRects[drawerInputs].left + 4 * k, titleBase, rowTitle);
         int top = -1;
-        for (int i = 0; i < drawerItems.size(); i++) if (drawerFocus[i].value > 0.02f && (top < 0 || drawerFocus[i].value > drawerFocus[top].value)) top = i;
+        if (reordering && reorderZone == Z_DRAWER && liftIndex >= 0 && liftIndex < drawerItems.size()) {
+            top = liftIndex;
+        } else {
+            for (int i = 0; i < drawerItems.size(); i++) if (drawerFocus[i].value > 0.02f && (top < 0 || drawerFocus[i].value > drawerFocus[top].value)) top = i;
+        }
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
@@ -1501,25 +1526,34 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */
     private void drawDrawerTile(Canvas c, int i) {
         HomeApps.Item it = drawerItems.get(i);
-        float f = Ui.clamp(drawerFocus[i].value), s = 1 + 0.07f * f;
+        float f = Ui.clamp(drawerFocus[i].value);
+        float l = (reordering && reorderZone == Z_DRAWER && i == liftIndex) ? Math.max(0, moveLift.value) : 0;
+        float s = 1 + 0.07f * f + l * LIFT_GROW;
         RectF base = drawerRects[i];
         float cx = base.centerX(), cy = base.centerY();
         cell.set(cx - base.width() * s / 2, cy - base.height() * s / 2, cx + base.width() * s / 2, cy + base.height() * s / 2);
         float r = 20 * k * s;
-        if (f > 0.01f) {
+        c.save();
+        if (l > 0.01f) {
+            c.rotate(wiggle * l, cx, cy);
+            tmp.set(cell);
+            tmp.offset(0, 16 * k * l);
+            shadow.setColor(Ui.alpha(0xFF000000, 0.6f * l));
+            shadows.draw(c, tmp, r, SHADOW_BLUR * k, shadow);
+        } else if (f > 0.01f) {
             tmp.set(cell);
             tmp.offset(0, 12 * k * f);
             shadow.setColor(Ui.alpha(0xFF000000, 0.45f * f));
             shadows.draw(c, tmp, r, SHADOW_BLUR * k, shadow);
         }
-        if (f < 0.99f) drawerGlass(c, cell, r, 0.7f, 0x14000000, 6 * k);
-        if (f > 0.01f) {
+        if (f < 0.99f && l < 0.01f) drawerGlass(c, cell, r, 0.7f, 0x14000000, 6 * k);
+        if (f > 0.01f || l > 0.01f) {
             fill.setShader(null);
-            fill.setColor(Ui.alpha(WHITE, f));
+            fill.setColor(Ui.alpha(WHITE, Math.max(f, l)));
             c.drawRoundRect(cell, r, r, fill);
         }
         boolean off = it.kind == HomeApps.INPUT && !it.connected;
-        int ink = blend(tone(off ? 0xFF8E8E93 : L_INK, off ? 0x6BFFFFFF : 0xF2FFFFFF), INK, f);
+        int ink = blend(tone(off ? 0xFF8E8E93 : L_INK, off ? 0x6BFFFFFF : 0xF2FFFFFF), INK, Math.max(f, l));
         Symbols.draw(getContext(), c, it.symbol, cx, cell.top + cell.height() * 0.4f, 34 * k * s, ink);
         drawerLabel.setColor(ink);
         drawerLabel.setTextSize(23 * k * s);
@@ -1530,6 +1564,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         String label = TextUtils.ellipsize(it.label, fitPaint, room, TextUtils.TruncateAt.END).toString();
         c.drawText(label, cx, cell.top + cell.height() * 0.8f, drawerLabel);
         drawerLabel.setTextSize(23 * k);
+        c.restore();
     }
 
     /** Weather for your location: now (large), the next 6 hours, and sunrise and sunset. */
@@ -1655,7 +1690,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         @Override public void onSports() {
             handler.post(new Runnable() {
                 @Override public void run() {
+                    heroDirty = true;
                     drawerDirty = true;
+                    heroLayer.invalidate();
                     drawerLayer.invalidate();
                 }
             });
@@ -1674,7 +1711,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         heroFocus.target = !sheetOpen && zone == Z_HERO ? 1 : 0;
         if (snap) heroFocus.snap(heroFocus.target);
         boolean topChanged = aim(topFocus, !sheetOpen && zone == Z_TOP ? topIndex : -1, snap);
-        heroChanged |= aim(cardFocus, !sheetOpen && zone == Z_CARDS ? cardIndex : -1, snap) | topChanged;
+        heroChanged |= aim(cardFocus, !sheetOpen && zone == Z_CARDS ? (tab == TAB_SPORTS ? 0 : cardIndex) : -1, snap) | topChanged;
         statusChanged |= topChanged;
         tilesDirty |= snap || tilesChanged;
         statusDirty |= snap || statusChanged;
@@ -2161,13 +2198,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             it = drawerItems.get(drawerIndex);
             r = drawerRects[drawerIndex];
         } else if (zone == Z_TOP) {
-            if (topIndex < 3) {
+            if (topIndex < TABS_COUNT) {
                 selectTab(topIndex);
                 return;
             }
-            it = lightButtons.get(topIndex - 3);
+            it = lightButtons.get(topIndex - TABS_COUNT);
             r = topRects[topIndex];
         } else if (zone == Z_CARDS) {
+            if (tab == TAB_SPORTS) {
+                Intent intent = new Intent(activity, SettingsActivity.class);
+                intent.putExtra("page", 4);
+                activity.startActivity(intent);
+                return;
+            }
             Recs.Pick p = cardIndex < cards.size() ? cards.get(cardIndex) : null;
             if (p == null || p.pkg == null) return;
             it = HomeApps.app(p.pkg, Recs.serviceName(p), p.link);
@@ -2288,9 +2331,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     // MARK: - Moving apps on the shelf
 
     private boolean canReorder() {
-        if (sheetOpen || zone != Z_SHELF || shelfIndex >= shelf.size() || shelf.size() < 2) return false;
-        HomeApps.Item it = shelf.get(shelfIndex);
-        return it.kind == HomeApps.APP && it.pkg != null;
+        if (sheetOpen) return false;
+        if (zone == Z_SHELF) {
+            if (shelfIndex >= shelf.size() || shelf.size() < 2) return false;
+            HomeApps.Item it = shelf.get(shelfIndex);
+            return it.kind == HomeApps.APP && it.pkg != null;
+        }
+        if (zone == Z_DRAWER) {
+            return drawerIndex < drawerItems.size() && drawerItems.size() >= 2;
+        }
+        return false;
     }
 
     private void startReorder() {
@@ -2298,9 +2348,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         holdArmed = false;
         if (reordering || !canReorder()) return;
         wake();
+        reorderZone = zone;
         reordering = reorderAnim = okHeld = true;
-        reorderOrigin = new ArrayList<>(shelf);
-        liftIndex = shelfIndex;
+        if (reorderZone == Z_SHELF) {
+            reorderOrigin = new ArrayList<>(shelf);
+            liftIndex = shelfIndex;
+        } else {
+            reorderOrigin = new ArrayList<>(drawerItems);
+            liftIndex = drawerIndex;
+        }
         reorderAt = SystemClock.uptimeMillis();
         moveLift.target = 1;
         click.open();
@@ -2345,63 +2401,88 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
-    /** Swaps the lifted app with its neighbor; both slide from where they are to their new slots. */
+    /** Swaps the lifted app or shortcut with its neighbor; both slide from where they are to their new slots. */
     private void shiftReorder(int dx) {
-        int i = shelfIndex, j = i + dx;
-        if (j < 0 || j >= shelf.size()) return;
-        HomeApps.Item it = shelf.get(i);
-        shelf.set(i, shelf.get(j));
-        shelf.set(j, it);
-        Spring f = tileFocus[i];
-        tileFocus[i] = tileFocus[j];
-        tileFocus[j] = f;
-        Spring s = tileSlide[i];
-        tileSlide[i] = tileSlide[j];
-        tileSlide[j] = s;
-        float d = tileRects[i].left - tileRects[j].left;
-        tileSlide[j].value += d;
-        tileSlide[i].value -= d;
-        if (tileShaders.length == shelf.size()) {
-            LinearGradient g = tileShaders[i];
-            tileShaders[i] = tileShaders[j];
-            tileShaders[j] = g;
+        if (reorderZone == Z_SHELF) {
+            int i = shelfIndex, j = i + dx;
+            if (j < 0 || j >= shelf.size()) return;
+            HomeApps.Item it = shelf.get(i);
+            shelf.set(i, shelf.get(j));
+            shelf.set(j, it);
+            Spring f = tileFocus[i];
+            tileFocus[i] = tileFocus[j];
+            tileFocus[j] = f;
+            Spring s = tileSlide[i];
+            tileSlide[i] = tileSlide[j];
+            tileSlide[j] = s;
+            float d = tileRects[i].left - tileRects[j].left;
+            tileSlide[j].value += d;
+            tileSlide[i].value -= d;
+            if (tileShaders.length == shelf.size()) {
+                LinearGradient g = tileShaders[i];
+                tileShaders[i] = tileShaders[j];
+                tileShaders[j] = g;
+            }
+            shelfIndex = liftIndex = j;
+        } else {
+            int i = drawerIndex, j = i + dx;
+            if (j < 0 || j >= drawerItems.size()) return;
+            HomeApps.Item it = drawerItems.get(i);
+            drawerItems.set(i, drawerItems.get(j));
+            drawerItems.set(j, it);
+            Spring f = drawerFocus[i];
+            drawerFocus[i] = drawerFocus[j];
+            drawerFocus[j] = f;
+            drawerIndex = liftIndex = j;
+            layoutDrawer();
+            drawerDirty = true;
         }
-        shelfIndex = liftIndex = j;
         reorderAnim = true;
         wake();
         retarget(false);
         click.move();
     }
 
-    /** OK: drops the app where it is and saves the shelf's new order. */
+    /** OK: drops the app or shortcut where it is and saves the new order. */
     private void dropReorder() {
         if (!reordering) return;
         reordering = false;
         moveLift.target = 0;
-        boolean changed = false;
-        for (int i = 0; i < shelf.size() && !changed; i++) changed = shelf.get(i) != reorderOrigin.get(i);
-        reorderOrigin = null;
         click.open();
         retarget(false);
-        if (!changed) return;
-        final List<String> order = new ArrayList<>();
-        for (HomeApps.Item it : shelf) order.add(it.pkg);
-        final Context c = getContext().getApplicationContext();
-        LOADER.execute(() -> {
-            // The saved list may hold more than the shelf shows (apps not installed, past the limit): the shown ones
-            // take their new order in the same slots, the others stay where they were.
-            List<String> all = HomeApps.shelfPackages(c), out = new ArrayList<>(all);
-            int next = 0;
-            for (int s = 0; s < out.size() && next < order.size(); s++) {
-                if (order.contains(out.get(s))) out.set(s, order.get(next++));
-            }
-            if (next < order.size()) {
-                out = new ArrayList<>(order);
-                for (String p : all) if (!order.contains(p)) out.add(p);
-            }
-            final List<String> save = out;
-            handler.post(() -> Prefs.setShelf(save));
-        });
+        if (reorderZone == Z_SHELF) {
+            boolean changed = false;
+            for (int i = 0; i < shelf.size() && !changed; i++) changed = shelf.get(i) != reorderOrigin.get(i);
+            reorderOrigin = null;
+            if (!changed) return;
+            final List<String> order = new ArrayList<>();
+            for (HomeApps.Item it : shelf) order.add(it.pkg);
+            final Context c = getContext().getApplicationContext();
+            LOADER.execute(() -> {
+                // The saved list may hold more than the shelf shows (apps not installed, past the limit): the shown ones
+                // take their new order in the same slots, the others stay where they were.
+                List<String> all = HomeApps.shelfPackages(c), out = new ArrayList<>(all);
+                int next = 0;
+                for (int s = 0; s < out.size() && next < order.size(); s++) {
+                    if (order.contains(out.get(s))) out.set(s, order.get(next++));
+                }
+                if (next < order.size()) {
+                    out = new ArrayList<>(order);
+                    for (String p : all) if (!order.contains(p)) out.add(p);
+                }
+                final List<String> save = out;
+                handler.post(() -> Prefs.setShelf(save));
+            });
+        } else {
+            boolean changed = false;
+            for (int i = 0; i < drawerItems.size() && !changed; i++) changed = drawerItems.get(i) != reorderOrigin.get(i);
+            reorderOrigin = null;
+            if (!changed) return;
+            List<String> keys = new ArrayList<>();
+            for (HomeApps.Item it : drawerItems) keys.add(it.key);
+            Prefs.setDrawerOrder(keys);
+            drawerDirty = true;
+        }
     }
 
     /** Back, or leaving the home screen: the original order comes back (sliding, unless `snap`). */
@@ -2410,23 +2491,32 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (reordering) {
             reordering = false;
             moveLift.target = 0;
-            int n = shelf.size();
-            if (reorderOrigin != null && reorderOrigin.size() == n) {
-                HomeApps.Item lifted = shelf.get(shelfIndex);
-                Spring[] focus = new Spring[n], slide = new Spring[n];
-                LinearGradient[] shaders = tileShaders.length == n ? new LinearGradient[n] : tileShaders;
-                for (int a = 0; a < n; a++) {
-                    int b = shelf.indexOf(reorderOrigin.get(a));
-                    focus[a] = tileFocus[b];
-                    slide[a] = tileSlide[b];
-                    slide[a].value += tileRects[b].left - tileRects[a].left;
-                    if (shaders != tileShaders) shaders[a] = tileShaders[b];
+            if (reorderZone == Z_SHELF) {
+                int n = shelf.size();
+                if (reorderOrigin != null && reorderOrigin.size() == n) {
+                    HomeApps.Item lifted = shelf.get(shelfIndex);
+                    Spring[] focus = new Spring[n], slide = new Spring[n];
+                    LinearGradient[] shaders = tileShaders.length == n ? new LinearGradient[n] : tileShaders;
+                    for (int a = 0; a < n; a++) {
+                        int b = shelf.indexOf(reorderOrigin.get(a));
+                        focus[a] = tileFocus[b];
+                        slide[a] = tileSlide[b];
+                        slide[a].value += tileRects[b].left - tileRects[a].left;
+                        if (shaders != tileShaders) shaders[a] = tileShaders[b];
+                    }
+                    shelf = reorderOrigin;
+                    tileFocus = focus;
+                    tileSlide = slide;
+                    tileShaders = shaders;
+                    shelfIndex = liftIndex = shelf.indexOf(lifted);
                 }
-                shelf = reorderOrigin;
-                tileFocus = focus;
-                tileSlide = slide;
-                tileShaders = shaders;
-                shelfIndex = liftIndex = shelf.indexOf(lifted);
+            } else {
+                if (reorderOrigin != null) {
+                    drawerItems.clear();
+                    drawerItems.addAll(reorderOrigin);
+                    layoutDrawer();
+                    drawerDirty = true;
+                }
             }
             reorderOrigin = null;
             retarget(snap);
@@ -2437,7 +2527,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             wiggle = 0;
             liftIndex = -1;
             reorderAnim = false;
-            tilesDirty = true;
+            tilesDirty = drawerDirty = true;
         } else {
             wake();
         }
@@ -2474,8 +2564,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             for (int i = 0; i < others.size(); i++) out.add(a11yId(GRID, i));
             return;
         }
-        for (int i = picksOn() ? 0 : 3; i < 3 + lightButtons.size(); i++) out.add(a11yId(Z_TOP, i));
-        for (int i = 0; i < Math.min(3, cards.size()); i++) out.add(a11yId(Z_CARDS, i));
+        for (int i = picksOn() ? 0 : TABS_COUNT; i < TABS_COUNT + lightButtons.size(); i++) out.add(a11yId(Z_TOP, i));
+        if (tab == TAB_SPORTS) {
+            if (picksOn()) out.add(a11yId(Z_CARDS, 0));
+        } else {
+            for (int i = 0; i < Math.min(3, cards.size()); i++) out.add(a11yId(Z_CARDS, i));
+        }
         for (int i = 0; i < shelf.size(); i++) out.add(a11yId(Z_SHELF, i));
         for (int i = 0; i < drawerItems.size(); i++) out.add(a11yId(Z_DRAWER, i));
         if (drawerOpen && Prefs.weather()) out.add(a11yId(WIDGETS, 0));
@@ -2488,16 +2582,26 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 if (i >= others.size()) return "";
                 return label(others, i) + ", " + Ui.trf("{i} of {n}", "i", i + 1, "n", others.size());
             case Z_TOP:
-                if (i >= 3) return label(lightButtons, i - 3);
-                return Ui.trf("{name}, tab {i} of {n}", "name", tabs()[i], "i", i + 1, "n", 3);
-            case Z_CARDS: return i < cards.size() ? pickText(cards.get(i)) : "";
+                if (i >= TABS_COUNT) return label(lightButtons, i - TABS_COUNT);
+                return Ui.trf("{name}, tab {i} of {n}", "name", tabs()[i], "i", i + 1, "n", TABS_COUNT);
+            case Z_CARDS:
+                if (tab == TAB_SPORTS) {
+                    List<Sports.Game> games = Sports.get(getContext()).games();
+                    return Ui.tr("Sports") + ", " + (games.isEmpty() ? Ui.tr("No games soon.") : Ui.trf("{n} games", "n", games.size()));
+                }
+                return i < cards.size() ? pickText(cards.get(i)) : "";
             case Z_SHELF:
-                if (reordering && i == shelfIndex) {
+                if (reordering && reorderZone == Z_SHELF && i == shelfIndex) {
                     return Ui.trf("Moving {app}, position {n} of {total}",
                             "app", label(shelf, i), "n", i + 1, "total", shelf.size());
                 }
                 return label(shelf, i);
-            case Z_DRAWER: return label(drawerItems, i);
+            case Z_DRAWER:
+                if (reordering && reorderZone == Z_DRAWER && i == drawerIndex) {
+                    return Ui.trf("Moving {app}, position {n} of {total}",
+                            "app", label(drawerItems, i), "n", i + 1, "total", drawerItems.size());
+                }
+                return label(drawerItems, i);
             case WIDGETS: return weatherText();
             default: return "";
         }
@@ -2521,13 +2625,18 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 break;
             }
             case Z_TOP:
-                if (i >= 3 + lightButtons.size()) return false;
+                if (i >= TABS_COUNT + lightButtons.size()) return false;
                 a11yRect.set(topRects[i]);
-                dy = (i < 3 ? heroLayer : status).getTranslationY();
+                dy = (i < TABS_COUNT ? heroLayer : status).getTranslationY();
                 break;
             case Z_CARDS:
-                if (i >= Math.min(3, cards.size())) return false;
-                a11yRect.set(cardRects[i]);
+                if (tab == TAB_SPORTS) {
+                    if (i != 0) return false;
+                    a11yRect.set(sportsHeroCard);
+                } else {
+                    if (i >= Math.min(3, cards.size())) return false;
+                    a11yRect.set(cardRects[i]);
+                }
                 dy = heroLayer.getTranslationY();
                 break;
             case Z_SHELF:
@@ -2560,7 +2669,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (sheetOpen) return others.isEmpty() ? -1 : a11yId(GRID, gridIndex);
         switch (zone) {
             case Z_TOP: return a11yId(Z_TOP, topIndex);
-            case Z_CARDS: return cardIndex < cards.size() ? a11yId(Z_CARDS, cardIndex) : -1;
+            case Z_CARDS: return tab == TAB_SPORTS ? a11yId(Z_CARDS, 0) : (cardIndex < cards.size() ? a11yId(Z_CARDS, cardIndex) : -1);
             case Z_SHELF: return shelf.isEmpty() ? -1 : a11yId(Z_SHELF, shelfIndex);
             case Z_DRAWER: return drawerItems.isEmpty() ? -1 : a11yId(Z_DRAWER, drawerIndex);
             case WIDGETS: return a11yId(WIDGETS, widgetIndex);
@@ -2607,12 +2716,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 widgetIndex = i;
                 break;
             case Z_TOP:
-                if (i >= 3 + lightButtons.size() || (i < 3 && !picksOn())) return;
+                if (i >= TABS_COUNT + lightButtons.size() || (i < TABS_COUNT && !picksOn())) return;
                 if (drawerOpen) closeDrawer();
                 topIndex = i;
-                if (i < 3) selectTab(i);
+                if (i < TABS_COUNT) selectTab(i);
                 break;
             case Z_CARDS:
+                if (tab == TAB_SPORTS) {
+                    if (drawerOpen) closeDrawer();
+                    cardIndex = 0;
+                    break;
+                }
                 if (i >= cards.size()) return;
                 if (drawerOpen) closeDrawer();
                 cardIndex = i;
@@ -2672,14 +2786,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // Text tabs; the focus pill extends 26 px past the text (the first tab's text starts at the margin).
         float pad = 26 * k, tabTop = L_TABBAR_TOP * k, tabBottom = (L_TABBAR_TOP + L_TABBAR_H) * k;
         float x = MARGIN * k - pad;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < TABS_COUNT; i++) {
             float tw = Math.max(lTabOn.measureText(tabs()[i]), lTab.measureText(tabs()[i]));
             topRects[i].set(x, tabTop, x + tw + 2 * pad, tabBottom);
             x = topRects[i].right + 4 * k;
         }
         float b = L_BUTTON * k, right = CONTENT_R * k, cy = L_BUTTON_CY * k;
         for (int i = lightButtons.size() - 1; i >= 0; i--) {
-            topRects[3 + i].set(right - b, cy - b / 2, right, cy + b / 2);
+            topRects[TABS_COUNT + i].set(right - b, cy - b / 2, right, cy + b / 2);
             right -= b + L_BUTTON_GAP * k;
         }
         float top = L_CARDS_TOP * k, ch = L_CARD_H * k, g = L_CARD_GAP * k, left = MARGIN * k, tall = L_TALL_W * k;
@@ -2687,6 +2801,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         cardRects[0].set(left, top, left + wide, top + ch);
         cardRects[1].set(cardRects[0].right + g, top, cardRects[0].right + g + tall, top + ch);
         cardRects[2].set(cardRects[1].right + g, top, cardRects[1].right + g + tall, top + ch);
+        sportsHeroCard.set(left, top, CONTENT_R * k, top + ch);
         heroDirty = statusDirty = true;
     }
 
@@ -2738,7 +2853,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The theme or the recommendations changed while the Control Center was over this screen: take it now. */
     void refreshNow() {
         checkNight(false);
-        if (!picksOn() && zone == Z_TOP && topIndex < 3) topIndex = 3;
+        if (!picksOn() && zone == Z_TOP && topIndex < TABS_COUNT) topIndex = TABS_COUNT;
         if (!picksOn() && zone == Z_CARDS) zone = Z_SHELF;
         updateCards();
         refreshHero(false);
@@ -2749,7 +2864,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The background follows the card in focus (the way it follows the first one when nothing is focused). */
     private void followCard() {
-        if (cards.isEmpty() || !picksOn()) return;
+        if (cards.isEmpty() || !picksOn() || tab == TAB_SPORTS) return;
         Backdrop b = recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (b != null) showBackdrop(b);
     }
@@ -2759,18 +2874,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (!samePicks(list, cards)) {
             cards = list;
             cardIndex = Math.min(cardIndex, Math.max(0, list.size() - 1));
-            if (zone == Z_CARDS && list.isEmpty()) {
+            if (zone == Z_CARDS && list.isEmpty() && tab != TAB_SPORTS) {
                 zone = Z_SHELF;
                 retarget(false);
             }
         }
         if (!picksOn()) {
+            cards = java.util.Collections.emptyList();
             recs.clearMemory();
         } else {
             for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
         }
         // Without picks on the screen (none, or turned off): the photo from the phone, or the default background.
-        boolean noPicks = cards.isEmpty() || !picksOn();
+        boolean noPicks = cards.isEmpty() || !picksOn() || tab == TAB_SPORTS;
         Backdrop b = noPicks ? wallpaperBackdrop() : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (noPicks || b != null) showBackdrop(b);
         heroDirty = true;
@@ -2780,6 +2896,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void selectTab(int index) {
         if (index == tab) return;
         tab = index;
+        Prefs.setRecsTab(tab);
         updateCards();
         heroDirty = true;
     }
@@ -2832,12 +2949,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         String hello = !Prefs.greeting() ? Ui.tr("For You") : greetingText.isEmpty() ? Ui.greeting() : greetingText;
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // The time and date stay on screen, small, left of the buttons.
-        float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[3].left - 36 * k;
+        float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[TABS_COUNT].left - 36 * k;
         c.drawText(miniText, edge, L_BUTTON_CY * k + Ui.halfCap(lMini), lMini);
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
         // the white pill with a shadow and grows a little (the tvOS focus).
         float focus = Ui.clamp(topFocus[tab].value);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < TABS_COUNT; i++) {
             RectF r = topRects[i];
             if (i == tab && focus > 0.01f) {
                 float s = 1 + 0.05f * focus;
@@ -2858,10 +2975,188 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (i == tab) lTabOn.setColor(blend(tone(L_INK, WHITE), L_INK, focus));   // always dark on the white pill
             c.drawText(tabs()[i], r.centerX() - p.measureText(tabs()[i]) / 2, r.centerY() + Ui.halfCap(p), p);
         }
-        int top = -1;
-        for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;
-        for (int i = 0; i < 3; i++) if (i != top) drawLightCard(c, i);
-        if (top >= 0) drawLightCard(c, top);
+        if (tab == TAB_SPORTS) {
+            drawGiantSportsCard(c);
+        } else {
+            int top = -1;
+            for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;
+            for (int i = 0; i < 3; i++) if (i != top) drawLightCard(c, i);
+            if (top >= 0) drawLightCard(c, top);
+        }
+    }
+
+    private void drawGiantSportsCard(Canvas c) {
+        RectF base = sportsHeroCard;
+        float v = cardFocus[0].value, f = Ui.clamp(v), s = 1 + 0.02f * v;
+        float bw = base.width(), bh = base.height(), r0 = 24 * k;
+        float cx = base.centerX(), cy = base.centerY() - 4 * k * v;
+        cell.set(cx - bw * s / 2, cy - bh * s / 2, cx + bw * s / 2, cy + bh * s / 2);
+        float r = r0 * s;
+
+        c.save();
+        c.translate(cx, cy);
+        c.scale(s, s);
+        tmp.set(-bw / 2, -bh / 2, bw / 2, bh / 2);
+        tmp.offset(0, (10 + 14 * f) * k);
+        shadowDeep.setColor(Ui.alpha(0xFF000000, tone(0.12f, 0.35f) + tone(0.18f, 0.25f) * f));
+        shadows.draw(c, tmp, r0, DEEP_BLUR * k, shadowDeep);
+        c.restore();
+
+        int cTop = blend(0xD0D6F4DF, 0xD80D2818, night);
+        int cBottom = blend(0xB8C5ECD4, 0xC4081E12, night);
+        LinearGradient bgGrad = new LinearGradient(cell.left, cell.top, cell.left, cell.bottom, cTop, cBottom, Shader.TileMode.CLAMP);
+        fill.setShader(bgGrad);
+        c.drawRoundRect(cell, r, r, fill);
+        fill.setShader(null);
+
+        int restingRim = blend(0x3328A745, 0x4430D158, night);
+        int focusedRim = blend(0xDD28A745, 0xFF30D158, night);
+        rim.setColor(blend(restingRim, focusedRim, f));
+        rim.setStrokeWidth((2f + 1f * f) * k);
+        c.drawRoundRect(cell, r, r, rim);
+
+        if (f > 0.01f) {
+            LinearGradient sGrad = new LinearGradient(cell.left, cell.top, cell.left + bw * 0.4f, cell.bottom, 0x24FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP);
+            sheen.setShader(sGrad);
+            sheen.setAlpha(Math.round(255 * f));
+            c.drawRoundRect(cell, r, r, sheen);
+            sheen.setAlpha(255);
+            sheen.setShader(null);
+        }
+
+        List<Sports.Game> games = Sports.get(getContext()).games();
+        int textInk = blend(L_INK, 0xFFFFFFFF, night);
+        int textDim = blend(L_DIM, 0xADFFFFFF, night);
+        int greenAccent = blend(0xFF1E7E34, 0xFF30D158, night);
+
+        if (games.isEmpty()) {
+            float midY = cell.centerY();
+            float iconSize = 64 * k;
+            Symbols.draw(getContext(), c, "sports", cell.centerX(), midY - 48 * k, iconSize, greenAccent);
+            fitPaint.set(lTitle);
+            fitPaint.setTextSize(36 * k);
+            fitPaint.setColor(textInk);
+            fitPaint.setTextAlign(Paint.Align.CENTER);
+            c.drawText(Ui.tr("No games soon."), cell.centerX(), midY + 16 * k, fitPaint);
+
+            fitPaint.set(lCardMeta);
+            fitPaint.setTextSize(24 * k);
+            fitPaint.setColor(textDim);
+            fitPaint.setTextAlign(Paint.Align.CENTER);
+            c.drawText(Ui.tr("Pick your team in Settings → Sports."), cell.centerX(), midY + 56 * k, fitPaint);
+            fitPaint.setTextAlign(Paint.Align.LEFT);
+            return;
+        }
+
+        float leftMargin = cell.left + 48 * k;
+        float headerY = cell.top + 56 * k;
+
+        float badgeW = 126 * k, badgeH = 34 * k;
+        tmp.set(leftMargin, headerY, leftMargin + badgeW, headerY + badgeH);
+        fill.setColor(blend(0x4028A745, 0x4030D158, night));
+        c.drawRoundRect(tmp, badgeH / 2, badgeH / 2, fill);
+        Symbols.draw(getContext(), c, "sports", leftMargin + 18 * k, headerY + badgeH / 2, 18 * k, greenAccent);
+        fitPaint.set(lTip);
+        fitPaint.setTextSize(18 * k);
+        fitPaint.setColor(greenAccent);
+        fitPaint.setTextAlign(Paint.Align.LEFT);
+        c.drawText(Ui.tr("Sports").toUpperCase(java.util.Locale.ROOT), leftMargin + 36 * k, headerY + badgeH / 2 + Ui.halfCap(fitPaint), fitPaint);
+
+        fitPaint.set(lTitle);
+        fitPaint.setTextSize(38 * k);
+        fitPaint.setColor(textInk);
+        c.drawText(Ui.tr("Upcoming Games"), leftMargin, headerY + badgeH + 46 * k, fitPaint);
+
+        fitPaint.set(lCardMeta);
+        fitPaint.setTextSize(22 * k);
+        fitPaint.setColor(textDim);
+        c.drawText(Ui.tr("Followed teams and championships"), leftMargin, headerY + badgeH + 82 * k, fitPaint);
+
+        fitPaint.setTextSize(20 * k);
+        fitPaint.setColor(blend(textDim, greenAccent, 0.5f));
+        c.drawText(Ui.tr("Follow teams and championships in Settings"), leftMargin, cell.bottom - 44 * k, fitPaint);
+
+        float dividerX = cell.left + 440 * k;
+        border.setColor(blend(0x20000000, 0x25FFFFFF, night));
+        border.setStrokeWidth(1.5f * k);
+        c.drawLine(dividerX, cell.top + 36 * k, dividerX, cell.bottom - 36 * k, border);
+
+        float gamesLeft = dividerX + 36 * k;
+        float availableW = (cell.right - 48 * k) - gamesLeft;
+        int maxShow = Math.min(3, games.size());
+        float colGap = 24 * k;
+        float colW = (availableW - (maxShow - 1) * colGap) / maxShow;
+        float cardTop = cell.top + 40 * k;
+        float cardBottom = cell.bottom - 40 * k;
+
+        for (int i = 0; i < maxShow; i++) {
+            Sports.Game g = games.get(i);
+            float gx = gamesLeft + i * (colW + colGap);
+            tmp.set(gx, cardTop, gx + colW, cardBottom);
+
+            int subBg = blend(0x50FFFFFF, 0x2A000000, night);
+            fill.setColor(subBg);
+            c.drawRoundRect(tmp, 16 * k, 16 * k, fill);
+
+            border.setColor(blend(0x3028A745, 0x3330D158, night));
+            border.setStrokeWidth(1 * k);
+            c.drawRoundRect(tmp, 16 * k, 16 * k, border);
+
+            float px = tmp.left + 24 * k;
+            float topY = tmp.top + 32 * k;
+
+            String iconName = Sports.icon(g.sport);
+            Symbols.draw(getContext(), c, iconName, px + 10 * k, topY + 4 * k, 20 * k, greenAccent);
+            fitPaint.set(cardTitle);
+            fitPaint.setTextSize(20 * k);
+            fitPaint.setColor(textDim);
+            fitPaint.setTextAlign(Paint.Align.LEFT);
+            float tagX = px + 28 * k;
+            float maxTagW = colW - 48 * k - (g.live ? 90 * k : 0);
+            c.drawText(TextUtils.ellipsize(g.tag, (TextPaint) cardTitle, maxTagW, TextUtils.TruncateAt.END).toString(), tagX, topY + 12 * k, fitPaint);
+
+            if (g.live) {
+                float liveW = 76 * k, liveH = 26 * k;
+                RectF livePill = new RectF(tmp.right - 20 * k - liveW, tmp.top + 20 * k, tmp.right - 20 * k, tmp.top + 20 * k + liveH);
+                fill.setColor(0xE6E53935);
+                c.drawRoundRect(livePill, liveH / 2, liveH / 2, fill);
+                fitPaint.set(lTip);
+                fitPaint.setTextSize(14 * k);
+                fitPaint.setColor(0xFFFFFFFF);
+                fitPaint.setTextAlign(Paint.Align.CENTER);
+                c.drawText(Ui.tr("LIVE"), livePill.centerX(), livePill.centerY() + Ui.halfCap(fitPaint), fitPaint);
+                fitPaint.setTextAlign(Paint.Align.LEFT);
+            }
+
+            fitPaint.set(lCardTitle);
+            fitPaint.setTextSize(26 * k);
+            fitPaint.setColor(textInk);
+            float matchY = tmp.top + 100 * k;
+            String match = g.match;
+            int vsIdx = match.indexOf(" vs ");
+            if (vsIdx < 0) vsIdx = match.indexOf(" vs. ");
+            if (vsIdx < 0) vsIdx = match.indexOf(" - ");
+            if (vsIdx > 0 && colW < 420 * k) {
+                String team1 = match.substring(0, vsIdx).trim();
+                String team2 = match.substring(vsIdx + 4).trim();
+                c.drawText(TextUtils.ellipsize(team1, (TextPaint) lCardTitle, colW - 48 * k, TextUtils.TruncateAt.END).toString(), px, matchY, fitPaint);
+                fitPaint.setTextSize(18 * k);
+                fitPaint.setColor(greenAccent);
+                c.drawText("VS", px, matchY + 34 * k, fitPaint);
+                fitPaint.setTextSize(26 * k);
+                fitPaint.setColor(textInk);
+                c.drawText(TextUtils.ellipsize(team2, (TextPaint) lCardTitle, colW - 48 * k, TextUtils.TruncateAt.END).toString(), px, matchY + 70 * k, fitPaint);
+            } else {
+                c.drawText(TextUtils.ellipsize(match, (TextPaint) lCardTitle, colW - 48 * k, TextUtils.TruncateAt.END).toString(), px, matchY + 20 * k, fitPaint);
+            }
+
+            float botY = tmp.bottom - 28 * k;
+            String dtText = g.day() + " · " + g.time();
+            fitPaint.set(lCardMeta);
+            fitPaint.setTextSize(21 * k);
+            fitPaint.setColor(g.live ? greenAccent : textDim);
+            c.drawText(dtText, px, botY, fitPaint);
+        }
     }
 
     private boolean picksOn() {
@@ -2963,8 +3258,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         applyTone();
         for (int i = 0; i < lightButtons.size(); i++) {
             HomeApps.Item it = lightButtons.get(i);
-            RectF r = topRects[3 + i];
-            float f = Ui.clamp(topFocus[3 + i].value), s = 1 + 0.1f * f, rad = r.width() / 2 * s;
+            RectF r = topRects[TABS_COUNT + i];
+            float f = Ui.clamp(topFocus[TABS_COUNT + i].value), s = 1 + 0.1f * f, rad = r.width() / 2 * s;
             cell.set(r.centerX() - rad, r.centerY() - rad, r.centerX() + rad, r.centerY() + rad);
             tmp.set(cell);
             tmp.offset(0, (6 + 8 * f) * k);
@@ -2991,7 +3286,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** No cards on screen: none loaded, or the recommendations are off (then they are loaded but hidden). */
     private boolean noCards() {
-        return cards.isEmpty() || !picksOn();
+        if (!picksOn()) return true;
+        if (tab == TAB_SPORTS) return false;
+        return cards.isEmpty();
     }
 
     private boolean moveLight(int dx, int dy) {
@@ -3002,41 +3299,61 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 if (noCards()) {
                     if (!picksOn() && lightButtons.isEmpty()) return true;   // no tabs and no buttons above
                     zone = Z_TOP;
-                    topIndex = picksOn() ? tab : 3;
+                    topIndex = picksOn() ? tab : TABS_COUNT;
                 } else {
                     zone = Z_CARDS;
-                    cardIndex = nearest(cardRects, cards.size(), shelf.isEmpty() ? w / 2f : tileRects[shelfIndex].centerX());
+                    if (tab == TAB_SPORTS) {
+                        cardIndex = 0;
+                    } else {
+                        cardIndex = nearest(cardRects, cards.size(), shelf.isEmpty() ? w / 2f : tileRects[shelfIndex].centerX());
+                    }
                 }
                 break;
             case Z_CARDS:
-                if (dx != 0) {
-                    int next = Math.max(0, Math.min(cards.size() - 1, cardIndex + dx));
-                    if (next == cardIndex) return true;
-                    cardIndex = next;
-                    followCard();
-                } else if (dy < 0) {
-                    zone = Z_TOP;
-                    topIndex = tab;     // as on Apple TV: moving up to the tabs focuses the selected tab
+                if (tab == TAB_SPORTS) {
+                    if (dy < 0) {
+                        zone = Z_TOP;
+                        topIndex = tab;
+                    } else if (dy > 0) {
+                        zone = Z_SHELF;
+                        if (!shelf.isEmpty()) shelfIndex = nearest(tileRects, tileRects.length, sportsHeroCard.centerX());
+                    } else {
+                        return true;
+                    }
                 } else {
-                    zone = Z_SHELF;
-                    if (!shelf.isEmpty()) shelfIndex = nearest(tileRects, tileRects.length, cardRects[cardIndex].centerX());
+                    if (dx != 0) {
+                        int next = Math.max(0, Math.min(cards.size() - 1, cardIndex + dx));
+                        if (next == cardIndex) return true;
+                        cardIndex = next;
+                        followCard();
+                    } else if (dy < 0) {
+                        zone = Z_TOP;
+                        topIndex = tab;     // as on Apple TV: moving up to the tabs focuses the selected tab
+                    } else {
+                        zone = Z_SHELF;
+                        if (!shelf.isEmpty()) shelfIndex = nearest(tileRects, tileRects.length, cardRects[cardIndex].centerX());
+                    }
                 }
                 break;
             case Z_TOP:
                 if (dx != 0) {
-                    int next = Math.max(picksOn() ? 0 : 3, Math.min(2 + lightButtons.size(), topIndex + dx));
+                    int next = Math.max(picksOn() ? 0 : TABS_COUNT, Math.min((TABS_COUNT - 1) + lightButtons.size(), topIndex + dx));
                     if (next == topIndex) return true;
                     topIndex = next;
-                    if (topIndex < 3) selectTab(topIndex);   // like Apple TV tabs: focusing a tab selects it
+                    if (topIndex < TABS_COUNT) selectTab(topIndex);   // like Apple TV tabs: focusing a tab selects it
                 } else if (dy > 0) {
                     if (noCards()) {
                         zone = Z_SHELF;
                     } else {
                         zone = Z_CARDS;
-                        cardIndex = nearest(cardRects, cards.size(), topRects[topIndex].centerX());
+                        if (tab == TAB_SPORTS) {
+                            cardIndex = 0;
+                        } else {
+                            cardIndex = nearest(cardRects, cards.size(), topRects[topIndex].centerX());
+                        }
                     }
-                } else if (topIndex < 3 && !lightButtons.isEmpty()) {
-                    topIndex = 3;   // up from the tabs reaches the corner buttons without walking the row
+                } else if (topIndex < TABS_COUNT && !lightButtons.isEmpty()) {
+                    topIndex = TABS_COUNT;   // up from the tabs reaches the corner buttons without walking the row
                 } else {
                     return true;
                 }
