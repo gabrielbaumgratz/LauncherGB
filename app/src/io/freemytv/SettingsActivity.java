@@ -862,6 +862,8 @@ public class SettingsActivity extends Activity {
             lastNanos = 0;
             inputChoices = null;
             deviceChoices = null;
+            appPkgs.clear();   // the apps' names again, in the language now
+            appLabels.clear();
             themeAt = 0;
             updateTheme();
             handler.post(poll);
