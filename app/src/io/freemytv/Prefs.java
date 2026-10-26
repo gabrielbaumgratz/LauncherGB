@@ -172,11 +172,15 @@ final class Prefs {
 
     // MARK: - Glass
 
+    /** The home background comes from the photos (the screensaver's) instead of the recommendations. */
+    static boolean photoBackground() { return sp().getBoolean("photoBackground", false); }
+    static void setPhotoBackground(boolean on) { put("photoBackground", on); version++; }
+
     /** How frosted the glass of the shelf and the Control Center is: 0 (clear) to 4 (very frosted). */
     static int glass() { return Math.max(0, Math.min(4, sp().getInt("glass", 2))); }
     static void setGlass(int level) { sp().edit().putInt("glass", Math.max(0, Math.min(4, level))).apply(); version++; }
 
-    /** How much of the photo shows in the home screen's background: 0 (most frosted) to 4 (most visible); 2 is the usual look. */
+    /** How frosted the home screen's background is: 0 (clear, the photo most visible) to 4 (most frosted); 2 is the usual look. */
     static int backdrop() { return Math.max(0, Math.min(4, sp().getInt("backdrop", 2))); }
     static void setBackdrop(int level) { sp().edit().putInt("backdrop", Math.max(0, Math.min(4, level))).apply(); version++; }
 

@@ -37,6 +37,7 @@ final class Sports {
     static final class Game {
         long when;
         String match = "", tag = "", sport = "soccer";
+        String logoHome = "", logoAway = "";   // ESPN's crest addresses (team games only)
         boolean live, mine;
         private String cachedDay, cachedTime;
         private int cachedDayGen = -1, cachedTimeGen = -1;
@@ -435,14 +436,20 @@ final class Sports {
         if (comp == null) return;
         String state = stateOf(comp.optJSONObject("status"));
         if (state.equals("post")) return;
-        String home = "", away = "";
+        String home = "", away = "", logoHome = "", logoAway = "";
         JSONArray teams = comp.optJSONArray("competitors");
         for (int i = 0; teams != null && i < teams.length(); i++) {
             JSONObject t = teams.optJSONObject(i);
             JSONObject team = t == null ? null : t.optJSONObject("team");
             if (team == null) continue;
             String name = team.optString("displayName", team.optString("name", ""));
-            if ("away".equals(t.optString("homeAway"))) away = name; else home = name;
+            if ("away".equals(t.optString("homeAway"))) {
+                away = name;
+                logoAway = team.optString("logo");
+            } else {
+                home = name;
+                logoHome = team.optString("logo");
+            }
         }
         if (home.isEmpty() || away.isEmpty()) return;
         String id = e.optString("id");
@@ -451,6 +458,8 @@ final class Sports {
         g.when = parse(e.optString("date"));
         if (g.when == 0) return;
         g.match = home + " × " + away;
+        g.logoHome = logoHome;
+        g.logoAway = logoAway;
         g.tag = leagueName(path);
         g.sport = sportOf(path);
         g.live = state.equals("in");
@@ -580,7 +589,7 @@ final class Sports {
     private void save(List<Game> list) {
         try (FileOutputStream out = new FileOutputStream(file())) {
             JSONArray a = new JSONArray();
-            for (Game g : list) a.put(new JSONObject().put("w", g.when).put("m", g.match).put("t", g.tag).put("l", g.live).put("p", g.mine).put("s", g.sport));
+            for (Game g : list) a.put(new JSONObject().put("w", g.when).put("m", g.match).put("t", g.tag).put("l", g.live).put("p", g.mine).put("s", g.sport).put("a", g.logoHome).put("b", g.logoAway));
             out.write(a.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException | JSONException e) {
             AppLog.w("sports not saved: " + e.getMessage());
@@ -604,6 +613,8 @@ final class Sports {
                 g.live = o.optBoolean("l");
                 g.mine = o.optBoolean("p");
                 g.sport = o.optString("s", "soccer");
+                g.logoHome = o.optString("a");
+                g.logoAway = o.optString("b");
                 list.add(g);
             }
         } catch (IOException | JSONException ignored) {

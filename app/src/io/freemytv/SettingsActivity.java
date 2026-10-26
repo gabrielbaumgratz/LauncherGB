@@ -520,7 +520,12 @@ public class SettingsActivity extends Activity {
                         Prefs.setGlass((Prefs.glass() + 1) % 5);
                         HomeData.get(c).settingsChanged();
                     });
-                    value(Ui.tr("Background: frosted to clear"), () -> (Prefs.backdrop() + 1) + " / 5", () -> {
+                    value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Ui.tr("Recommendations"), () -> {
+                        Prefs.setPhotoBackground(!Prefs.photoBackground());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    value(Ui.tr("Background: clear to frosted"), () -> (Prefs.backdrop() + 1) + " / 5", () -> {
                         Prefs.setBackdrop((Prefs.backdrop() + 1) % 5);
                         HomeData.get(c).settingsChanged();
                     });

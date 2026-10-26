@@ -48,7 +48,7 @@ final class Backdrop {
     Bitmap nightImage;                  // at night: the background (the darkened frosted version)
     private int bgLevel = -1;
     /** How much of the photo's color the background keeps: the white (day) and black (night) mixed in, per level 0 to 4. */
-    private static final float[] WHITEN = {0.93f, 0.88f, 0.82f, 0.64f, 0.44f}, DARKEN = {0.95f, 0.92f, 0.89f, 0.78f, 0.64f};
+    private static final float[] WHITEN = {0.44f, 0.64f, 0.82f, 0.88f, 0.93f}, DARKEN = {0.64f, 0.78f, 0.89f, 0.92f, 0.95f};
 
     private Backdrop(Bitmap image, int[] frost, int[] glass, Bitmap wide, Bitmap tall, int[] light, int[] lightGlass,
                      int[] night, int[] nightGlass) {
@@ -63,7 +63,7 @@ final class Backdrop {
         this.nightGlass = nightGlass;
     }
 
-    /** Makes the day and night backgrounds for this level (Prefs.backdrop: 0 most frosted, 2 the usual look, 4 the photo most visible). */
+    /** Makes the day and night backgrounds for this level (Prefs.backdrop: 0 clear, the photo most visible; 2 the usual look; 4 most frosted). */
     void background(int level) {
         if (level == bgLevel || light == null) return;
         lightImage = Bitmap.createBitmap(whiten(frost.clone(), WHITEN[level]), FW, FH, Bitmap.Config.ARGB_8888);

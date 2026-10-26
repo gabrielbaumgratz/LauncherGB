@@ -430,6 +430,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         data.refreshIfStale();
         recs.refreshIfStale();
         Sports.get(getContext()).setListener(sportsListener);
+        Crests.setListener(new Runnable() {
+            @Override public void run() { sportsListener.onSports(); }
+        });
         Sports.get(getContext()).refreshIfStale();
         if (tvInputs != null) tvInputs.registerCallback(inputCallback, handler);
         handler.postDelayed(tick, 15_000);
@@ -458,6 +461,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         data.removeListener(this);
         recs.removeListener(this);
         Sports.get(getContext()).setListener(null);
+        Crests.setListener(null);
         if (tvInputs != null) tvInputs.unregisterCallback(inputCallback);
     }
 
@@ -2894,6 +2898,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The photo from the phone picked as the background (while there are no recommendations to show), or null. */
     private Backdrop wallpaperBackdrop() {
         String chosen = Prefs.wallpaper();
+        if (chosen.isEmpty() && Prefs.photoBackground()) chosen = "*";
         if (chosen.equals("*")) {   // rotate through all the photos, one every Prefs.photoSeconds()
             List<String> all = Photos.list(getContext());
             chosen = all.isEmpty() ? "" : all.get((int) ((System.currentTimeMillis() / 1000 / Prefs.photoSeconds()) % all.size()));
@@ -2948,7 +2953,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The background follows the card in focus (the way it follows the first one when nothing is focused). */
     private void followCard() {
-        if (cards.isEmpty() || !picksOn() || isSportsTab()) return;
+        if (cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground()) return;
         Backdrop b = recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (b != null) showBackdrop(b);
     }
@@ -2974,7 +2979,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
         }
         // Without picks on the screen (none, or turned off): the photo from the phone, or the default background.
-        boolean noPicks = cards.isEmpty() || !picksOn() || isSportsTab();
+        boolean noPicks = cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground();
         Backdrop b = noPicks ? wallpaperBackdrop() : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (noPicks || b != null) showBackdrop(b);
         heroDirty = true;
@@ -3173,7 +3178,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             String[] sides = vs > 0 ? new String[] {g.match.substring(0, vs), g.match.substring(vs + 3)} : new String[] {g.match};
             for (int t = 0; t < sides.length; t++) {
                 float ty = tmp.top + (sides.length == 1 ? 118 : 100 + t * 68) * k;
-                monogram(c, sides[t], px + 24 * k, ty, 24 * k);
+                monogram(c, sides[t], sides.length == 2 ? (t == 0 ? g.logoHome : g.logoAway) : "", px + 24 * k, ty, 24 * k);
                 fitPaint.set(lCardTitle);
                 fitPaint.setTextSize(25 * k);
                 fitPaint.setColor(ink);
@@ -3195,9 +3200,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private final float[] teamHsv = {0, 0.45f, 0.78f};
+    private final RectF crestRect = new RectF();
 
     /** A colored circle with the team's first letter (no images: the color comes from the name). */
-    private void monogram(Canvas c, String name, float cx, float cy, float radius) {
+    private void monogram(Canvas c, String name, String logo, float cx, float cy, float radius) {
+        Bitmap crest = Crests.get(logo);
+        if (crest != null) {
+            crestRect.set(cx - radius, cy - radius, cx + radius, cy + radius);
+            c.drawBitmap(crest, null, crestRect, imagePaint);
+            return;
+        }
         teamHsv[0] = (name.hashCode() & 0x7fffffff) % 360;
         fill.setColor(android.graphics.Color.HSVToColor(teamHsv));
         c.drawCircle(cx, cy, radius, fill);
