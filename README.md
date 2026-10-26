@@ -77,7 +77,8 @@ Real performance without inflated claims: GB Home TV opens faster and animates c
 | **Drawer** | <img src="docs/assets/en/drawer.png" width="440"> |
 | **Control Center** | <img src="docs/assets/en/control-center.png" width="440"> |
 | **Settings** | <img src="docs/assets/en/settings.png" width="440"> |
-| **Sports** | <img src="docs/assets/en/settings-games.png" width="440"> |
+| **Sports tab** | <img src="docs/assets/en/sports.png" width="440"> |
+| **Sports settings** | <img src="docs/assets/en/settings-games.png" width="440"> |
 | **Screensaver** | <img src="docs/assets/en/settings-screensaver.png" width="440"> |
 | **Performance** | <img src="docs/assets/en/settings-performance.png" width="440"> |
 | **Remote buttons** | <img src="docs/assets/en/settings-remote.png" width="440"> |

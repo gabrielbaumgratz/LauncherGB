@@ -77,7 +77,8 @@ Rendimiento transparente: GB Home TV inicia más rápido y ofrece una respuesta 
 | **Cajón** | <img src="docs/assets/es/drawer.png" width="440"> |
 | **Centro de control** | <img src="docs/assets/es/control-center.png" width="440"> |
 | **Ajustes** | <img src="docs/assets/es/settings.png" width="440"> |
-| **Deportes** | <img src="docs/assets/es/settings-games.png" width="440"> |
+| **Pestaña Deportes** | <img src="docs/assets/es/sports.png" width="440"> |
+| **Ajustes de deportes** | <img src="docs/assets/es/settings-games.png" width="440"> |
 | **Protector de pantalla** | <img src="docs/assets/es/settings-screensaver.png" width="440"> |
 | **Rendimiento** | <img src="docs/assets/es/settings-performance.png" width="440"> |
 | **Botones del control** | <img src="docs/assets/es/settings-remote.png" width="440"> |

@@ -77,7 +77,8 @@ Sem números maquiados: o GB Home TV abre mais rápido e responde instantaneamen
 | **Gaveta** | <img src="docs/assets/pt/drawer.png" width="440"> |
 | **Central de Controle** | <img src="docs/assets/pt/control-center.png" width="440"> |
 | **Configurações** | <img src="docs/assets/pt/settings.png" width="440"> |
-| **Esportes** | <img src="docs/assets/pt/settings-games.png" width="440"> |
+| **Aba Esportes** | <img src="docs/assets/pt/sports.png" width="440"> |
+| **Configurações de esportes** | <img src="docs/assets/pt/settings-games.png" width="440"> |
 | **Tela de descanso** | <img src="docs/assets/pt/settings-screensaver.png" width="440"> |
 | **Desempenho** | <img src="docs/assets/pt/settings-performance.png" width="440"> |
 | **Botões do controle** | <img src="docs/assets/pt/settings-remote.png" width="440"> |
