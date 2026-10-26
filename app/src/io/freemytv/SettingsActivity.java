@@ -173,7 +173,7 @@ public class SettingsActivity extends Activity {
         private static final int SMOKE = 0xFF111113, INK = 0xFF1C1C1E, WHITE = 0xFFF5F5F7;
         private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73;
         private static final float SHADOW_BLUR = 26;
-        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2, PICK_CUSTOM = -3, PICK_LEVEL = -4;
+        private static final int PICK_CITY = 0, PICK_LANGUAGE = -1, PICK_TEAM = -2, PICK_CUSTOM = -3;
         private static final String[] UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
 
         private static final class Row {
@@ -554,7 +554,7 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     });
                     note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
-                    value(Ui.tr("Tab order"), () -> Prefs.sportsFirst() ? Ui.tr("Sports, then Recommendations") : Ui.tr("Recommendations, then Sports"), () -> {
+                    value(Ui.tr("Tab order"), () -> Prefs.sportsFirst() ? Ui.tr("Sports → Recommendations") : Ui.tr("Recommendations → Sports"), () -> {
                         Prefs.setSportsFirst(!Prefs.sportsFirst());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
@@ -666,7 +666,7 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Display"));
                     toggle(Ui.tr("Clock"), Prefs::dreamClock, () -> Prefs.setDreamClock(!Prefs.dreamClock()));
                     toggle(Ui.tr("Date and weather"), Prefs::dreamDate, () -> Prefs.setDreamDate(!Prefs.dreamDate()));
-                    value(Ui.tr("Screensaver brightness"), () -> levelNames()[Prefs.dreamLevel()], () -> openPicker(PICK_LEVEL));
+                    value(Ui.tr("Brightness: dark to bright"), () -> (6 - Prefs.dreamLevel()) + " / 6", () -> Prefs.setDreamLevel(6 - (6 - Prefs.dreamLevel()) % 6 - 1));
                     toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
                     break;
                 }
@@ -1372,7 +1372,7 @@ public class SettingsActivity extends Activity {
 
         private String pickerTitle() {
             return pickFor == PICK_CITY ? Ui.tr("City") : pickFor == PICK_LANGUAGE ? Ui.tr("Language")
-                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : pickFor == PICK_CUSTOM ? Ui.tr("What should it open?") : pickFor == PICK_LEVEL ? Ui.tr("Screensaver brightness") : keyLabels()[pickFor - 1];
+                    : pickFor == PICK_TEAM ? Ui.tr("Add a team") : pickFor == PICK_CUSTOM ? Ui.tr("What should it open?") : keyLabels()[pickFor - 1];
         }
 
         private void drawSidebar(Canvas c) {
@@ -1760,9 +1760,6 @@ public class SettingsActivity extends Activity {
                 Prefs.setCity(city[1], city[2], city[3]);
                 HomeData.get(getContext()).settingsChanged();
                 back();
-            } else if (screen == PICKER && pickFor == PICK_LEVEL) {
-                Prefs.setDreamLevel(pickScroll + focus);
-                back();
             } else if (screen == PICKER && pickFor == PICK_CUSTOM) {
                 Prefs.setCustomKey(customCode, customScan, appPkgs.get(pickScroll + focus));
                 back();
@@ -1903,10 +1900,6 @@ public class SettingsActivity extends Activity {
                         rebuild();
                         invalidate();
                     });
-        }
-
-        private static String[] levelNames() {
-            return new String[] {Ui.tr("Brightest"), Ui.tr("Brighter"), Ui.tr("Standard"), Ui.tr("Dim"), Ui.tr("Dark"), Ui.tr("Darkest and matte")};
         }
 
         private static volatile long cachedMemoryMb = 0;
@@ -2119,9 +2112,6 @@ public class SettingsActivity extends Activity {
             } else if (which == PICK_TEAM) {
                 for (String[] team : teamResults) pickLabels.add(Sports.describe(team));
                 pickCurrent = -1;
-            } else if (which == PICK_LEVEL) {
-                pickLabels.addAll(java.util.Arrays.asList(levelNames()));
-                pickCurrent = Prefs.dreamLevel();
             } else if (which == PICK_CUSTOM) {
                 pickLabels.addAll(appLabels);
                 String now = Prefs.customKeyApp(customCode, customScan);
