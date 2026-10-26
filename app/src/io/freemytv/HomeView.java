@@ -3201,13 +3201,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private final float[] teamHsv = {0, 0.45f, 0.78f};
     private final RectF crestRect = new RectF();
+    private final Paint crestPaint = new Paint(Paint.FILTER_BITMAP_FLAG);   // not imagePaint: the background fades that one
 
     /** A colored circle with the team's first letter (no images: the color comes from the name). */
     private void monogram(Canvas c, String name, String logo, float cx, float cy, float radius) {
         Bitmap crest = Crests.get(logo);
         if (crest != null) {
             crestRect.set(cx - radius, cy - radius, cx + radius, cy + radius);
-            c.drawBitmap(crest, null, crestRect, imagePaint);
+            c.drawBitmap(crest, null, crestRect, crestPaint);
             return;
         }
         teamHsv[0] = (name.hashCode() & 0x7fffffff) % 360;
