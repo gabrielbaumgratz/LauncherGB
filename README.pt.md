@@ -8,7 +8,7 @@
 # GB Home TV
 
 **Uma tela inicial inspirada na Apple TV para Google TV e Android TV: mais rápida, leve e sem anúncios nem spyware.**<br>
-Prateleira de vidro, abas de filmes, séries e esportes, Central de Controle e protetor de tela com fotos no lugar da tela inicial de fábrica. Um clique desliga anúncios e rastreadores, e outro traz tudo de volta.
+abas de filmes, séries e esportes, Central de Controle e protetor de tela com fotos no lugar da tela inicial de fábrica. Um clique desliga anúncios e rastreadores, e outro traz tudo de volta.
 
 [English](README.md) · Português · [Español](README.es.md)
 
