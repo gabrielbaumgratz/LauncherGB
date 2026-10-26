@@ -8,7 +8,7 @@
 # GB Home TV
 
 **An Apple TV-inspired home screen for Google TV and Android TV: faster, lighter, with no ads and no spyware.**<br>
-A glass app shelf, tabs for movies, shows and sports, a Control Center and a photo screensaver replace your TV's stock home screen. One click turns off factory ads and telemetry, and one click brings it all back.
+Tabs for movies, shows and sports, a Control Center and a photo screensaver replace your TV's stock home screen. One click turns off factory ads and telemetry, and one click brings it all back.
 
 English · [Português](README.pt.md) · [Español](README.es.md)
 
@@ -194,7 +194,7 @@ tools/check.sh        # runs build and translation validations
 Created and maintained by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), originally inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv).
 
 - **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): original project foundation.
-- **Apple TV (tvOS)**: the visual inspiration for the glass shelf, tabs and Control Center. GB Home TV is an independent project, not affiliated with or endorsed by Apple.
+- **Apple TV (tvOS)**: the visual inspiration for the home screen, tabs and Control Center. GB Home TV is an independent project, not affiliated with or endorsed by Apple.
 - **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, by jqssun (GPL-3.0): companion AirPlay receiver.
 - **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): interface iconography.
 - **[TMDB](https://www.themoviedb.org)**: streaming recommendations and artwork metadata.

@@ -8,7 +8,7 @@
 # GB Home TV
 
 **Una pantalla de inicio inspirada en Apple TV para Google TV y Android TV: más rápida, ligera y sin anuncios ni spyware.**<br>
-Estante de cristal, pestañas de películas, series y deportes, Centro de control y salvapantallas con fotos en lugar de la pantalla de inicio de fábrica. Un clic apaga anuncios y rastreadores, y otro lo devuelve todo.
+Pestañas de películas, series y deportes, Centro de control y salvapantallas con fotos en lugar de la pantalla de inicio de fábrica. Un clic apaga anuncios y rastreadores, y otro lo devuelve todo.
 
 [English](README.md) · [Português](README.pt.md) · Español
 
@@ -194,7 +194,7 @@ tools/check.sh        # comprueba integridad de código y catálogos de traducci
 Creado y mantenido por [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), basado originalmente en el proyecto [Free My TV](https://github.com/simbasjungles/free-my-tv).
 
 - **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): base original sobre la cual evolucionó este launcher.
-- **Apple TV (tvOS)**: inspiración visual del estante de cristal, las pestañas y el Centro de control. GB Home TV es un proyecto independiente, sin vínculo ni aval de Apple.
+- **Apple TV (tvOS)**: inspiración visual de la pantalla de inicio, las pestañas y el Centro de control. GB Home TV es un proyecto independiente, sin vínculo ni aval de Apple.
 - **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, por jqssun (GPL-3.0): receptor auxiliar para AirPlay.
 - **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): iconografía del sistema.
 - **[TMDB](https://www.themoviedb.org)**: metadatos y recomendaciones de streaming.
