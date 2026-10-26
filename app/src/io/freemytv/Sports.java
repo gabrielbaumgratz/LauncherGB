@@ -445,10 +445,10 @@ final class Sports {
             String name = team.optString("displayName", team.optString("name", ""));
             if ("away".equals(t.optString("homeAway"))) {
                 away = name;
-                logoAway = team.optString("logo");
+                logoAway = logoOf(team);
             } else {
                 home = name;
-                logoHome = team.optString("logo");
+                logoHome = logoOf(team);
             }
         }
         if (home.isEmpty() || away.isEmpty()) return;
@@ -465,6 +465,14 @@ final class Sports {
         g.live = state.equals("in");
         g.mine = mine != null && (home.equals(mine) || away.equals(mine));
         out.add(g);
+    }
+
+    /** The crest's address: the scoreboard gives "logo", a team's schedule gives a list of "logos". */
+    private static String logoOf(JSONObject team) {
+        String logo = team.optString("logo");
+        if (!logo.isEmpty()) return logo;
+        JSONObject first = first(team.optJSONArray("logos"));
+        return first == null ? "" : first.optString("href");
     }
 
     private void tennis(List<Game> out, Set<String> seen, String tour, long now, int topN, Set<String> players) {
