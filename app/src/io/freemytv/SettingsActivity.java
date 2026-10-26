@@ -57,6 +57,7 @@ import java.util.function.Supplier;
  */
 public class SettingsActivity extends Activity {
     private SettingsView view;
+    private boolean previewAlone;   // the preview came from outside (the Control Center): closing it leaves, back to where it started
     private DreamView preview;   // "Screensaver": the screensaver right here, without changing the system setting
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +75,7 @@ public class SettingsActivity extends Activity {
         if (preview == null && getIntent().getBooleanExtra("screensaver", false)) {
             getIntent().removeExtra("screensaver");
             view.pause();
+            previewAlone = true;
             showPreview();
         }
         // From ADB: --ei page 4 opens that category (0 General, 1 Home Screen, 2 Control Center, 3 Weather, 4 Games, 5 Screensaver,
@@ -81,6 +83,11 @@ public class SettingsActivity extends Activity {
         // From ADB: --ei tennisAtp 5 --ei tennisWta 3 (how many of each ranking the tennis shows; ten by default, no menu).
         if (getIntent().hasExtra("tennisAtp")) Prefs.setTennisTop("atp", getIntent().getIntExtra("tennisAtp", 10));
         if (getIntent().hasExtra("tennisWta")) Prefs.setTennisTop("wta", getIntent().getIntExtra("tennisWta", 10));
+        if (getIntent().hasExtra("language")) {   // --es language en|pt|es|auto
+            Prefs.setLanguage(getIntent().getStringExtra("language"));
+            getIntent().removeExtra("language");
+            recreate();
+        }
         if (getIntent().hasExtra("demo")) {
             Prefs.setDemo(getIntent().getBooleanExtra("demo", false));
             getIntent().removeExtra("demo");
@@ -139,6 +146,11 @@ public class SettingsActivity extends Activity {
         if (preview == null) return;
         preview.stop();
         preview = null;
+        if (previewAlone) {
+            previewAlone = false;
+            finish();
+            return;
+        }
         setContentView(view);
         view.resume();
     }
@@ -586,6 +598,11 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     });
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
+                    toggle(Ui.tr("Sports tab first"), Prefs::sportsFirst, () -> {
+                        Prefs.setSportsFirst(!Prefs.sportsFirst());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
 
                     header(Ui.tr("Display priority"));
                     value(Ui.tr("Priority"), () -> {
@@ -754,12 +771,8 @@ public class SettingsActivity extends Activity {
         }
 
         private String licenseText() {
-            try (InputStream in = getContext().getAssets().open("LICENSE.txt");
-                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                byte[] buf = new byte[1024];
-                int n;
-                while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
-                return new String(out.toByteArray(), StandardCharsets.UTF_8).trim();
+            try (InputStream in = getContext().getAssets().open("LICENSE.txt")) {
+                return Ui.readUtf8(in).trim();
             } catch (IOException e) {
                 return "MIT License\n\nCopyright (c) 2026 Gabriel Baumgratz\nCopyright (c) 2026 Free My TV contributors";
             }
@@ -824,11 +837,9 @@ public class SettingsActivity extends Activity {
                                 install.setDataAndType(uri, "application/vnd.android.package-archive");
                                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                                 activity.startActivity(install);
-                            } catch (Exception ex) {
-                                Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-                                install.setData(Uri.fromFile(apkFile));
-                                install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                activity.startActivity(install);
+                            } catch (Exception ex) {   // no installer on this TV
+                                githubInstallStatus = Ui.tr("Download failed");
+                                invalidate();
                             }
                         });
                     } else {

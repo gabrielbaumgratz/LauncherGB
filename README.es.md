@@ -7,8 +7,8 @@
 
 # GB Home TV
 
-**Tu TV más rápida, ligera y libre de anuncios y spyware.**<br>
-Elimina anuncios invasivos y rastreadores de fábrica de tu Google TV o Android TV con un solo clic. Totalmente reversible en cualquier momento.
+**Una pantalla de inicio inspirada en Apple TV para Google TV y Android TV: más rápida, ligera y sin anuncios ni spyware.**<br>
+Estante de cristal, pestañas de películas, series y deportes, Centro de control y salvapantallas con fotos en lugar de la pantalla de inicio de fábrica. Un clic apaga anuncios y rastreadores, y otro lo devuelve todo.
 
 [English](README.md) · [Português](README.pt.md) · Español
 
@@ -35,7 +35,7 @@ Elimina anuncios invasivos y rastreadores de fábrica de tu Google TV o Android 
 | Característica | Descripción |
 |---|---|
 | **Centro de control** | Panel lateral instantáneo para alternar salidas de audio Bluetooth (auriculares y barras de sonido), volumen, modo de imagen (en televisores compatibles), tema visual y acceso directo al receptor AirPlay. |
-| **Deportes, equipos y deportistas** | Sigue a tus clubes (fútbol, baloncesto, fútbol americano) en ligas y copas (Champions League, Copa Libertadores, ligas locales), además de deportistas individuales (tenistas en rankings ATP/WTA, pilotos de Fórmula 1, luchadores de UFC y golfistas de la PGA). Información pública en tiempo real de ESPN sin necesidad de cuenta. |
+| **Deportes, equipos y deportistas** | Sigue a tus clubes (fútbol, baloncesto, fútbol americano) en ligas y copas (Champions League, Copa Libertadores, ligas locales), además de deportistas individuales (tenistas en rankings ATP/WTA, pilotos de Fórmula 1, luchadores de UFC y golfistas de la PGA). Información pública en tiempo real de ESPN sin necesidad de cuenta. Elige si la pestaña Deportes va primero o última en *Ajustes → Deportes*. |
 | **Protector de pantalla personalizado** | Galería fotográfica a pantalla completa con reloj, fecha y clima local. Seis niveles de brillo adaptados (incluyendo opciones mate y ultra-oscura para dormitorios y paneles OLED). |
 | **Envío de fotos desde el móvil** | Transfiere fotografías de tu teléfono al televisor por Wi-Fi local mediante código QR, protegido con servidor temporal y validación por PIN. |
 | **Mapeo de botones del mando** | Asigna cualquier botón del mando a distancia para abrir una app específica, desplegar el Centro de control o entrar a los ajustes del televisor. Reconocimiento nativo de teclas de acceso rápido en mandos TCL, Sony, Vestel, KTC y Formovie. |
@@ -87,7 +87,7 @@ En movimiento: [Centro de control](docs/assets/es/control-center.webp) · [Ajust
 
 ## Instalación
 
-**Requisitos:** Un televisor o dispositivo con Google TV o Android TV (Android 8 o superior) y un ordenador conectado a la misma red Wi-Fi.
+**Requisitos:** Un televisor, TV Box o reproductor con Google TV o Android TV (Android 8 o superior) y un ordenador conectado a la misma red Wi-Fi.
 
 ### 1. Preparar la TV
 
@@ -174,7 +174,7 @@ Accede a *Ajustes → Protector de pantalla → Fotos de tu celular*. Escanea el
 
 **¿Cómo regreso al launcher de fábrica?** Dirígete a *Ajustes → General → Launcher → Original*. Todos los servicios del fabricante que estaban desactivados volverán a funcionar inmediatamente.
 
-**¿Qué televisores son compatibles?** Cualquier televisor o dispositivo con Google TV o Android TV (versión 8 en adelante): TCL, Sony, Xiaomi, Philips, onn., Chromecast con Google TV, NVIDIA Shield, entre otros. Los televisores de marcas como LG (webOS) o Samsung (Tizen) no utilizan Android; en ellos se aconseja conectar un reproductor Google TV por HDMI.
+**¿Qué dispositivos son compatibles?** Cualquier televisor, TV Box o reproductor con Google TV o Android TV (versión 8 en adelante): TCL, Sony, Xiaomi, Philips y otros smart TV, además de cajas y sticks como Mi Box, onn., Chromecast con Google TV y NVIDIA Shield. Los televisores de marcas como LG (webOS) o Samsung (Tizen) no utilizan Android; en ellos se aconseja conectar un reproductor Google TV por HDMI.
 
 **¿El software recopila datos de los usuarios?** En absoluto. Las únicas conexiones de red que realiza corresponden exclusivamente a los servicios que decidas habilitar: pronóstico meteorológico (Open-Meteo), recomendaciones de streaming (TMDB, utilizando tu propia clave) e información deportiva pública (ESPN).
 
@@ -193,6 +193,7 @@ tools/check.sh        # comprueba integridad de código y catálogos de traducci
 Creado y mantenido por [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), basado originalmente en el proyecto [Free My TV](https://github.com/simbasjungles/free-my-tv).
 
 - **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): base original sobre la cual evolucionó este launcher.
+- **Apple TV (tvOS)**: inspiración visual del estante de cristal, las pestañas y el Centro de control. GB Home TV es un proyecto independiente, sin vínculo ni aval de Apple.
 - **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, por jqssun (GPL-3.0): receptor auxiliar para AirPlay.
 - **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): iconografía del sistema.
 - **[TMDB](https://www.themoviedb.org)**: metadatos y recomendaciones de streaming.

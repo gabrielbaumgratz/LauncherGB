@@ -101,7 +101,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
     private static String[] tabs;
     private static int tabsGeneration = -1;
-    private static boolean lastSportsOn, lastPicksOn;
+    private static boolean lastSportsOn, lastPicksOn, lastSportsFirst;
     private static final int MAX_TABS = 4;
     private static final int TAB_EXPLORE = 0, TAB_MOVIES = 1, TAB_SHOWS = 2, TAB_SPORTS = 3;
     private static final String[] TAB_KIND = {null, "movie", "tv", "sports"};
@@ -249,9 +249,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private boolean okDown, backDown;
 
     private Paint labelPaint, metaPaint, clockPaint, buttonPaint, capsuleText, tipPaint;
-    private Paint rowTitle, drawerLabel, cardTitle, cardText, cardDim, cardDimRight, bigTemp, hourPaint, hourTemp;
+    private Paint rowTitle, drawerLabel, cardTitle, cardDimRight, bigTemp, hourPaint, hourTemp;
     private Paint sheetTitle;
-    private TextPaint titlePaint, gridLabel, toastPaint;
+    private TextPaint titlePaint, gridLabel, toastPaint, cardText, cardDim;
     private final Paint bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint imagePaint = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
     private final Paint shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -463,8 +463,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     void destroy() {
         pause();
+        trimMemory();
         if (launcherApps != null) launcherApps.unregisterCallback(packages);
         click.release();
+    }
+
+    void trimMemory() {
+        synchronized (crispLogos) {
+            crispLogos.clear();   // not recycled: a recorded layer may still draw them
+        }
+        weatherSnapshot.recycle();
+        sportsSnapshot.recycle();
+        shadows.clear();
+        bgFrom = null;
     }
 
     /** Starting state (Home pressed while the home screen is showing): first app focused, drawer and sheet closed. */
@@ -500,10 +511,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         return picksOn() || Prefs.sportsOn();
     }
 
+    private boolean sportsFirst() {
+        return Prefs.sportsFirst() && Prefs.sportsOn() && picksOn();
+    }
+
     private boolean isSportsTab() {
         if (!Prefs.sportsOn()) return false;
         if (!picksOn()) return true;
-        return tab == tabsCount() - 1;
+        return tab == (sportsFirst() ? 0 : tabsCount() - 1);
     }
 
     private int tabsCount() {
@@ -531,11 +546,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private String[] tabs() {
         boolean sports = Prefs.sportsOn();
         boolean picks = picksOn();
-        if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks) {
+        boolean first = sportsFirst();
+        if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks || lastSportsFirst != first) {
             if (!contentOn()) {
                 tabs = new String[0];
             } else if (!picks) {
                 tabs = new String[] {Ui.tr("Sports")};
+            } else if (first) {
+                tabs = new String[] {Ui.tr("Sports"), Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows")};
             } else if (sports) {
                 tabs = new String[] {Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows"), Ui.tr("Sports")};
             } else {
@@ -544,6 +562,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             tabsGeneration = Ui.generation;
             lastSportsOn = sports;
             lastPicksOn = picks;
+            lastSportsFirst = first;
         }
         return tabs;
     }
@@ -666,8 +685,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         drawerLabel = Ui.text(Ui.medium, 23 * k, 0xEBFFFFFF);
         drawerLabel.setTextAlign(Paint.Align.CENTER);
         cardTitle = Ui.text(Ui.semibold, 25 * k, 0xB3FFFFFF);
-        cardText = Ui.text(Ui.medium, 29 * k, 0xF2FFFFFF);
-        cardDim = Ui.numbers(Ui.medium, 23 * k, 0xADFFFFFF);
+        cardText = new TextPaint(Ui.text(Ui.medium, 29 * k, 0xF2FFFFFF));
+        cardDim = new TextPaint(Ui.numbers(Ui.medium, 23 * k, 0xADFFFFFF));
         cardDimRight = Ui.text(Ui.medium, 23 * k, 0xADFFFFFF);
         cardDimRight.setTextAlign(Paint.Align.RIGHT);
         bigTemp = Ui.numbers(Ui.light, 100 * k, 0xFFFFFFFF);
@@ -1206,7 +1225,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             tileRects[i].set(x, y, x + tw, y + th);
             x += tw + gap;
         }
-        crispLogos.clear();
+        synchronized (crispLogos) {
+            crispLogos.clear();   // not recycled: a recorded layer may still draw them
+        }
     }
 
     /** Shelf layer: the glass bar and its shadow (it only changes with the background). */
@@ -1557,9 +1578,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             Sports.Game g = games.get(i);
             float top = r.top + (86 + 64 * i) * k;
             Symbols.draw(getContext(), c, Sports.icon(g.sport), x + 17 * k, top + 32 * k, 30 * k, drawerInk(0.9f));
-            c.drawText(TextUtils.ellipsize(g.match, new TextPaint(cardText), room, TextUtils.TruncateAt.END).toString(), textX, top + 26 * k, cardText);
+            c.drawText(TextUtils.ellipsize(g.match, cardText, room, TextUtils.TruncateAt.END).toString(), textX, top + 26 * k, cardText);
             String when = (g.live ? Ui.tr("LIVE") : g.day()) + " · " + g.time() + " · " + g.tag;
-            c.drawText(TextUtils.ellipsize(when, new TextPaint(cardDim), room, TextUtils.TruncateAt.END).toString(), textX, top + 54 * k, cardDim);
+            c.drawText(TextUtils.ellipsize(when, cardDim, room, TextUtils.TruncateAt.END).toString(), textX, top + 54 * k, cardDim);
         }
         cardText.setTextSize(29 * k);
         cardDim.setTextSize(23 * k);
@@ -1635,9 +1656,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (tempWidth > tempRoom) bigTemp.setTextSize(tempSize * tempRoom / tempWidth);
         c.drawText(nowTemp, x + sw + 18 * k - Ui.leftBearing(bigTemp, nowTemp), r.top + 170 * k, bigTemp);
         bigTemp.setTextSize(tempSize);
-        c.drawText(TextUtils.ellipsize(HomeData.condition(wx.code, wx.isDay), new TextPaint(cardText), leftRoom, TextUtils.TruncateAt.END).toString(),
+        c.drawText(TextUtils.ellipsize(HomeData.condition(wx.code, wx.isDay), cardText, leftRoom, TextUtils.TruncateAt.END).toString(),
                 x, r.top + 220 * k, cardText);
-        c.drawText(TextUtils.ellipsize(highLow, new TextPaint(cardDim), leftRoom, TextUtils.TruncateAt.END).toString(), x, r.top + 258 * k, cardDim);
+        c.drawText(TextUtils.ellipsize(highLow, cardDim, leftRoom, TextUtils.TruncateAt.END).toString(), x, r.top + 258 * k, cardDim);
         fill.setShader(null);
         fill.setColor(tone(0x1A000000, 0x24FFFFFF));
         c.drawRoundRect(split - k, r.top + 34 * k, split + k, r.bottom - 34 * k, k, k, fill);
@@ -1713,6 +1734,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             int left = Math.round(r.left), top = Math.round(r.top);
             int w = Math.max(1, Math.round(r.right) - left), h = Math.max(1, Math.round(r.bottom) - top);
             if (bitmap == null || bitmap.getWidth() != w || bitmap.getHeight() != h) {
+                if (bitmap != null) bitmap.recycle();
                 bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
                 this.key = "";
             }
@@ -1724,6 +1746,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 this.key = key;
             }
             c.drawBitmap(bitmap, left, top, null);
+        }
+
+        void recycle() {
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+                bitmap = null;
+            }
+            key = "";
         }
     }
 
@@ -1928,14 +1958,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float age = (SystemClock.uptimeMillis() - toastAt) / 1000f;
         float a = Math.min(Ui.clamp(age / 0.3f), Ui.clamp((TOAST_MS / 1000f - age) / 0.4f));
         if (a <= 0) return;
-        float padX = 28 * k, padY = 18 * k, icon = 26 * k, iconW = Symbols.width(getContext(), "bell", icon);
-        float tw = toast.getWidth() + iconW + 16 * k, th = toast.getHeight();
+        float padX = 28 * k, padY = 18 * k;
+        float tw = toast.getWidth(), th = toast.getHeight();
         float toastTop = 64 * k - (1 - a) * 16 * k;
         tmp.set((w - tw) / 2f - padX, toastTop, (w + tw) / 2f + padX, toastTop + th + 2 * padY);
         int save = c.saveLayerAlpha(tmp.left - 4, tmp.top - 4, tmp.right + 4, tmp.bottom + 4, Math.round(255 * a));
         scene.glass(c, tmp, Math.min(tmp.height() / 2, 32 * k), SMOKE, 0.55f, 0, 0, 0.02f, 1);
-        Symbols.draw(getContext(), c, "bell", tmp.left + padX + iconW / 2, tmp.centerY(), icon, 0xEBFFFFFF);
-        c.translate(tmp.left + padX + iconW + 16 * k, tmp.top + padY);
+        c.translate(tmp.left + padX, tmp.top + padY);
         toast.draw(c);
         c.restoreToCount(save);
     }
@@ -2925,8 +2954,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void updateCards() {
-        if (!isSportsTab() && tab < TAB_KIND.length) {
-            List<Recs.Pick> list = recs.now(TAB_KIND[tab]);
+        int kind = tab - (sportsFirst() ? 1 : 0);
+        if (!isSportsTab() && kind < TAB_KIND.length) {
+            List<Recs.Pick> list = recs.now(TAB_KIND[kind]);
             if (!samePicks(list, cards)) {
                 cards = list;
                 cardIndex = Math.min(cardIndex, Math.max(0, list.size() - 1));

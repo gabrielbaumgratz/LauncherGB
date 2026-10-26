@@ -1057,4 +1057,9 @@ final class HomeApps {
         if (bottom < 0) return b;
         return Bitmap.createBitmap(b, left, top, right - left + 1, bottom - top + 1);
     }
+
+    static synchronized void clearMemory() {
+        TILES.clear();   // not recycled: a recorded layer may still draw them
+        LOGOS.clear();
+    }
 }

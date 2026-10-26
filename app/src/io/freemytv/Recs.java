@@ -304,10 +304,7 @@ final class Recs {
 
     void clearMemory() {
         synchronized (images) {
-            for (Backdrop b : images.values()) {
-                if (b != null) b.recycle();
-            }
-            images.clear();
+            images.clear();   // not recycled: the home screen may be fading from one
         }
     }
 
@@ -755,12 +752,8 @@ final class Recs {
             Backdrop backdrop = Backdrop.make(b, forLight);
             if (forLight != light) return;   // the design changed midway: this one is stale
             synchronized (images) {
-                Backdrop old = images.put(p.backdrop, backdrop);
-                if (old != null && old != backdrop) old.recycle();
-                while (images.size() > (forLight ? 10 : 4)) {
-                    Backdrop removed = images.remove(images.keySet().iterator().next());
-                    if (removed != null) removed.recycle();
-                }
+                images.put(p.backdrop, backdrop);
+                while (images.size() > (forLight ? 10 : 4)) images.remove(images.keySet().iterator().next());
             }
             notifyListeners();
         } catch (IOException | RuntimeException | OutOfMemoryError e) {
@@ -778,10 +771,7 @@ final class Recs {
             java.util.Iterator<Map.Entry<String, Backdrop>> it = images.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Backdrop> entry = it.next();
-                if (!keep.contains(entry.getKey())) {
-                    if (entry.getValue() != null) entry.getValue().recycle();
-                    it.remove();
-                }
+                if (!keep.contains(entry.getKey())) it.remove();
             }
         }
     }

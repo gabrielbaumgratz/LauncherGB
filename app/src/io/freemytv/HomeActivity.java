@@ -58,6 +58,12 @@ public class HomeActivity extends Activity {
         super.onPause();
     }
 
+    @Override protected void onStop() {
+        if (home != null) home.trimMemory();
+        Recs.get(this).trim();
+        super.onStop();
+    }
+
     android.graphics.Bitmap snapshot() {
         if (home == null || home.getWidth() <= 0 || home.getHeight() <= 0) return null;
         try {
@@ -96,7 +102,12 @@ public class HomeActivity extends Activity {
 
     @Override public void onTrimMemory(int level) {
         super.onTrimMemory(level);
-        if (level >= TRIM_MEMORY_MODERATE) Recs.get(this).trim();
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            if (home != null) home.trimMemory();
+            Recs.get(this).trim();
+            HomeApps.clearMemory();
+            Symbols.clear();
+        }
         if (level >= TRIM_MEMORY_COMPLETE || !Prefs.recommendations()) Recs.get(this).clearMemory();
     }
 

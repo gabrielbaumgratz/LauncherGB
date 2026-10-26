@@ -716,4 +716,12 @@ public class ControlCenterActivity extends Activity {
             return true;
         }
     }
+
+    @Override protected void onDestroy() {
+        if (backdrop != null && !backdrop.isRecycled()) {
+            backdrop.recycle();
+            backdrop = null;
+        }
+        super.onDestroy();
+    }
 }

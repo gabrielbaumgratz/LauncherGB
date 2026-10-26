@@ -38,12 +38,32 @@ final class Sports {
         long when;
         String match = "", tag = "", sport = "soccer";
         boolean live, mine;
+        private String cachedDay, cachedTime;
+        private int cachedDayGen = -1, cachedTimeGen = -1;
+        private long cachedDayAt = -1, cachedTimeMinute = -1;
 
         /** "TODAY", "TOMORROW" or "SAT 25/10", in the language now. */
-        String day() { return dayText(when); }
+        String day() {
+            long now = System.currentTimeMillis();
+            if (cachedDay == null || cachedDayGen != Ui.generation || now - cachedDayAt > 60_000L) {
+                cachedDay = dayText(when);
+                cachedDayGen = Ui.generation;
+                cachedDayAt = now;
+            }
+            return cachedDay;
+        }
 
         /** The time, in the TV's clock (12 or 24 hours, as set). */
-        String time() { return timeText(when); }
+        String time() {
+            int gen = Ui.generation + Prefs.version;
+            long min = System.currentTimeMillis() / 60_000L;
+            if (cachedTime == null || cachedTimeGen != gen || cachedTimeMinute != min) {
+                cachedTime = timeText(when);
+                cachedTimeGen = gen;
+                cachedTimeMinute = min;
+            }
+            return cachedTime;
+        }
     }
 
     /** A championship the person can follow: ESPN's path (sport/league) and its name. */
@@ -547,16 +567,7 @@ final class Sports {
             c.setConnectTimeout(8000);
             c.setReadTimeout(12000);
             if (c.getResponseCode() != 200) return null;
-            try (InputStream in = c.getInputStream()) {
-                ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                byte[] chunk = new byte[16384];
-                int n;
-                while ((n = in.read(chunk)) > 0) {
-                    buf.write(chunk, 0, n);
-                    if (buf.size() > MAX_BODY) return null;
-                }
-                return new JSONObject(new String(buf.toByteArray(), StandardCharsets.UTF_8));
-            }
+            return new JSONObject(Ui.readUtf8(c.getInputStream()));
         } catch (IOException | JSONException e) {
             return null;
         } finally {
@@ -578,12 +589,10 @@ final class Sports {
 
     private List<Game> load() {
         List<Game> list = new ArrayList<>();
-        try (InputStream in = new java.io.FileInputStream(file())) {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            byte[] chunk = new byte[8192];
-            int n;
-            while ((n = in.read(chunk)) > 0) buf.write(chunk, 0, n);
-            JSONArray a = new JSONArray(new String(buf.toByteArray(), StandardCharsets.UTF_8));
+        File f = file();
+        if (!f.exists()) return list;
+        try (InputStream in = new java.io.FileInputStream(f)) {
+            JSONArray a = new JSONArray(Ui.readUtf8(in));
             long now = System.currentTimeMillis();
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.getJSONObject(i);

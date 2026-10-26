@@ -71,11 +71,11 @@ final class Prefs {
 
     // MARK: - Language and units
 
-    /** "auto" or a language code as picked ("pt", "fr", "zh-CN"…); Ui.applyLanguage finds its catalogue. */
     /** What the greeting calls the person ("Good morning, Ana"); empty for no name. */
     static String userName() { return demo() ? "Gabriel" : sp().getString("userName", "").trim(); }
     static void setUserName(String v) { put("userName", v.trim()); }
 
+    /** "auto" or a language code as picked ("pt", "fr", "zh-CN"…); Ui.applyLanguage finds its catalogue. */
     static String language() {
         String v = app == null ? Config.LANGUAGE : sp().getString("language", Config.LANGUAGE);
         v = v.trim();
@@ -297,6 +297,10 @@ final class Prefs {
     // MARK: - Games widget (Sports) and Bluetooth names
 
     static boolean sportsOn() { return demo() || sp().getBoolean("sportsOn", false); }
+
+    /** The Sports tab before Explore, Movies and Shows (it is the one the home screen opens on), instead of after them. */
+    static boolean sportsFirst() { return sp().getBoolean("sportsFirst", false); }
+    static void setSportsFirst(boolean on) { sp().edit().putBoolean("sportsFirst", on).putInt("recsTab", 0).apply(); version++; }
 
     static int sportsPriority() { return sp().getInt("sportsPriority", 0); }
     static void setSportsPriority(int priority) { sp().edit().putInt("sportsPriority", priority).apply(); version++; }

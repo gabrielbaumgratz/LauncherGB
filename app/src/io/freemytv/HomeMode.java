@@ -57,12 +57,18 @@ final class HomeMode {
      */
     static final String[] DEBLOAT = {
         "com.google.android.play.games", "com.google.android.youtube.tvmusic",        // Play Games, YouTube Music
+        // System background services useless on TV
+        "com.google.android.feedback",                                                // bug / feedback reporting daemon
+        "com.android.printspooler",                                                   // print spooler (never prints on a TV)
+        "com.android.traceur",                                                        // system trace daemon
+        "com.android.providers.partnerbookmarks",                                     // vendor partner bookmarks
         // TCL
         "com.tcl.magiconnectfree", "com.tcl.miracast",                                // screen mirroring apps
         "com.tcl.waterfall.overseas", "com.tcl.channelplus",                          // TCL Channel and its Live TV
         "com.tcl.messagebox", "com.tcl.usercenter",                                   // TCL messages and account
         "com.tcl.exhibit", "com.tcl.esticker", "com.tcl.hotelmenu",                   // store demo, hotel menu
         "com.tcl.repairguide", "com.tcl.ocean.instructions", "com.tcl.logkit",        // repair guide, manual, logs
+        "com.tcl.bi",                                                                 // TCL Business Intelligence / telemetry
         // Multilaser (Expressluck / CVTE board)
         "tv.anoki.acr.anokiacroptin",                                                 // Anoki ACR: watches what's on screen
         "fusion.android.tv.demo", "com.expressluck.tvhelpmanual",                     // store demo (also Xiaomi projectors), manual
@@ -72,6 +78,8 @@ final class HomeMode {
         // Xiaomi
         "com.miui.tv.analytics", "com.xiaomi.statistic",                              // telemetry
         "com.mitv.tvhome.mitvplus", "com.xm.webcontent",                              // Mi TV+ promo channels, promo web content
+        "com.xiaomi.mitv.advertise", "com.miui.systemAdSolution",                     // Xiaomi ad services
+        "com.miui.analytics",                                                         // Xiaomi analytics
         // Skyworth (VEON and other badges; MediaTek)
         "com.smartdevice.epopplayer", "com.coocaa.demonow.lightining",               // store demos (start on screen on)
         "com.smartdevice.recommendation",                                             // Coolita promo channels
@@ -79,7 +87,7 @@ final class HomeMode {
         "tv.anoki.acr.controller",                                                    // Anoki ACR: watches what's on screen
         "com.mediatek.tv.retaildemo", "com.electronic.manual",                        // store demo, manual
         // TCL 32S5K (MediaTek, Android 14)
-        "com.android.adservices.api",                                                   // Android ad targeting
+        "com.android.adservices.api",                                                 // Android ad targeting
     };
 
     /** The voice assistant, only with disable_assistant=true in config.properties (the mic button stops working). */

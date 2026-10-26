@@ -45,6 +45,12 @@ final class Symbols {
         }
     }
 
+    static void clear() {
+        synchronized (CACHE) {
+            CACHE.clear();   // not recycled: a recorded layer may still draw them
+        }
+    }
+
     static float width(Context c, String name, float pointSize) {
         Bitmap b = get(c, name);
         return b == null ? 0 : b.getWidth() * pointSize / PX_PER_POINT;

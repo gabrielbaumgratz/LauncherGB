@@ -7,8 +7,8 @@
 
 # GB Home TV
 
-**A faster, lighter home screen for Google TV and Android TV, free of ads and spyware.**<br>
-Eliminate intrusive factory ads and background telemetry with a single click. Fully reversible anytime.
+**An Apple TV-inspired home screen for Google TV and Android TV: faster, lighter, with no ads and no spyware.**<br>
+A glass app shelf, tabs for movies, shows and sports, a Control Center and a photo screensaver replace your TV's stock home screen. One click turns off factory ads and telemetry, and one click brings it all back.
 
 English · [Português](README.pt.md) · [Español](README.es.md)
 
@@ -35,7 +35,7 @@ English · [Português](README.pt.md) · [Español](README.es.md)
 | Feature | Description |
 |---|---|
 | **Control Center** | Quick-access side panel to switch Bluetooth audio devices (headphones and soundbars), adjust volume, toggle picture modes (on supported TVs), change themes, and launch AirPlay. |
-| **Sports, teams, and athletes** | Track your clubs (soccer, basketball, football) across leagues and cups (Champions League, Premier League, Libertadores, etc.), plus individual athletes (ATP/WTA tennis players, Formula 1 drivers, UFC fighters, and PGA golfers). Public real-time data from ESPN with no account needed. |
+| **Sports, teams, and athletes** | Track your clubs (soccer, basketball, football) across leagues and cups (Champions League, Premier League, Libertadores, etc.), plus individual athletes (ATP/WTA tennis players, Formula 1 drivers, UFC fighters, and PGA golfers). Public real-time data from ESPN with no account needed. Show the Sports tab first or last in *Settings → Sports*. |
 | **Custom screensaver** | Full-screen photo showcase with live clock, date, and local weather. Six brightness settings including matte and ultra-dark levels optimized for bedrooms and OLED panels. |
 | **Phone photo uploads** | Send photos straight from your phone to the TV screensaver over local Wi-Fi via QR code, protected by a temporary server and PIN security. |
 | **Remote button remapping** | Assign any button on your remote to launch a chosen app, open the Control Center, or bring up TV settings. Native detection for dedicated factory buttons on TCL, Sony, Vestel, KTC, and Formovie remotes. |
@@ -87,7 +87,7 @@ In motion: [Control Center](docs/assets/en/control-center.webp) · [Settings](do
 
 ## Installation
 
-**Requirements:** A TV running Google TV or Android TV (Android 8 or newer) and a computer connected to the same Wi-Fi network.
+**Requirements:** A TV, TV box or streamer running Google TV or Android TV (Android 8 or newer) and a computer connected to the same Wi-Fi network.
 
 ### 1. Prepare the TV
 
@@ -174,7 +174,7 @@ Go to *Settings → Screensaver → Photos from your phone*. Scan the QR code di
 
 **How do I return to the stock launcher?** Open *Settings → General → Launcher → Original*. All disabled manufacturer services are immediately re-enabled.
 
-**Which TVs are supported?** Any device running Google TV or Android TV (Android 8 and up): TCL, Sony, Xiaomi, Philips, onn., Chromecast with Google TV, NVIDIA Shield, and others. LG (webOS) and Samsung (Tizen) devices do not run Android; connecting a Google TV streaming device via HDMI is recommended.
+**Which devices are supported?** Any TV, TV box or streamer running Google TV or Android TV (Android 8 and up): TCL, Sony, Xiaomi, Philips and other smart TVs, plus boxes and sticks such as the Mi Box, onn., Chromecast with Google TV and NVIDIA Shield. LG (webOS) and Samsung (Tizen) devices do not run Android; connecting a Google TV streaming device via HDMI is recommended.
 
 **Does it collect data?** No. Network access is strictly limited to services you enable: weather data (Open-Meteo), streaming highlights (TMDB, via your private key), and sports fixtures (public ESPN).
 
@@ -193,6 +193,7 @@ tools/check.sh        # runs build and translation validations
 Created and maintained by [Gabriel Baumgratz](https://github.com/gabrielbaumgratz), originally inspired by [Free My TV](https://github.com/simbasjungles/free-my-tv).
 
 - **[Free My TV](https://github.com/simbasjungles/free-my-tv)** (MIT): original project foundation.
+- **Apple TV (tvOS)**: the visual inspiration for the glass shelf, tabs and Control Center. GB Home TV is an independent project, not affiliated with or endorsed by Apple.
 - **[android-airplay-server](https://github.com/jqssun/android-airplay-server)**, by jqssun (GPL-3.0): companion AirPlay receiver.
 - **[Material Symbols](https://fonts.google.com/icons)** (Apache 2.0): interface iconography.
 - **[TMDB](https://www.themoviedb.org)**: streaming recommendations and artwork metadata.

@@ -90,8 +90,12 @@ final class Shadows {
         }
         mask = full.extractAlpha();
         full.recycle();
-        if (cache.size() > 64) cache.clear();     // focus animations step through a few sizes; keep it bounded
+        if (cache.size() > 64) clear();     // focus animations step through a few sizes; keep it bounded
         cache.put(key, mask);
         return mask;
+    }
+
+    void clear() {
+        cache.clear();   // not recycled: a recorded layer may still draw them
     }
 }
