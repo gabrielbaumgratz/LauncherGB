@@ -922,7 +922,10 @@ final class HomeMode {
         }
     }
 
-    /** A notice for the home screen (a bubble) and the settings screen. Keeps the last 20. */
+    /** How long a notice stays: the settings show, and the next one saved keeps, only the last 48 hours. */
+    static final long NOTICE_MS = 48 * 3600_000L;
+
+    /** A notice for the home screen (a bubble) and the settings screen. Keeps the last 20 from the last 48 hours. */
     static void notice(Context c, String text) {
         AppLog.w("notice: " + Ui.render(text));
         JSONObject s = state(c);
@@ -930,7 +933,10 @@ final class HomeMode {
         JSONArray list = new JSONArray();
         try {
             list.put(new JSONObject().put("at", System.currentTimeMillis()).put("text", text));
-            if (old != null) for (int i = 0; i < old.length() && list.length() < 20; i++) list.put(old.get(i));
+            long cutoff = System.currentTimeMillis() - NOTICE_MS;
+            if (old != null) for (int i = 0; i < old.length() && list.length() < 20; i++) {
+                if (old.getJSONObject(i).optLong("at") >= cutoff) list.put(old.get(i));
+            }
             s.put("notices", list);
         } catch (JSONException ignored) {}
         save(c, s);

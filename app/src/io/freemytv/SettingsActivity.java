@@ -549,6 +549,11 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     });
                     note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
+                    value(Ui.tr("Tab order"), () -> Prefs.sportsFirst() ? Ui.tr("Sports, then Recommendations") : Ui.tr("Recommendations, then Sports"), () -> {
+                        Prefs.setSportsFirst(!Prefs.sportsFirst());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     List<HomeApps.Item> inputs = inputChoices();
                     if (!inputs.isEmpty()) {
                         header(Ui.tr("Inputs on the home screen"));
@@ -602,11 +607,6 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     });
                     note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
-                    toggle(Ui.tr("Sports tab first"), Prefs::sportsFirst, () -> {
-                        Prefs.setSportsFirst(!Prefs.sportsFirst());
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
 
                     header(Ui.tr("Display priority"));
                     value(Ui.tr("Priority"), () -> {
@@ -746,7 +746,7 @@ public class SettingsActivity extends Activity {
                     int shown = 0;
                     for (int i = 0; notices != null && i < notices.length() && shown < 3; i++) {
                         JSONObject o = notices.optJSONObject(i);
-                        if (o == null) continue;
+                        if (o == null || o.optLong("at") < System.currentTimeMillis() - HomeMode.NOTICE_MS) continue;
                         if (!o.optString("text").startsWith("\u0001")) continue;   // written before notices kept their English
                         final String when = ago(o.optLong("at")), text = Ui.render(o.optString("text"));
                         info(text, () -> when);
@@ -981,9 +981,24 @@ public class SettingsActivity extends Activity {
                     String alias = Prefs.btAlias(address);
                     return alias.isEmpty() ? d.device.getName() == null ? "Bluetooth" : d.device.getName() : alias;
                 }, () -> askDeviceName(d));
+                header(Ui.tr("Position"));
+                link(Ui.tr("Move up"), () -> "", () -> moveDevice(address, -1));
+                link(Ui.tr("Move down"), () -> "", () -> moveDevice(address, 1));
                 header(Ui.tr("Pairing"));
                 link(Ui.tr("Forget this device"), () -> "", () -> askForget(d));
             });
+        }
+
+        /** Moves a device one place in the list the Control Center, the shortcuts and these settings share. */
+        private void moveDevice(String address, int dx) {
+            List<String> order = new ArrayList<>();
+            for (BluetoothAudio.DeviceInfo i : BluetoothAudio.getPairedAudioDevices()) order.add(i.device.getAddress());
+            int i = order.indexOf(address), j = i + dx;
+            if (i < 0 || j < 0 || j >= order.size()) return;
+            java.util.Collections.swap(order, i, j);
+            Prefs.setBtOrder(order);
+            deviceChoices = null;
+            HomeData.get(getContext()).settingsChanged();
         }
 
         private void askDeviceName(BluetoothAudio.DeviceInfo d) {

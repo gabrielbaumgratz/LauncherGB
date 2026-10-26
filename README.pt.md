@@ -35,7 +35,7 @@ Prateleira de vidro, abas de filmes, séries e esportes, Central de Controle e p
 | Recurso | Descrição |
 |---|---|
 | **Central de Controle** | Painel lateral instantâneo para alternar saídas de áudio Bluetooth (fones e caixas), volume, modo de imagem (em TVs suportadas), tema e atalho para receptor AirPlay. |
-| **Esportes, times e atletas** | Acompanhe seus clubes (futebol, basquete, futebol americano) em ligas e copas (Brasileirão, Libertadores, Copa do Brasil, etc.), além de atletas individuais (tenistas no ranking ATP/WTA, pilotos de Fórmula 1, lutadores do UFC e golfistas). Dados públicos direto da ESPN, sem precisar de conta. Escolha se a aba Esportes vem primeiro ou por último em *Configurações → Esportes*. |
+| **Esportes, times e atletas** | Acompanhe seus clubes (futebol, basquete, futebol americano) em ligas e copas (Brasileirão, Libertadores, Copa do Brasil, etc.), além de atletas individuais (tenistas no ranking ATP/WTA, pilotos de Fórmula 1, lutadores do UFC e golfistas). Dados públicos direto da ESPN, sem precisar de conta. Escolha se a aba Esportes vem primeiro ou por último em *Configurações → Início → Ordem das abas*. |
 | **Tela de descanso personalizada** | Fotos em tela cheia com relógio, data e previsão do tempo local. Seis níveis de brilho (incluindo nível fosco e ultra-escuro para quartos e painéis OLED). |
 | **Fotos direto do celular** | Envie fotos do celular para a tela de descanso da TV via Wi-Fi local através de QR code, com servidor temporário e autenticação por PIN. |
 | **Mapeamento do controle remoto** | Configure qualquer botão do controle remoto para abrir o app desejado, a Central de Controle ou os ajustes da TV. Compatibilidade nativa com botões dedicados de marcas como TCL, Sony, Vestel, KTC e Formovie. |

@@ -3095,8 +3095,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // The gradient is made again only when the night blend or the size changes (not on every frame).
         float key = Math.round(night * 50) + bh;
         if (sportsFill == null || sportsFillKey != key) {
-            sportsFill = new LinearGradient(0, 0, 0, bh, blend(0xD0D6F4DF, 0xD80D2818, night),
-                    blend(0xB8C5ECD4, 0xC4081E12, night), Shader.TileMode.CLAMP);
+            sportsFill = new LinearGradient(0, 0, 0, bh, blend(0xE6FFFFFF, 0xD01E1E22, night),
+                    blend(0xCCF2F2F7, 0xC4141416, night), Shader.TileMode.CLAMP);
             sportsFillKey = key;
         }
         c.save();
@@ -3107,9 +3107,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         fill.setShader(null);
         c.restore();
 
+        // Quiet at rest; the white focus ring of the other cards, with a touch of green, when focused.
         rim.setShader(null);
-        rim.setColor(blend(blend(0x3328A745, 0x4430D158, night), blend(0xDD28A745, 0xFF30D158, night), f));
-        rim.setStrokeWidth((2 + f) * k);
+        rim.setColor(blend(blend(0x22000000, 0x33FFFFFF, night), blend(0xFFFFFFFF, 0xFFFFFFFF, night), f));
+        rim.setStrokeWidth((1.5f + 1.5f * f) * k);
         c.drawRoundRect(cell, r, r, rim);
         rim.setStrokeWidth(2.5f * k);
 
@@ -3132,66 +3133,81 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             return;
         }
 
-        // Left column: the heading.
-        float left = cell.left + 48 * k;
-        fitPaint.set(lTitle);
-        fitPaint.setTextSize(38 * k);
-        fitPaint.setColor(ink);
+        // The heading, then up to three games side by side.
+        float left = cell.left + 40 * k;
+        fitPaint.set(lCardMeta);
+        fitPaint.setTextSize(21 * k);
+        fitPaint.setColor(dim);
         fitPaint.setTextAlign(Paint.Align.LEFT);
-        c.drawText(Ui.tr("Upcoming Games"), left, cell.centerY() + Ui.halfCap(fitPaint), fitPaint);
+        c.drawText(Ui.tr("Upcoming Games").toUpperCase(Ui.locale()), left, cell.top + 42 * k, fitPaint);
 
-        float divider = cell.left + 440 * k;
-        border.setColor(blend(0x20000000, 0x25FFFFFF, night));
-        c.drawLine(divider, cell.top + 36 * k, divider, cell.bottom - 36 * k, border);
-
-        // Up to three games side by side.
         int n = Math.min(3, games.size());
-        float gap = 24 * k, gx0 = divider + 36 * k;
-        float colW = ((cell.right - 48 * k) - gx0 - (n - 1) * gap) / n, textW = colW - 48 * k;
+        float gap = 22 * k, gx0 = cell.left + 32 * k;
+        float colW = ((cell.right - 32 * k) - gx0 - (n - 1) * gap) / n, textW = colW - 48 * k - 56 * k;
         for (int i = 0; i < n; i++) {
             Sports.Game g = games.get(i);
             float gx = gx0 + i * (colW + gap);
-            tmp.set(gx, cell.top + 40 * k, gx + colW, cell.bottom - 40 * k);
-            fill.setColor(blend(0x50FFFFFF, 0x2A000000, night));
-            c.drawRoundRect(tmp, 16 * k, 16 * k, fill);
-            float px = tmp.left + 24 * k, y = tmp.top + 44 * k;
+            tmp.set(gx, cell.top + 64 * k, gx + colW, cell.bottom - 28 * k);
+            fill.setColor(blend(0x70FFFFFF, 0x24FFFFFF, night));
+            c.drawRoundRect(tmp, 18 * k, 18 * k, fill);
+            float px = tmp.left + 24 * k, y = tmp.top + 40 * k;
 
             Symbols.draw(getContext(), c, Sports.icon(g.sport), px + 10 * k, y - 8 * k, 20 * k, green);
             fitPaint.set(lCardMeta);
             fitPaint.setTextSize(20 * k);
             fitPaint.setColor(dim);
-            c.drawText(TextUtils.ellipsize(g.tag, fitPaint, textW - 28 * k - (g.live ? 90 * k : 0),
+            c.drawText(TextUtils.ellipsize(g.tag, fitPaint, colW - 48 * k - 28 * k - (g.live ? 90 * k : 0),
                     TextUtils.TruncateAt.END).toString(), px + 28 * k, y, fitPaint);
             if (g.live) {
-                livePill.set(tmp.right - 96 * k, tmp.top + 20 * k, tmp.right - 20 * k, tmp.top + 46 * k);
+                livePill.set(tmp.right - 96 * k, tmp.top + 18 * k, tmp.right - 20 * k, tmp.top + 44 * k);
                 fill.setColor(0xE6E53935);
                 c.drawRoundRect(livePill, 13 * k, 13 * k, fill);
                 fitPaint.set(lTip);
                 fitPaint.setTextSize(14 * k);
                 fitPaint.setColor(0xFFFFFFFF);
+                fitPaint.setTextAlign(Paint.Align.CENTER);
                 c.drawText(Ui.tr("LIVE"), livePill.centerX(), livePill.centerY() + Ui.halfCap(fitPaint), fitPaint);
             }
 
-            fitPaint.set(lCardTitle);
-            fitPaint.setTextSize(26 * k);
-            fitPaint.setColor(ink);
-            float my = tmp.top + 110 * k;
-            int vs = g.match.indexOf(" \u00d7 ");   // Sports writes "Home \u00d7 Away"
-            if (vs > 0) {
-                c.drawText(TextUtils.ellipsize(g.match.substring(0, vs), fitPaint, textW, TextUtils.TruncateAt.END).toString(), px, my, fitPaint);
-                c.drawText(TextUtils.ellipsize(g.match.substring(vs + 3), fitPaint, textW, TextUtils.TruncateAt.END).toString(), px, my + 70 * k, fitPaint);
-                fitPaint.setTextSize(18 * k);
-                fitPaint.setColor(green);
-                c.drawText("\u00d7", px, my + 35 * k, fitPaint);
-            } else {
-                c.drawText(TextUtils.ellipsize(g.match, fitPaint, textW, TextUtils.TruncateAt.END).toString(), px, my + 20 * k, fitPaint);
+            int vs = g.match.indexOf(" × ");   // Sports writes "Home × Away"
+            String[] sides = vs > 0 ? new String[] {g.match.substring(0, vs), g.match.substring(vs + 3)} : new String[] {g.match};
+            for (int t = 0; t < sides.length; t++) {
+                float ty = tmp.top + (sides.length == 1 ? 118 : 100 + t * 68) * k;
+                monogram(c, sides[t], px + 24 * k, ty, 24 * k);
+                fitPaint.set(lCardTitle);
+                fitPaint.setTextSize(25 * k);
+                fitPaint.setColor(ink);
+                fitPaint.setTextAlign(Paint.Align.LEFT);
+                c.drawText(TextUtils.ellipsize(sides[t], fitPaint, textW, TextUtils.TruncateAt.END).toString(), px + 62 * k,
+                        ty + Ui.halfCap(fitPaint), fitPaint);
             }
 
+            fitPaint.set(lCardTitle);
+            fitPaint.setTextSize(30 * k);
+            fitPaint.setColor(g.live ? green : ink);
+            fitPaint.setTextAlign(Paint.Align.LEFT);
+            c.drawText(g.time(), px, tmp.bottom - 56 * k, fitPaint);
             fitPaint.set(lCardMeta);
-            fitPaint.setTextSize(21 * k);
-            fitPaint.setColor(g.live ? green : dim);
-            c.drawText(g.day() + " · " + g.time(), px, tmp.bottom - 28 * k, fitPaint);
+            fitPaint.setTextSize(20 * k);
+            fitPaint.setColor(dim);
+            c.drawText(g.live ? Ui.tr("LIVE") : g.day(), px, tmp.bottom - 24 * k, fitPaint);
         }
+    }
+
+    private final float[] teamHsv = {0, 0.45f, 0.78f};
+
+    /** A colored circle with the team's first letter (no images: the color comes from the name). */
+    private void monogram(Canvas c, String name, float cx, float cy, float radius) {
+        teamHsv[0] = (name.hashCode() & 0x7fffffff) % 360;
+        fill.setColor(android.graphics.Color.HSVToColor(teamHsv));
+        c.drawCircle(cx, cy, radius, fill);
+        fitPaint.set(lCardTitle);
+        fitPaint.setTextSize(24 * k);
+        fitPaint.setColor(0xFFFFFFFF);
+        fitPaint.setTextAlign(Paint.Align.CENTER);
+        String letter = name.isEmpty() ? "?" : name.substring(0, name.offsetByCodePoints(0, 1)).toUpperCase(Ui.locale());
+        c.drawText(letter, cx, cy + Ui.halfCap(fitPaint), fitPaint);
+        fitPaint.setTextAlign(Paint.Align.LEFT);
     }
 
     private void drawClock(Canvas c) {

@@ -374,6 +374,17 @@ final class Prefs {
     static String btAlias(String address) { return sp().getString("btAlias_" + address, ""); }
     static void setBtAlias(String address, String name) { put("btAlias_" + address, name.trim()); }
 
+    /** The order the person gave the Bluetooth devices (their addresses); empty: connected first, then by name. */
+    static List<String> btOrder() {
+        String s = sp().getString("btOrder", "");
+        return s.isEmpty() ? new ArrayList<String>() : new ArrayList<>(java.util.Arrays.asList(s.split(",")));
+    }
+
+    static void setBtOrder(List<String> addresses) {
+        put("btOrder", String.join(",", addresses));
+        version++;
+    }
+
     // MARK: - Top buttons
 
     /**

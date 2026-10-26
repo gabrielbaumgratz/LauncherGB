@@ -52,9 +52,14 @@ final class BluetoothAudio {
                 }
             }
 
-            // Connected first, then by name.
+            // The order the person chose; for the rest, connected first, then by name.
+            final List<String> order = Prefs.btOrder();
             java.util.Collections.sort(list, new java.util.Comparator<DeviceInfo>() {
                 @Override public int compare(DeviceInfo x, DeviceInfo y) {
+                    int ix = order.indexOf(x.device.getAddress()), iy = order.indexOf(y.device.getAddress());
+                    if (ix < 0) ix = Integer.MAX_VALUE;
+                    if (iy < 0) iy = Integer.MAX_VALUE;
+                    if (ix != iy) return Integer.compare(ix, iy);
                     if (x.isConnected != y.isConnected) return x.isConnected ? -1 : 1;
                     return x.name.compareToIgnoreCase(y.name);
                 }
