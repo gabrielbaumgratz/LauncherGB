@@ -43,9 +43,12 @@ final class Backdrop {
     final int[] glass;      // lightly blurred (Liquid Glass: the photo shows through the glass)
     final Bitmap wide, tall;            // the photo on the cards
     final int[] light, lightGlass;      // by day: the frosted and glass versions, lightened
-    final Bitmap lightImage;            // by day: the background (the lightened frosted version, scaled up on screen)
+    Bitmap lightImage;                  // by day: the background (the lightened frosted version, scaled up on screen)
     final int[] nightFrost, nightGlass; // at night: frosted (the bottom drawer's frosted glass) and glass, darkened
-    final Bitmap nightImage;            // at night: the background (the darkened frosted version)
+    Bitmap nightImage;                  // at night: the background (the darkened frosted version)
+    private int bgLevel = -1;
+    /** How much of the photo's color the background keeps: the white (day) and black (night) mixed in, per level 0 to 4. */
+    private static final float[] WHITEN = {0.93f, 0.88f, 0.82f, 0.64f, 0.44f}, DARKEN = {0.95f, 0.92f, 0.89f, 0.78f, 0.64f};
 
     private Backdrop(Bitmap image, int[] frost, int[] glass, Bitmap wide, Bitmap tall, int[] light, int[] lightGlass,
                      int[] night, int[] nightGlass) {
@@ -58,8 +61,14 @@ final class Backdrop {
         this.lightGlass = lightGlass;
         this.nightFrost = night;
         this.nightGlass = nightGlass;
-        lightImage = light == null ? null : Bitmap.createBitmap(light, FW, FH, Bitmap.Config.ARGB_8888);
-        nightImage = night == null ? null : Bitmap.createBitmap(night, FW, FH, Bitmap.Config.ARGB_8888);
+    }
+
+    /** Makes the day and night backgrounds for this level (Prefs.backdrop: 0 most frosted, 2 the usual look, 4 the photo most visible). */
+    void background(int level) {
+        if (level == bgLevel || light == null) return;
+        lightImage = Bitmap.createBitmap(whiten(frost.clone(), WHITEN[level]), FW, FH, Bitmap.Config.ARGB_8888);
+        nightImage = Bitmap.createBitmap(darken(frost.clone(), DARKEN[level]), FW, FH, Bitmap.Config.ARGB_8888);
+        bgLevel = level;
     }
 
     static Backdrop make(Bitmap src, boolean forLight) {

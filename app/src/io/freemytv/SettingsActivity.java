@@ -520,6 +520,10 @@ public class SettingsActivity extends Activity {
                         Prefs.setGlass((Prefs.glass() + 1) % 5);
                         HomeData.get(c).settingsChanged();
                     });
+                    value(Ui.tr("Background: frosted to clear"), () -> (Prefs.backdrop() + 1) + " / 5", () -> {
+                        Prefs.setBackdrop((Prefs.backdrop() + 1) % 5);
+                        HomeData.get(c).settingsChanged();
+                    });
                     toggle(Ui.tr("Navigation sounds"), Prefs::sounds, () -> Prefs.setSounds(!Prefs.sounds()));
                     header(Ui.tr("System"));
                     link(Ui.tr("TV Settings"), () -> "", () ->

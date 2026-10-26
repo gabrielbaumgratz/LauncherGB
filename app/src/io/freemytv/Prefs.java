@@ -176,6 +176,10 @@ final class Prefs {
     static int glass() { return Math.max(0, Math.min(4, sp().getInt("glass", 2))); }
     static void setGlass(int level) { sp().edit().putInt("glass", Math.max(0, Math.min(4, level))).apply(); version++; }
 
+    /** How much of the photo shows in the home screen's background: 0 (most frosted) to 4 (most visible); 2 is the usual look. */
+    static int backdrop() { return Math.max(0, Math.min(4, sp().getInt("backdrop", 2))); }
+    static void setBackdrop(int level) { sp().edit().putInt("backdrop", Math.max(0, Math.min(4, level))).apply(); version++; }
+
     /** Multiplies a glass tint's opacity by the chosen level (the middle one is the default look). */
     private static final float[] FROST = {0.55f, 0.85f, 1.25f, 1.6f, 2f};
 
