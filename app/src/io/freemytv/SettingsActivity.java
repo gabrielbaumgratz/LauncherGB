@@ -83,6 +83,11 @@ public class SettingsActivity extends Activity {
         // From ADB: --ei tennisAtp 5 --ei tennisWta 3 (how many of each ranking the tennis shows; ten by default, no menu).
         if (getIntent().hasExtra("tennisAtp")) Prefs.setTennisTop("atp", getIntent().getIntExtra("tennisAtp", 10));
         if (getIntent().hasExtra("tennisWta")) Prefs.setTennisTop("wta", getIntent().getIntExtra("tennisWta", 10));
+        if (getIntent().hasExtra("layout")) {   // --ei layout 0|1|2: classic, photo, photo with sidebar
+            Prefs.setLayout(getIntent().getIntExtra("layout", 0));
+            getIntent().removeExtra("layout");
+            HomeData.get(this).settingsChanged();
+        }
         if (getIntent().hasExtra("language")) {   // --es language en|pt|es|auto
             Prefs.setLanguage(getIntent().getStringExtra("language"));
             getIntent().removeExtra("language");
