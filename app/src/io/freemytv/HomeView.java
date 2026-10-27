@@ -822,8 +822,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float lift = -d * shift;
         show(heroLayer, top, lift);
         show(status, top, lift);
-        show(platter, home, lift);
-        show(tiles, home, lift);
+        if (Prefs.sidebar()) {   // the column stays where it is and fades while the drawer comes up, instead of riding up out of the screen
+            show(platter, home * (1 - dc), 0);
+            show(tiles, home * (1 - dc), 0);
+        } else {
+            show(platter, home, lift);
+            show(tiles, home, lift);
+        }
         float da = home * smoothstep(0.1f, 0.6f, dc);
         drawerLayer.setTranslationY((1 - d) * shift);
         drawerLayer.setAlpha(da);
