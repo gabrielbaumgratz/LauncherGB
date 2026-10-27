@@ -189,10 +189,6 @@ final class Prefs {
     static boolean photoLayout() { return layout() != 0; }
     static boolean sidebar() { return layout() == 2; }
 
-    /** Prime Video, Disney+ and HBO Max as white logos on a dark tile, like the others on the shelf (not their old colored art). */
-    static boolean darkTiles() { return sp().getBoolean("darkTiles", true); }
-    static void setDarkTiles(boolean on) { put("darkTiles", on); }
-
     /** How frosted the home screen's background is: 0 (clear, the photo most visible) to 4 (most frosted); 2 is the usual look. */
     static int backdrop() { return Math.max(0, Math.min(4, sp().getInt("backdrop", 2))); }
     static void setBackdrop(int level) { sp().edit().putInt("backdrop", Math.max(0, Math.min(4, level))).apply(); version++; }

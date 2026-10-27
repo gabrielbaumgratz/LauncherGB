@@ -98,9 +98,9 @@ public class SettingsActivity extends Activity {
                     case "weatherDrawer": Prefs.setWeatherDrawer(on); break;
                     case "greeting": Prefs.setGreeting(on); break;
                     case "photoBackground": Prefs.setPhotoBackground(on); break;
-                    case "darkTiles": Prefs.setDarkTiles(on); break;
                     case "sportsFirst": Prefs.setSportsFirst(on); break;
                     case "layout": Prefs.setLayout(Integer.parseInt(kv[1])); break;
+                    case "theme": Prefs.setTheme(kv[1]); break;   // auto, light or dark
                     default:
                 }
             }
@@ -566,12 +566,6 @@ public class SettingsActivity extends Activity {
                         updateTheme();
                     });
                     link(Ui.tr("Glass"), () -> "", this::openGlass);
-                    toggle(Ui.tr("Dark cards: Prime Video, Disney+, HBO Max"), Prefs::darkTiles, () -> {
-                        Prefs.setDarkTiles(!Prefs.darkTiles());
-                        HomeApps.clearMemory();
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
                     if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Recs.hasKey(c) && Prefs.recommendations() ? Ui.tr("Recommendations") : Ui.tr("Default"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
                         HomeData.get(c).settingsChanged();
@@ -615,6 +609,8 @@ public class SettingsActivity extends Activity {
                             {"picture", Ui.tr("Picture mode")}, {"pair", Ui.tr("Pair a new device")}, {"tv", Ui.tr("TV Settings")},
                             {"home", Ui.tr("Home Settings")}, {"airplay", "AirPlay"}, {"saver", Ui.tr("Screensaver")},
                             {"mute", Ui.tr("Mute")}, {"network", Ui.tr("Network")}, {"volume", Ui.tr("Volume")}};
+                    final java.text.Collator abc = java.text.Collator.getInstance(Ui.locale());
+                    Arrays.sort(tiles, (x, y) -> abc.compare(x[1], y[1]));   // alphabetical, in the language now
                     for (String[] tile : tiles) {
                         toggle(tile[1], () -> Prefs.ccShown(tile[0]), () -> Prefs.setCcShown(tile[0], !Prefs.ccShown(tile[0])));
                     }

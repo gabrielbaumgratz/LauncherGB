@@ -166,17 +166,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         TILE_STYLE.put("netflix", new int[] {0xFF0A0A0A, 0xFF000000, 0});
         TILE_STYLE.put("youtube", new int[] {0xFF1C1C1E, 0xFF09090A, 0});
         TILE_STYLE.put("globoplay", new int[] {0xFFFF8A1F, 0xFFFF2D5A, 1});
-        TILE_STYLE.put("prime", new int[] {0xFF2AA8FF, 0xFF0A68D4, 1});
-        TILE_STYLE.put("disney", new int[] {0xFF173584, 0xFF08143F, 0});
-        TILE_STYLE.put("max", new int[] {0xFF5C30E8, 0xFF221684, 0});
+        TILE_STYLE.put("prime", new int[] {0xFF1C1C1E, 0xFF000000, 1});
+        TILE_STYLE.put("disney", new int[] {0xFF1C1C1E, 0xFF000000, 0});
+        TILE_STYLE.put("max", new int[] {0xFF1C1C1E, 0xFF000000, 0});
         TILE_STYLE.put("appletv", new int[] {0xFF1C1C1E, 0xFF000000, 0});
-    }
-    /** Prime Video, Disney+ and HBO Max as the others: a dark card with the white logo (Settings > Home > Dark app tiles). */
-    private static final Map<String, int[]> DARK_STYLE = new HashMap<>();
-    static {
-        DARK_STYLE.put("prime", new int[] {0xFF1B2330, 0xFF05080D, 1});
-        DARK_STYLE.put("disney", new int[] {0xFF121A38, 0xFF04070F, 0});
-        DARK_STYLE.put("max", new int[] {0xFF1B1530, 0xFF07050E, 0});
     }
     private final android.graphics.PorterDuffColorFilter whiteLogo =
             new android.graphics.PorterDuffColorFilter(0xFFFFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
@@ -1367,7 +1360,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         shadowDeep.setColor(Ui.alpha(0xFF000000, tone(0.14f, 0.3f) + tone(0.18f, 0.3f) * fc + 0.14f * Ui.clamp(l)));
         shadows.draw(c, tmp, r0, DEEP_BLUR * k, shadowDeep);
         c.restore();
-        int[] style = Prefs.darkTiles() && DARK_STYLE.containsKey(it.key) ? DARK_STYLE.get(it.key) : TILE_STYLE.get(it.key);
+        int[] style = TILE_STYLE.get(it.key);
         // By day Netflix's black card turns white (YouTube's too, with its lettering turned dark).
         boolean day = night < 0.5f;
         if (tilesDay != day) {
@@ -1376,6 +1369,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (day && ("netflix".equals(it.key) || "youtube".equals(it.key))) {
             style = new int[] {0xFFFFFFFF, 0xFFE6E6EB, "youtube".equals(it.key) ? 2 : 0};
+        } else if (day && ("prime".equals(it.key) || "disney".equals(it.key) || "max".equals(it.key)) && it.logoDark != null) {
+            style = new int[] {0xFFFFFFFF, 0xFFE6E6EB, 2};   // light cards by day, with the logo in dark: the company's own logo either way
         }
         if (it.logo != null && style != null) {
             if (tileShaders.length != shelf.size() || tileShaderH != bh) {

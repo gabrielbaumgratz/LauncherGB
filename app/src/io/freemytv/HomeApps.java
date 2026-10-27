@@ -153,7 +153,9 @@ final class HomeApps {
                 if (it.logo == null) it.tile = appTile(c, d[0], d[2], 0xFF000000 | Integer.parseInt(d[3], 16));
                 if (it.logo != null) it.logoInk = ink(it.logo);
                 it.logoDark = ownLogoCached(c, d[0] + "-dark");
-                if (it.logoDark == null && it.logo != null && d[0].equals("youtube")) it.logoDark = whiteToDark(it.logo);
+                if (it.logoDark == null && it.logo != null && (d[0].equals("youtube") || d[0].equals("prime") || d[0].equals("disney") || d[0].equals("max"))) {
+                    it.logoDark = whiteToDark(it.logo);   // the card is light by day: the white logo turns dark
+                }
                 it.logoScale = Float.parseFloat(d[5]);
             }
             items.add(it);
