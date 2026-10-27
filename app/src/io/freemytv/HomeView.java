@@ -3050,7 +3050,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // The time and date stay on screen, small, left of the buttons.
         int tc = tabsCount();
         float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[tc].left - 36 * k;
-        c.drawText(miniText, edge, L_BUTTON_CY * k + Ui.halfCap(lMini), lMini);
+        if (picksOn() || isSportsTab()) c.drawText(miniText, edge, L_BUTTON_CY * k + Ui.halfCap(lMini), lMini);   // the Home tab has the big clock
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
         // the white pill with a shadow and grows a little (the tvOS focus).
         float focus = Ui.clamp(topFocus[tab].value);
