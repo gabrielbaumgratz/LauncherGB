@@ -681,17 +681,6 @@ public class SettingsActivity extends Activity {
                         });
                     }
 
-                    header(Ui.tr("Order of the games"));
-                    value(Ui.tr("Sort games by"), () -> {
-                        int p = Prefs.sportsPriority();
-                        return p == 0 ? Ui.tr("My teams first") : p == 1 ? Ui.tr("Championships first") : Ui.tr("Chronological");
-                    }, () -> {
-                        Prefs.setSportsPriority((Prefs.sportsPriority() + 1) % 3);
-                        Sports.get(c).refresh();
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-
                     header(Ui.tr("My teams and athletes"));
                     List<String[]> allTeams = Prefs.sportsTeams();
                     for (int i = 0; i < allTeams.size(); i++) {
@@ -1062,28 +1051,26 @@ public class SettingsActivity extends Activity {
             openDetail(Ui.tr("Background photo"), () -> {
                 String chosen = Prefs.wallpaper();
                 boolean all = chosen.isEmpty() || chosen.equals("*") || !Photos.list(c).contains(chosen);
-                value(Ui.tr("All photos"), () -> Prefs.wallpaper().isEmpty() || Prefs.wallpaper().equals("*") ? Ui.tr("On") : "", () -> {
-                    Prefs.setWallpaper("*");
+                toggle(Ui.tr("All photos"), () -> Prefs.wallpaper().isEmpty() || Prefs.wallpaper().equals("*") || !Photos.list(c).contains(Prefs.wallpaper()), () -> {
+                    boolean rotating = Prefs.wallpaper().isEmpty() || Prefs.wallpaper().equals("*") || !Photos.list(c).contains(Prefs.wallpaper());
+                    Prefs.setWallpaper(rotating ? Photos.backgroundNow(c) : "*");   // off keeps the photo showing now
                     HomeActivity.refreshNow();
                 });
-                value(Ui.tr("Change the photo"), () -> {
-                    int s = Prefs.backgroundSeconds();
-                    return !Prefs.wallpaper().isEmpty() && !Prefs.wallpaper().equals("*") ? Ui.tr("Never") : s < 60 ? Ui.trf("{n} s", "n", s) : s < 3600 ? Ui.trf("{n} min", "n", s / 60) : Ui.trf("{n} h", "n", s / 3600);
-                }, () -> {
-                    int[] options = {0, 30, 60, 300, 900, 1800, 3600};   // 0: keep the photo showing now
-                    boolean fixed = !Prefs.wallpaper().isEmpty() && !Prefs.wallpaper().equals("*");
-                    int at = 0;
-                    if (!fixed) for (int i = 1; i < options.length; i++) if (options[i] == Prefs.backgroundSeconds()) at = i;
-                    int next = options[(at + 1) % options.length];
-                    if (next == 0) {
-                        Prefs.setWallpaper(Photos.backgroundNow(c));
-                    } else {
-                        Prefs.setWallpaper("*");
-                        Prefs.setBackgroundSeconds(next);
-                    }
-                    HomeActivity.refreshNow();
-                });
-                note(Ui.tr("They change on their own, apart from the screensaver. Choose \"Never\", or one photo below, to keep one still."));
+                if (all) {
+                    value(Ui.tr("Change the photo"), () -> {
+                        int s = Prefs.backgroundSeconds();
+                        return s < 3600 ? Ui.trf("{n} min", "n", Math.max(1, s / 60)) : Ui.trf("{n} h", "n", s / 3600);
+                    }, () -> {
+                        int[] options = {60, 300, 900, 1800, 3600};
+                        int at = 0;
+                        for (int i = 0; i < options.length; i++) if (options[i] == Prefs.backgroundSeconds()) at = i;
+                        Prefs.setBackgroundSeconds(options[(at + 1) % options.length]);
+                        HomeActivity.refreshNow();
+                    });
+                    note(Ui.tr("They change on their own, apart from the screensaver. Turn it off, or choose a photo below, to keep one still."));
+                } else {
+                    note(Ui.tr("This photo stays. Turn on All photos to let them change."));
+                }
                 header(Ui.tr("Photos"));
                 int n = 0;
                 for (String name : Photos.list(c)) {

@@ -366,8 +366,6 @@ final class Prefs {
     static boolean sportsFirst() { return sp().getBoolean("sportsFirst", false); }
     static void setSportsFirst(boolean on) { sp().edit().putBoolean("sportsFirst", on).putInt("recsTab", 0).apply(); version++; }
 
-    static int sportsPriority() { return sp().getInt("sportsPriority", 0); }
-    static void setSportsPriority(int priority) { sp().edit().putInt("sportsPriority", priority).apply(); version++; }
 
     /** The Sports tab on the home screen (needs the sports widget on). */
     static boolean sportsTab() { return sp().getBoolean("sportsTab", true); }

@@ -123,7 +123,7 @@ final class Sports {
 
     private static final String API = "https://site.api.espn.com/apis/site/v2/sports/";
     private static final long EVERY = 3 * 3600_000L, DAY = 24 * 3600_000L;
-    private static final int MAX_BODY = 4_000_000, KEEP = 12;
+    private static final int MAX_BODY = 4_000_000, KEEP = 12, SLOTS = 3;   // the cards the Sports tab shows at once
     /** Where a soccer team can also play besides its own league: the continental and the national cups. */
     private static final String[][] CUP_NAMES = {{"esp.copa_del_rey", "Copa del Rey"}, {"eng.fa", "FA Cup"}, {"eng.league_cup", "League Cup"},
             {"ger.dfb_pokal", "DFB-Pokal"}, {"ita.coppa_italia", "Coppa Italia"}, {"fra.coupe_de_france", "Coupe de France"}};
@@ -300,27 +300,25 @@ final class Sports {
         }
         List<Game> upcoming = new ArrayList<>();
         for (Game g : out) if (g.when >= now - 3 * 3600_000L) upcoming.add(g);
-        final int priority = Prefs.sportsPriority();
-        final List<String[]> teamsList = Prefs.sportsTeams();
-        final List<String> leaguesList = Prefs.sportsLeagues();
+        // Live first, then by time. One of the three cards the tab shows is kept for the next game of something followed:
+        // a long run of live tournament matches cannot push every team and player out.
         Collections.sort(upcoming, new Comparator<Game>() {
             @Override public int compare(Game a, Game b) {
                 if (a.live != b.live) return a.live ? -1 : 1;
-                if (priority == 0) {
-                    if (a.mine != b.mine) return a.mine ? -1 : 1;
-                    if (a.mine) {
-                        int ia = teamIndex(a, teamsList);
-                        int ib = teamIndex(b, teamsList);
-                        if (ia != ib) return Integer.compare(ia, ib);
-                    }
-                } else if (priority == 1) {
-                    boolean aLeague = isFollowedLeague(a, leaguesList);
-                    boolean bLeague = isFollowedLeague(b, leaguesList);
-                    if (aLeague != bLeague) return aLeague ? -1 : 1;
-                }
                 return Long.compare(a.when, b.when);
             }
         });
+        final List<String[]> followed = Prefs.sportsTeams();
+        Set<Integer> started = new HashSet<>();
+        List<Game> next = new ArrayList<>();   // the next game of each team, player or driver followed (the list is in time order)
+        for (Game g : upcoming) if (g.mine && started.add(teamIndex(g, followed))) next.add(g);
+        boolean covered = false;
+        for (int i = 0; i < Math.min(SLOTS, upcoming.size()); i++) covered |= next.contains(upcoming.get(i));
+        if (!covered && !next.isEmpty() && upcoming.size() > SLOTS - 1) {
+            Game reserved = next.get(0);
+            upcoming.remove(reserved);
+            upcoming.add(Math.min(SLOTS - 1, upcoming.size()), reserved);
+        }
         List<Game> keep = new ArrayList<>();
         for (Game g : upcoming) {
             if (keep.size() < KEEP) keep.add(g);
@@ -335,15 +333,6 @@ final class Sports {
             if (!name.isEmpty() && g.match.contains(name)) return i;
         }
         return 999;
-    }
-
-    private static boolean isFollowedLeague(Game g, List<String> leagues) {
-        if (g.tag == null) return false;
-        for (String l : leagues) {
-            String lname = leagueName(l);
-            if (!lname.isEmpty() && g.tag.equalsIgnoreCase(lname)) return true;
-        }
-        return false;
     }
 
     private void team(List<Game> out, Set<String> seen, String sport, String league, String id, String name) {
