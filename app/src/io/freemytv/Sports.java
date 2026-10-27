@@ -290,9 +290,8 @@ final class Sports {
             Set<String> names = athletes.containsKey(sportOf(path)) ? athletes.get(sportOf(path)) : new HashSet<String>();
             events(out, seen, path, longRange, names, wholeCircuits.contains(path));
         }
-        for (String tour : tours) {   // the ranking's top, if the championship is followed; the players followed, always
-            boolean followed = Prefs.sportsLeagues().contains("tennis/" + tour);
-            tennis(out, seen, tour, now, followed ? Prefs.tennisTop(tour) : 0, players);
+        for (String tour : tours) {   // the tournaments, if the tour is followed; the players followed, always
+            tennis(out, seen, tour, now, Prefs.sportsLeagues().contains("tennis/" + tour), players);
         }
         List<Game> upcoming = new ArrayList<>();
         for (Game g : out) if (g.when >= now - 3 * 3600_000L) upcoming.add(g);
@@ -475,61 +474,78 @@ final class Sports {
         return first == null ? "" : first.optString("href");
     }
 
-    private void tennis(List<Game> out, Set<String> seen, String tour, long now, int topN, Set<String> players) {
-        JSONObject ranking = get(API + "tennis/" + tour + "/rankings");
-        JSONArray blocks = ranking == null ? null : ranking.optJSONArray("rankings");
-        JSONObject block = blocks == null ? null : blocks.optJSONObject(0);
-        JSONArray ranks = block == null ? null : block.optJSONArray("ranks");
-        Set<String> top = new HashSet<>();
-        for (int i = 0; ranks != null && i < ranks.length() && i < topN; i++) {
-            JSONObject a = ranks.optJSONObject(i) == null ? null : ranks.optJSONObject(i).optJSONObject("athlete");
-            if (a != null) top.add(a.optString("displayName"));
-        }
-        top.addAll(players);
-        if (top.isEmpty()) return;
+    /** ESPN's tournament numbers (the part of an event's id before the year) by level: it does not say which level an event is. */
+    private static final String[] SLAMS = {"154", "172", "188", "189"};
+    private static final String[] ATP_1000 = {"411", "713", "42", "413", "414", "421", "718", "315", "13"};
+    private static final String[] ATP_500 = {"4", "25", "119", "375", "711", "338", "27", "129", "942", "888", "959", "5", "10", "23"};
+    private static final String[] WTA_1000 = {"256", "25", "411", "713", "413", "414", "421", "718", "959", "381"};
+    private static final String[] WTA_500 = {"970", "611", "930", "199", "228", "254", "635", "444", "636", "888", "264", "963", "887"};
+
+    /** "slam", "1000", "500" or null for the event of ESPN's tour ("atp", "wta"). */
+    private static String tennisLevel(String tour, String eventId) {
+        String id = eventId.contains("-") ? eventId.substring(0, eventId.indexOf('-')) : eventId;
+        boolean atp = tour.equals("atp");
+        if (java.util.Arrays.asList(SLAMS).contains(id)) return "slam";
+        if (java.util.Arrays.asList(atp ? ATP_1000 : WTA_1000).contains(id)) return "1000";
+        if (java.util.Arrays.asList(atp ? ATP_500 : WTA_500).contains(id)) return "500";
+        return null;
+    }
+
+    /** At most this many matches of the tournaments followed at once (a Slam has dozens a day); the players followed always show. */
+    private static final int TOURNAMENT_MATCHES = 8;
+
+    private void tennis(List<Game> out, Set<String> seen, String tour, long now, boolean tournaments, Set<String> players) {
+        List<Game> wide = new ArrayList<>();
         for (int d = 0; d < 3; d++) {
             JSONObject day = get(API + "tennis/" + tour + "/scoreboard?dates=" + stamp(now + d * DAY));
             JSONArray events = day == null ? null : day.optJSONArray("events");
             for (int i = 0; events != null && i < events.length(); i++) {
                 JSONObject event = events.optJSONObject(i);
-                JSONArray groups = event == null ? null : event.optJSONArray("groupings");
+                if (event == null) continue;
+                String level = tournaments ? tennisLevel(tour, event.optString("id")) : null;
+                boolean all = level != null && Prefs.tennisLevel(level);
+                if (!all && players.isEmpty()) continue;
+                String name = event.optString("shortName", event.optString("name"));
+                JSONArray groups = event.optJSONArray("groupings");
                 for (int j = 0; groups != null && j < groups.length(); j++) {
                     JSONArray matches = groups.optJSONObject(j).optJSONArray("competitions");
                     for (int m = 0; matches != null && m < matches.length(); m++) {
-                        match(out, seen, matches.optJSONObject(m), top, players, tour.toUpperCase(Locale.ROOT));
+                        match(out, wide, seen, matches.optJSONObject(m), all, players, name.isEmpty() ? tour.toUpperCase(Locale.ROOT) : name);
                     }
                 }
             }
         }
+        java.util.Collections.sort(wide, (x, y) -> x.live != y.live ? (x.live ? -1 : 1) : Long.compare(x.when, y.when));
+        out.addAll(wide.subList(0, Math.min(TOURNAMENT_MATCHES, wide.size())));
     }
 
-    private void match(List<Game> out, Set<String> seen, JSONObject comp, Set<String> top, Set<String> players, String tour) {
+    /** A singles match: the players followed go to `out`; the others, when their tournament is followed, to `wide`. */
+    private void match(List<Game> out, List<Game> wide, Set<String> seen, JSONObject comp, boolean all, Set<String> players, String tag) {
         if (comp == null) return;
         String state = stateOf(comp.optJSONObject("status"));
         if (state.equals("post")) return;
         JSONArray competitors = comp.optJSONArray("competitors");
         List<String> names = new ArrayList<>();
-        boolean star = false, mine = false;
+        boolean mine = false;
         for (int i = 0; competitors != null && i < competitors.length(); i++) {
             JSONObject p = competitors.optJSONObject(i);
             JSONObject athlete = p == null ? null : p.optJSONObject("athlete");
             if (athlete == null) continue;
             String name = athlete.optString("displayName");
             names.add(name);
-            star |= top.contains(name);
             mine |= players.contains(name);
         }
-        if (!star || names.size() != 2) return;
+        if (names.size() != 2 || !(all || mine)) return;
         if (!seen.add("t" + comp.optString("id") + names.get(0))) return;
         Game g = new Game();
         g.when = parse(comp.optString("date"));
         if (g.when == 0) return;
         g.match = names.get(0) + " × " + names.get(1);
-        g.tag = tour;
+        g.tag = tag;
         g.sport = "tennis";
         g.mine = mine;
         g.live = state.equals("in");
-        out.add(g);
+        (mine ? out : wide).add(g);
     }
 
     private static String stateOf(JSONObject status) {

@@ -375,9 +375,9 @@ final class Prefs {
     static boolean weatherDrawer() { return sp().getBoolean("weatherDrawer", true); }
     static void setWeatherDrawer(boolean on) { put("weatherDrawer", on); }
 
-    /** How many of the top of the ranking the tennis championships show ("atp", "wta"): ten, unless set (adb only). */
-    static int tennisTop(String tour) { return sp().getInt("tennisTop_" + tour, 10); }
-    static void setTennisTop(String tour, int n) { sp().edit().putInt("tennisTop_" + tour, n).apply(); version++; }
+    /** The tennis tournaments followed, by level ("slam", "1000", "500"): every match of them shows. The Slams and the 1000s unless set. */
+    static boolean tennisLevel(String level) { return sp().getBoolean("tennis_" + level, !level.equals("500")); }
+    static void setTennisLevel(String level, boolean on) { put("tennis_" + level, on); version++; }
     static void setSportsOn(boolean on) { put("sportsOn", on); }
 
     /** The followed teams, as {sport, league, id, name}. */
@@ -433,7 +433,7 @@ final class Prefs {
     static String sportsKey() {
         StringBuilder sb = new StringBuilder();
         for (String[] t : sportsTeams()) sb.append(t[0]).append(t[2]).append(',');
-        return sb.append('#').append(sportsLeagues()).append('#').append(tennisTop("atp")).append(tennisTop("wta")).toString();
+        return sb.append('#').append(sportsLeagues()).append('#').append(tennisLevel("slam")).append(tennisLevel("1000")).append(tennisLevel("500")).toString();
     }
 
     /** The name the person gave a Bluetooth device (empty: the device's own). */

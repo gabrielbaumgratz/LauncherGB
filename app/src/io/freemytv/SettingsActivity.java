@@ -83,9 +83,6 @@ public class SettingsActivity extends Activity {
         }
         // From ADB: --ei page 4 opens that category (0 General, 1 Home Screen, 2 Control Center, 3 Weather, 4 Games, 5 Screensaver,
         // 6 Performance, 7 Remote, 8 About); --ez demo true puts a made-up name and city on the screen (for screenshots), false brings the real ones back.
-        // From ADB: --ei tennisAtp 5 --ei tennisWta 3 (how many of each ranking the tennis shows; ten by default, no menu).
-        if (getIntent().hasExtra("tennisAtp")) Prefs.setTennisTop("atp", getIntent().getIntExtra("tennisAtp", 10));
-        if (getIntent().hasExtra("tennisWta")) Prefs.setTennisTop("wta", getIntent().getIntExtra("tennisWta", 10));
         // --es set "recommendations=0,sportsTab=1,layout=1": switches for tests (the ones named here, 0 or 1; layout 0 to 2).
         if (getIntent().hasExtra("set")) {
             for (String pair : getIntent().getStringExtra("set").split(",")) {
@@ -708,6 +705,13 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Championships"));
                     link(Ui.tr("Choose championships"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openLeagues);
                     note(Ui.tr("Choose the leagues, tours and circuits you want to follow."));
+                    if (Prefs.sportsLeagues().contains("tennis/atp") || Prefs.sportsLeagues().contains("tennis/wta")) {
+                        header(Ui.tr("Tennis tournaments"));
+                        tennisToggle("slam", Ui.tr("Grand Slams"));
+                        tennisToggle("1000", Ui.tr("Masters 1000"));
+                        tennisToggle("500", Ui.tr("500 tournaments"));
+                        note(Ui.tr("All their matches, for the ATP and the WTA you follow. The players you follow always show."));
+                    }
                     break;
                 }
                 case P_SAVER: {
@@ -1056,6 +1060,14 @@ public class SettingsActivity extends Activity {
                 int at = 0;
                 for (int i = 0; i < options.length; i++) if (options[i] == Prefs.photoSeconds()) at = i;
                 Prefs.setPhotoSeconds(options[(at + 1) % options.length]);
+            });
+        }
+
+        private void tennisToggle(String level, String label) {
+            toggle(label, () -> Prefs.tennisLevel(level), () -> {
+                Prefs.setTennisLevel(level, !Prefs.tennisLevel(level));
+                Sports.get(getContext()).refresh();
+                HomeData.get(getContext()).settingsChanged();
             });
         }
 
