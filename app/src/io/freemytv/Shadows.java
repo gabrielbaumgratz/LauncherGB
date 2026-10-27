@@ -10,11 +10,11 @@ import android.graphics.RectF;
 import java.util.HashMap;
 
 /**
- * Blurred rounded-rectangle shadows for older GPUs. A BlurMaskFilter is rasterized on the CPU and uploaded again every
- * time the shape changes size (every frame of a focus animation): on a Mali-450 (Mi Box 3, Android 9) that alone took
- * ~40 ms a frame. Here each (corner radius, blur) is blurred once into a small alpha bitmap and drawn as a nine-slice
- * (corners as they are, edges and center stretched), tinted with the paint's color.
- * Android 12+ keeps drawing the real BlurMaskFilter.
+ * Blurred rounded-rectangle shadows on every GPU. A BlurMaskFilter is rasterized again every time the shape changes size
+ * (every frame of a focus animation): on a Mali-450 (Mi Box 3, Android 9) that alone took ~40 ms a frame, and on a 1 GB
+ * Android 14 TV the GPU kept a new scratch target for each size (140 after a few moves of the drawer, ~35 MB). Here each
+ * (corner radius, blur) is blurred once into a small alpha bitmap and drawn as a nine-slice (corners as they are, edges
+ * and center stretched), tinted with the paint's color.
  */
 final class Shadows {
     private final HashMap<Long, Bitmap> cache = new HashMap<>();
@@ -27,10 +27,6 @@ final class Shadows {
 
     /** Draws `shape` (radius `r`) with `paint`, whose BlurMaskFilter was made with radius `blur`. */
     void draw(Canvas c, RectF shape, float r, float blur, Paint paint) {
-        if (!Ui.LEGACY) {
-            c.drawRoundRect(shape, r, r, paint);
-            return;
-        }
         int radius = Math.max(0, Math.round(r)), b = Math.max(1, Math.round(blur));
         int m = (int) Math.ceil(b * 1.8f) + 1;        // how far the blur spreads outside the shape
         int corner = radius + 2 * m;                  // the slice that holds the curve and the blur on both sides of it

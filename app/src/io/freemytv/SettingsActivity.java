@@ -1606,7 +1606,7 @@ public class SettingsActivity extends Activity {
             float rad = radius * k * s;
             tmp.offset(0, 10 * k * f);
             dropShadow.setColor(Ui.alpha(0xFF000000, 0.4f * f));
-            c.drawRoundRect(tmp, rad, rad, dropShadow);
+            shadows.draw(c, tmp, rad, 22 * k, dropShadow);
             tmp.offset(0, -10 * k * f);
             white.setAlpha(Math.round(255 * f));
             c.drawRoundRect(tmp, rad, rad, white);
