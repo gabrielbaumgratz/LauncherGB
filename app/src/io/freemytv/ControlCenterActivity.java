@@ -94,7 +94,7 @@ public class ControlCenterActivity extends Activity {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             getWindow().getAttributes().dimAmount = 0.1f;
         }
-        if (getIntent().getBooleanExtra("fromKey", false)) backdrop = null;   // over an app: no picture of the home screen
+        if (getIntent().getBooleanExtra("fromKey", false)) backdrop = HomeActivity.snapshotIfShowing();   // over an app: no picture of the home screen
         if (backdrop == null && Build.VERSION.SDK_INT >= 31) getWindow().setBackgroundBlurRadius(60);
         dark = HomeData.get(this).isNight(System.currentTimeMillis());
         volume = shownVolume = readVolume();
