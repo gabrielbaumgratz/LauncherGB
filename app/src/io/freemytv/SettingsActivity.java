@@ -729,19 +729,14 @@ public class SettingsActivity extends Activity {
                         return mode == 0 ? Ui.tr("Full") : mode == 1 ? Ui.tr("Performance") : Ui.tr("Custom");
                     }, () -> setPerfMode(perfMode() == 0 ? 1 : 0));
                     header(Ui.tr("What each mode does"));
-                    info(Ui.tr("Full → Performance"), () -> "");
-                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather"), Ui.tr("Sports"), Ui.tr("Slow zoom of the photos"), Ui.tr("Glass lens (refraction)")}) {
-                        info(feature, () -> Ui.tr("On") + "  →  " + Ui.tr("Off"));
-                    }
+                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> perfToggle(() -> Prefs.setRecommendations(!Prefs.recommendations())));
+                    toggle(Ui.tr("Weather"), Prefs::weather, () -> perfToggle(() -> Prefs.setWeather(!Prefs.weather())));
+                    toggle(Ui.tr("Sports"), Prefs::sportsOn, () -> perfToggle(() -> Prefs.setSportsOn(!Prefs.sportsOn())));
+                    toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> perfToggle(() -> Prefs.setDreamMotion(!Prefs.dreamMotion())));
+                    toggle(Ui.tr("Refraction"), Prefs::glassLens, () -> perfToggle(() -> Prefs.setGlassLens(!Prefs.glassLens())));
+                    note(Ui.tr("Performance turns all of these off; Full turns them on. Change any one and the mode reads Custom."));
+                    note(Ui.tr("Refraction off: plain frosted glass, lighter on the TV. Frost levels stay as you set them."));
                     note(Ui.tr("Both modes keep your apps, the inputs, the clock, the Control Center and the settings."));
-                    note(Ui.tr("To change them one by one, use each one's own page."));
-                    header(Ui.tr("Liquid glass"));
-                    toggle(Ui.tr("Glass lens (refraction)"), Prefs::glassLens, () -> {
-                        Prefs.setGlassLens(!Prefs.glassLens());
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    note(Ui.tr("Off: plain frosted glass, lighter on the TV. Frost levels stay as you set them."));
                     break;
                 }
                 case P_REMOTE: {
@@ -1111,6 +1106,8 @@ public class SettingsActivity extends Activity {
         private void openGlass() {
             openDetail(Ui.tr("Liquid glass"), () -> {
                 // in the order they show on the screen: the shelf, the buttons above it, the Control Center, the drawer
+                toggle(Ui.tr("Refraction"), Prefs::glassLens, () -> perfToggle(() -> Prefs.setGlassLens(!Prefs.glassLens())));
+                note(Ui.tr("Off: plain frosted glass, lighter on the TV (the Performance mode turns it off)."));
                 String[] names = {Ui.tr("Shelf"), Ui.tr("Drawer"), Ui.tr("Top Buttons"), Ui.tr("Control Center")};
                 for (int e : new int[] {Prefs.G_SHELF, Prefs.G_TOP, Prefs.G_CONTROL, Prefs.G_DRAWER}) {
                     final int element = e;
@@ -1119,7 +1116,7 @@ public class SettingsActivity extends Activity {
                         Prefs.setGlassFrost(element, (Prefs.glassFrost(element) + 1) % 5);
                         HomeData.get(getContext()).settingsChanged();
                     });
-                    value(Ui.tr("Refraction: none to strong"), () -> (Prefs.glassRefraction(element) + 1) + " / 5", () -> {
+                    if (Prefs.glassLens()) value(Ui.tr("Refraction: none to strong"), () -> (Prefs.glassRefraction(element) + 1) + " / 5", () -> {
                         Prefs.setGlassRefraction(element, (Prefs.glassRefraction(element) + 1) % 5);
                         HomeData.get(getContext()).settingsChanged();
                     });
@@ -2111,6 +2108,12 @@ public class SettingsActivity extends Activity {
             int count = 0;
             for (boolean b : on) if (b) count++;
             return count == 5 ? 0 : count == 0 ? 1 : 2;
+        }
+
+        private void perfToggle(Runnable change) {
+            change.run();
+            HomeData.get(getContext()).settingsChanged();
+            HomeActivity.refreshNow();
         }
 
         private void setPerfMode(int mode) {
