@@ -49,6 +49,8 @@ final class Scene {
             glass = new RuntimeShader(Shaders.GLASS);
             liquid = new RuntimeShader(Shaders.LIQUID);
             steady = new RuntimeShader(Shaders.LIQUID);
+            liquid.setFloatUniform("dispersion", 0.22f);
+            steady.setFloatUniform("dispersion", 0.22f);
             steadyPaint.setShader(steady);
             steady.setInputShader("imageA", linear(steadyImage(0xFFF4F4F8, 0xFFE0E0E6, 7)));
             steady.setInputShader("imageB", linear(steadyImage(0xFF343438, 0xFF18181A, 10)));
@@ -192,6 +194,11 @@ final class Scene {
         liquid.setInputShader("imageB", to != null ? linear(glassB) : glassShaderA);
         liquid.setFloatUniform("mixB", 0);
         liquid.setFloatUniform("imageScale", (float) glassW / w, (float) glassH / h);
+    }
+
+    /** How far the liquid glass splits colors at its edge (the rainbow of a real lens): 0.22 is the usual. */
+    void setDispersion(float d) {
+        if (liquid != null) liquid.setFloatUniform("dispersion", d);
     }
 
     void setGlassMix(float t) {

@@ -171,6 +171,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         TILE_STYLE.put("max", new int[] {0xFF5C30E8, 0xFF221684, 0});
         TILE_STYLE.put("appletv", new int[] {0xFF1C1C1E, 0xFF000000, 0});
     }
+    /** Prime Video, Disney+ and HBO Max as the others: a dark card with the white logo (Settings > Home > Dark app tiles). */
+    private static final Map<String, int[]> DARK_STYLE = new HashMap<>();
+    static {
+        DARK_STYLE.put("prime", new int[] {0xFF1B2330, 0xFF05080D, 1});
+        DARK_STYLE.put("disney", new int[] {0xFF121A38, 0xFF04070F, 0});
+        DARK_STYLE.put("max", new int[] {0xFF1B1530, 0xFF07050E, 0});
+    }
     private final android.graphics.PorterDuffColorFilter whiteLogo =
             new android.graphics.PorterDuffColorFilter(0xFFFFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
     private boolean tilesDay;   // the shelf cards' gradients were made for day (true) or night
@@ -315,7 +322,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             // The layer may be shifted (bottom drawer): the glass reads the background from where it really is. The
             // drawer and the top buttons are always drawn as if resting in place (they are only visible there and are
             // not redrawn while they move).
-            scene.setOffset(0, kind == DRAWER || kind == STATUS ? 0 : getTranslationY());
+            scene.setOffset(0, kind == STATUS || (kind == DRAWER && !Prefs.photoLayout()) ? 0 : getTranslationY());
             shadows.dither = dark() > 0.5f;
             switch (kind) {
                 case SKY: drawSky(c); break;
@@ -514,22 +521,35 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean contentOn() {
-        return !Prefs.photoLayout() && (picksOn() || Prefs.sportsOn());
+        return !Prefs.photoLayout() && (picksOn() || sportsTabOn());
     }
 
     private boolean sportsFirst() {
-        return Prefs.sportsFirst() && Prefs.sportsOn();
+        return Prefs.sportsFirst() && sportsTabOn();
+    }
+
+    /** The Sports tab, the drawer's weather and sports cards: each one on its own. */
+    private boolean sportsTabOn() {
+        return Prefs.sportsOn() && Prefs.sportsTab();
+    }
+
+    private boolean drawerWeather() {
+        return Prefs.weather() && Prefs.weatherDrawer();
+    }
+
+    private boolean drawerSports() {
+        return Prefs.sportsOn() && Prefs.sportsDrawer();
     }
 
     private boolean isSportsTab() {
-        if (!Prefs.sportsOn()) return false;
+        if (!sportsTabOn()) return false;
         return tab == (sportsFirst() ? 0 : tabsCount() - 1);
     }
 
     private int tabsCount() {
         if (!contentOn()) return 0;
         if (!picksOn()) return 2;   // Home (the clock over the photos) and Sports
-        return Prefs.sportsOn() ? 4 : 3;
+        return sportsTabOn() ? 4 : 3;
     }
 
     /** The round buttons at the top right (Settings > Top Buttons), with their names in the current language. */
@@ -549,7 +569,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The tab names, made again only when the language or sports preference changes (they are drawn on every frame). */
     private String[] tabs() {
-        boolean sports = Prefs.sportsOn();
+        boolean sports = sportsTabOn();
         boolean picks = picksOn();
         boolean first = sportsFirst();
         if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks || lastSportsFirst != first) {
@@ -755,10 +775,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (tilesMoving || tilesDirty) tiles.invalidate();
         if (statusMoving || statusDirty || bgFading) status.invalidate();
         if (heroMoving || heroDirty || heroFading) heroLayer.invalidate();
-        if (drawerItemsMoving || drawerDirty || bgFading) drawerLayer.invalidate();
+        if (drawerItemsMoving || drawerDirty || bgFading || (drawerMoving && Prefs.photoLayout())) drawerLayer.invalidate();
         if (gridMoving || gridDirty) sheetLayer.invalidate();
         if (drawerMoving || bgFading) sky.invalidate();
-        if (bgFading || (drawerWasMoving && !drawerMoving)) platter.invalidate();
+        if (bgFading || (drawerWasMoving && !drawerMoving) || (drawerMoving && Prefs.photoLayout())) platter.invalidate();   // the lens follows the picture
         drawerWasMoving = drawerMoving;
         tilesDirty = statusDirty = heroDirty = drawerDirty = gridDirty = motionDirty = false;
         if (updateClock()) {
@@ -1274,12 +1294,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // The shelf glass is matte: a fixed picture (not the background), frosted as much as Home Settings say.
         if (Prefs.photoLayout() && bgTo != null && bgTo.image != null) {
             // Over the sharp photo, the real liquid glass: it bends what is behind it (the photo itself).
-            scene.liquid(c, platterRect, radius, tone(0xFFFFFFFF, 0xFF1C1C1E), Prefs.frost(tone(0.12f, 0.10f)), tone(0.02f, 0.01f),
-                    tone(40, 36) * k, tone(30, 27) * k, tone(0.5f, 0.4f), 1);
+            scene.setDispersion(0.42f);   // a little rainbow at the edge, like a real lens
+            scene.liquid(c, platterRect, radius, tone(0xFFFFFFFF, 0xFF1C1C1E), Prefs.frost(tone(0.12f, 0.10f), Prefs.G_SHELF), tone(0.02f, 0.01f),
+                    tone(40, 36) * k, tone(30, 27) * k * Prefs.lens(Prefs.G_SHELF), tone(0.5f, 0.4f), 1);
+            scene.setDispersion(0.22f);
             return;
         }
-        scene.liquidSteady(c, platterRect, radius, tone(0xFFFFFFFF, SMOKE), Prefs.frost(tone(0.42f, 0.30f)), tone(0.03f, 0.06f),
-                tone(14, 16) * k, tone(6, 8) * k, tone(0.1f, 0.12f), night);   // a thin, matte edge: almost no lens, no bright rim
+        scene.liquidSteady(c, platterRect, radius, tone(0xFFFFFFFF, SMOKE), Prefs.frost(tone(0.42f, 0.30f), Prefs.G_SHELF), tone(0.03f, 0.06f),
+                tone(14, 16) * k, tone(6, 8) * k * Prefs.lens(Prefs.G_SHELF), tone(0.1f, 0.12f), night);   // a thin, matte edge: almost no lens, no bright rim
     }
 
     private void drawTiles(Canvas c) {
@@ -1338,7 +1360,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         shadowDeep.setColor(Ui.alpha(0xFF000000, tone(0.14f, 0.3f) + tone(0.18f, 0.3f) * fc + 0.14f * Ui.clamp(l)));
         shadows.draw(c, tmp, r0, DEEP_BLUR * k, shadowDeep);
         c.restore();
-        int[] style = TILE_STYLE.get(it.key);
+        int[] style = Prefs.darkTiles() && DARK_STYLE.containsKey(it.key) ? DARK_STYLE.get(it.key) : TILE_STYLE.get(it.key);
         // By day Netflix's black card turns white (YouTube's too, with its lettering turned dark).
         boolean day = night < 0.5f;
         if (tilesDay != day) {
@@ -1522,7 +1544,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float cardsTop = CARDS_TOP * k;
         float cardX = left;
         weatherCard.set(left, cardsTop, Math.min(right, left + 870 * k), cardsTop + CARDS_H * k);
-        if (Prefs.weather()) cardX = weatherCard.right + 20 * k;
+        if (drawerWeather()) cardX = weatherCard.right + 20 * k;
         sportsCard.set(cardX, cardsTop, Math.min(right, cardX + 870 * k), cardsTop + CARDS_H * k);
         drawerDirty = true;
     }
@@ -1552,15 +1574,23 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Glass for a drawer card or button: white by day, smoked at night (both during the transition). */
     private void drawerGlass(Canvas c, RectF r, float radius, float lightTint, int shadowColor, float drop) {
-        float dk = dark();
+        float dk = dark(), rel = Prefs.frostRel(Prefs.G_DRAWER);
         if (dk < 0.999f) {
             tmp.set(r);
             tmp.offset(0, drop);
             shadow.setColor(Ui.alpha(shadowColor, 1 - dk));
             shadows.draw(c, tmp, radius, SHADOW_BLUR * k, shadow);
-            scene.glass(c, r, radius, 0xFFFFFFFF, lightTint, 0, 0, 0.02f, 1, 1 - dk);
         }
-        if (dk > 0.001f) scene.glass(c, r, radius, SMOKE, 0.4f, 0, 0, 0.02f, 1, dk);
+        if (Prefs.photoLayout() && bgTo != null && bgTo.image != null) {
+            // Over the sharp photo: liquid glass with a lens, so the cards bend the photo like the shelf does.
+            scene.setDispersion(0.4f);
+            scene.liquid(c, r, radius, tone(0xFFFFFFFF, SMOKE), Math.min(0.94f, tone(lightTint * 0.5f, 0.3f) * rel), tone(0.02f, 0.01f),
+                    16 * k, 14 * k * Prefs.lens(Prefs.G_DRAWER), tone(0.4f, 0.3f), 1);
+            scene.setDispersion(0.22f);
+            return;
+        }
+        if (dk < 0.999f) scene.glass(c, r, radius, 0xFFFFFFFF, Math.min(0.94f, lightTint * rel), 0, 0, 0.02f, 1, 1 - dk);
+        if (dk > 0.001f) scene.glass(c, r, radius, SMOKE, Math.min(0.94f, 0.4f * rel), 0, 0, 0.02f, 1, dk);
     }
 
     private void drawerCard(Canvas c, RectF r) {
@@ -1588,8 +1618,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
-        if (Prefs.weather()) drawWeatherCard(c, weatherCard);
-        if (Prefs.sportsOn()) drawSportsCard(c, sportsCard);
+        if (drawerWeather()) drawWeatherCard(c, weatherCard);
+        if (drawerSports()) drawSportsCard(c, sportsCard);
     }
 
     /** The followed teams' and championships' next games, beside the weather. */
@@ -2695,7 +2725,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         for (int i = 0; i < shelf.size(); i++) out.add(a11yId(Z_SHELF, i));
         for (int i = 0; i < drawerItems.size(); i++) out.add(a11yId(Z_DRAWER, i));
-        if (drawerOpen && Prefs.weather()) out.add(a11yId(WIDGETS, 0));
+        if (drawerOpen && drawerWeather()) out.add(a11yId(WIDGETS, 0));
     }
 
     private String a11yText(int id) {
@@ -2808,7 +2838,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private List<Integer> widgets() {
         List<Integer> out = new ArrayList<>();
         if (!drawerOpen) return out;
-        if (Prefs.weather()) out.add(0);
+        if (drawerWeather()) out.add(0);
         return out;
     }
 
@@ -2991,6 +3021,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (!contentOn() && zone == Z_TOP && topIndex < tc) topIndex = tc;
         if (!contentOn() && zone == Z_CARDS) zone = Z_SHELF;
         requestLayout();   // the shelf's layers are placed by the layout
+        tileShaders = new LinearGradient[0];
         layoutShelf();
         tilesDirty = true;
         platter.invalidate();
@@ -3427,8 +3458,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             tmp.offset(0, (6 + 8 * f) * k);
             shadow.setColor(Ui.alpha(0xFF000000, tone(0.1f, 0.3f) + tone(0.14f, 0.2f) * f));
             shadows.draw(c, tmp, rad, SHADOW_BLUR * k, shadow);
-            scene.liquid(c, cell, rad, tone(0xFFFFFFFF, SMOKE), tone(0.55f, 0.5f), tone(0.02f, 0.01f), 12 * k, 8 * k,
-                    tone(0.6f, 0.45f), 1 - f);
+            scene.liquid(c, cell, rad, tone(0xFFFFFFFF, SMOKE), Math.min(0.94f, tone(0.55f, 0.5f) * Prefs.frostRel(Prefs.G_TOP)),
+                    tone(0.02f, 0.01f), 12 * k, 8 * k * Prefs.lens(Prefs.G_TOP), tone(0.6f, 0.45f), 1 - f);
             if (f > 0.01f) {
                 fill.setShader(null);
                 fill.setColor(Ui.alpha(0xFFFFFFFF, f));

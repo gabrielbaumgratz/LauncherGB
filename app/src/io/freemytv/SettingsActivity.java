@@ -540,9 +540,12 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         updateTheme();
                     });
-                    value(Ui.tr("Glass: clear to frosted"), () -> (Prefs.glass() + 1) + " / 5", () -> {
-                        Prefs.setGlass((Prefs.glass() + 1) % 5);
+                    link(Ui.tr("Glass"), () -> "", this::openGlass);
+                    toggle(Ui.tr("Dark app tiles"), Prefs::darkTiles, () -> {
+                        Prefs.setDarkTiles(!Prefs.darkTiles());
+                        HomeApps.clearMemory();
                         HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
                     });
                     value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Ui.tr("Recommendations"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
@@ -560,9 +563,13 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    toggle(Ui.tr("Sports"), Prefs::sportsOn, () -> {
-                        Prefs.setSportsOn(!Prefs.sportsOn());
-                        if (Prefs.sportsOn()) Sports.get(c).refresh();
+                    toggle(Ui.tr("Sports tab"), () -> Prefs.sportsOn() && Prefs.sportsTab(), () -> {
+                        boolean on = !(Prefs.sportsOn() && Prefs.sportsTab());
+                        Prefs.setSportsTab(on);
+                        if (on) {
+                            Prefs.setSportsOn(true);
+                            Sports.get(c).refresh();
+                        }
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
@@ -573,6 +580,24 @@ public class SettingsActivity extends Activity {
                                 : (home ? Ui.tr("Home → Sports") : Ui.tr("Recommendations → Sports"));
                     }, () -> {
                         Prefs.setSportsFirst(!Prefs.sportsFirst());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    header(Ui.tr("Widgets in the drawer"));
+                    toggle(Ui.tr("Weather"), () -> Prefs.weather() && Prefs.weatherDrawer(), () -> {
+                        boolean on = !(Prefs.weather() && Prefs.weatherDrawer());
+                        Prefs.setWeatherDrawer(on);
+                        if (on) Prefs.setWeather(true);
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    toggle(Ui.tr("Sports"), () -> Prefs.sportsOn() && Prefs.sportsDrawer(), () -> {
+                        boolean on = !(Prefs.sportsOn() && Prefs.sportsDrawer());
+                        Prefs.setSportsDrawer(on);
+                        if (on) {
+                            Prefs.setSportsOn(true);
+                            Sports.get(c).refresh();
+                        }
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
@@ -628,7 +653,7 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    note(Ui.tr("The next games, beside the weather on the home screen. From ESPN, with no account."));
+                    note(Ui.tr("The next games, from ESPN, with no account. Where they show (the tab, the drawer) is in Home."));
 
                     header(Ui.tr("Display priority"));
                     value(Ui.tr("Priority"), () -> {
@@ -991,6 +1016,27 @@ public class SettingsActivity extends Activity {
         private int nextFocusable(int from, int dir, int fallback) {
             for (int i = from + dir; i >= 0 && i < rows.size(); i += dir) if (rows.get(i).focusable()) return i;
             return fallback;
+        }
+
+        // MARK: - Glass: each piece with its own frost and refraction
+
+        private void openGlass() {
+            openDetail(Ui.tr("Glass"), () -> {
+                String[] names = {Ui.tr("Shelf"), Ui.tr("Drawer"), Ui.tr("Top Buttons"), Ui.tr("Control Center")};
+                for (int e = 0; e < names.length; e++) {
+                    final int element = e;
+                    header(names[e]);
+                    value(Ui.tr("Frost: clear to frosted"), () -> (Prefs.glassFrost(element) + 1) + " / 5", () -> {
+                        Prefs.setGlassFrost(element, (Prefs.glassFrost(element) + 1) % 5);
+                        HomeData.get(getContext()).settingsChanged();
+                    });
+                    value(Ui.tr("Refraction: none to strong"), () -> (Prefs.glassRefraction(element) + 1) + " / 5", () -> {
+                        Prefs.setGlassRefraction(element, (Prefs.glassRefraction(element) + 1) % 5);
+                        HomeData.get(getContext()).settingsChanged();
+                    });
+                }
+                note(Ui.tr("The lens shows most in the Photo styles, over a sharp photo."));
+            });
         }
 
         // MARK: - Bluetooth devices and teams (pages that open from a row)

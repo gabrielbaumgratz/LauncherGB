@@ -152,6 +152,7 @@ final class Shaders {
         "uniform float band;\n" +
         "uniform float refraction;\n" +
         "uniform float specular;\n" +
+        "uniform float dispersion;\n" +
         "float hash(float2 p) {\n" +
         "  p = fract(p * float2(123.34, 456.21));\n" +
         "  p += dot(p, p + 45.32);\n" +
@@ -176,7 +177,7 @@ final class Shaders {
         "  float2 p = xy + offset - n * (bend * refraction);\n" +
         "  half3 bg;\n" +
         "  if (bend > 0.01) {\n" +
-        "    float2 ca = n * (bend * refraction * 0.22);\n" +
+        "    float2 ca = n * (bend * refraction * dispersion);\n" +
         "    bg = half3(bgAt(p + ca).r, bgAt(p).g, bgAt(p - ca).b);\n" +
         "  } else {\n" +
         "    bg = bgAt(p);\n" +

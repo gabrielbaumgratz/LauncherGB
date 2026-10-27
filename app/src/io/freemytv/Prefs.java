@@ -189,6 +189,10 @@ final class Prefs {
     static boolean photoLayout() { return layout() != 0; }
     static boolean sidebar() { return layout() == 2; }
 
+    /** Prime Video, Disney+ and HBO Max as white logos on a dark tile, like the others on the shelf (not their old colored art). */
+    static boolean darkTiles() { return sp().getBoolean("darkTiles", true); }
+    static void setDarkTiles(boolean on) { put("darkTiles", on); }
+
     /** How frosted the home screen's background is: 0 (clear, the photo most visible) to 4 (most frosted); 2 is the usual look. */
     static int backdrop() { return Math.max(0, Math.min(4, sp().getInt("backdrop", 2))); }
     static void setBackdrop(int level) { sp().edit().putInt("backdrop", Math.max(0, Math.min(4, level))).apply(); version++; }
@@ -196,9 +200,39 @@ final class Prefs {
     /** Multiplies a glass tint's opacity by the chosen level (the middle one is the default look). */
     private static final float[] FROST = {0.55f, 0.85f, 1.25f, 1.6f, 2f};
 
-    static float frost(float alpha) {
-        return Math.min(0.94f, alpha * FROST[glass()]);
+    /** The pieces of glass, each with its own frost and refraction (1 to 5 in the settings). */
+    static final int G_SHELF = 0, G_DRAWER = 1, G_TOP = 2, G_CONTROL = 3;
+
+    /** How frosted one piece of glass is, 0 (clear) to 4: its own choice; else the old single one (shelf, Control Center); else the middle. */
+    static int glassFrost(int element) {
+        int usual = element == G_SHELF || element == G_CONTROL ? glass() : 2;
+        return Math.max(0, Math.min(4, sp().getInt("glassFrost" + element, usual)));
     }
+
+    static void setGlassFrost(int element, int level) {
+        sp().edit().putInt("glassFrost" + element, Math.max(0, Math.min(4, level))).apply();
+        version++;
+    }
+
+    /** How much one piece of glass bends what is behind it, 0 (not at all) to 4; 2 is the usual. */
+    static int glassRefraction(int element) { return Math.max(0, Math.min(4, sp().getInt("glassRefraction" + element, 2))); }
+
+    static void setGlassRefraction(int element, int level) {
+        sp().edit().putInt("glassRefraction" + element, Math.max(0, Math.min(4, level))).apply();
+        version++;
+    }
+
+    private static final float[] REFRACTION = {0f, 0.5f, 1f, 1.6f, 2.4f};
+
+    /** The multiplier of a piece of glass's lens (1 at the usual level). */
+    static float lens(int element) { return REFRACTION[glassRefraction(element)]; }
+
+    static float frost(float alpha, int element) {
+        return Math.min(0.94f, alpha * FROST[glassFrost(element)]);
+    }
+
+    /** A tint tuned for the middle frost, scaled to this glass's own. */
+    static float frostRel(int element) { return FROST[glassFrost(element)] / FROST[2]; }
 
     // MARK: - Photos from the phone (Photos, UploadServer)
 
@@ -321,6 +355,18 @@ final class Prefs {
 
     static int sportsPriority() { return sp().getInt("sportsPriority", 0); }
     static void setSportsPriority(int priority) { sp().edit().putInt("sportsPriority", priority).apply(); version++; }
+
+    /** The Sports tab on the home screen (needs the sports widget on). */
+    static boolean sportsTab() { return sp().getBoolean("sportsTab", true); }
+    static void setSportsTab(boolean on) { put("sportsTab", on); }
+
+    /** The sports card in the drawer; where the tab shows the games already, it starts off. */
+    static boolean sportsDrawer() { return sp().contains("sportsDrawer") ? sp().getBoolean("sportsDrawer", true) : !sportsTab(); }
+    static void setSportsDrawer(boolean on) { put("sportsDrawer", on); }
+
+    /** The weather card in the drawer (the clock's weather line follows the weather widget). */
+    static boolean weatherDrawer() { return sp().getBoolean("weatherDrawer", true); }
+    static void setWeatherDrawer(boolean on) { put("weatherDrawer", on); }
 
     /** How many of the top of the ranking the tennis championships show ("atp", "wta"): ten, unless set (adb only). */
     static int tennisTop(String tour) { return sp().getInt("tennisTop_" + tour, 10); }

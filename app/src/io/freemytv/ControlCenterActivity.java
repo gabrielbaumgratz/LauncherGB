@@ -304,6 +304,7 @@ public class ControlCenterActivity extends Activity {
                     liquid.setInputShader("imageB", s);
                     liquid.setFloatUniform("mixB", 0);
                     liquid.setFloatUniform("offset", 0, 0);
+                    liquid.setFloatUniform("dispersion", 0.3f);
                     liquidPaint.setShader(liquid);
                 } catch (RuntimeException | LinkageError e) {
                     AppLog.w("control center glass: " + e.getMessage());
@@ -483,9 +484,9 @@ public class ControlCenterActivity extends Activity {
             if (panel.isEmpty()) layout();
             float r = 28 * dp;
             fill.setShader(null);
-            if (!glass(c, panel, r, dark ? 0xFF1C1C20 : 0xFFF6F6FA, Prefs.frost(dark ? 0.62f : 0.68f), 26 * dp, 18 * dp, dark ? 0.9f : 0.7f)) {
+            if (!glass(c, panel, r, dark ? 0xFF1C1C20 : 0xFFF6F6FA, Prefs.frost(dark ? 0.62f : 0.68f, Prefs.G_CONTROL), 26 * dp, 18 * dp * Prefs.lens(Prefs.G_CONTROL), dark ? 0.9f : 0.7f)) {
                 int base = dark ? 0x1E1E22 : 0xF4F4F8;
-                int alpha = (int) (Prefs.frost(dark ? 0.78f : 0.85f) * 255);
+                int alpha = (int) (Prefs.frost(dark ? 0.78f : 0.85f, Prefs.G_CONTROL) * 255);
                 fill.setColor((alpha << 24) | base);
                 c.drawRoundRect(panel, r, r, fill);
             }
@@ -528,9 +529,9 @@ public class ControlCenterActivity extends Activity {
             boolean flat = focused && !slider;
             if (flat) {
                 c.drawRoundRect(r, rad, rad, fill);
-            } else if (!glass(c, r, rad, dark ? 0xFF34343A : 0xFFFFFFFF, Prefs.frost(dark ? 0.52f : 0.6f), 9 * dp, 7 * dp, dark ? 0.8f : 0.6f)) {
+            } else if (!glass(c, r, rad, dark ? 0xFF34343A : 0xFFFFFFFF, Prefs.frost(dark ? 0.52f : 0.6f, Prefs.G_CONTROL), 9 * dp, 7 * dp * Prefs.lens(Prefs.G_CONTROL), dark ? 0.8f : 0.6f)) {
                 int base = dark ? 0x2C2C32 : 0xEAEAEF;
-                int alpha = (int) (Prefs.frost(dark ? 0.60f : 0.72f) * 255);
+                int alpha = (int) (Prefs.frost(dark ? 0.60f : 0.72f, Prefs.G_CONTROL) * 255);
                 fill.setColor((alpha << 24) | base);
                 c.drawRoundRect(r, rad, rad, fill);
             }
