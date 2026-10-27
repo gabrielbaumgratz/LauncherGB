@@ -500,6 +500,24 @@ public class SettingsActivity extends Activity {
                         String lang = Prefs.language();
                         return lang.equals("auto") ? Ui.tr("Automatic") : Ui.languageName(lang);
                     }, () -> openPicker(PICK_LANGUAGE));
+                    value(Ui.tr("Time format"), () -> {
+                        String f = Prefs.clockFormat();
+                        return f.equals("12") ? Ui.tr("12 hours") : f.equals("24") ? Ui.tr("24 hours") : Ui.tr("Automatic");
+                    }, () -> {
+                        String f = Prefs.clockFormat();
+                        Prefs.setClockFormat(f.equals("auto") ? "24" : f.equals("24") ? "12" : "auto");
+                    });
+                    header(Ui.tr("System"));
+                    toggle(Ui.tr("Navigation sounds"), Prefs::sounds, () -> Prefs.setSounds(!Prefs.sounds()));
+                    link(Ui.tr("TV Settings"), () -> "", () ->
+                            activity.startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
+                    break;
+                }
+                case P_HOME: {
+                    header(Ui.tr("Layout"));
+                    link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
+                    link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
+                    link(Ui.tr("Live TV shortcut"), this::liveTvSummary, this::openLiveTvPicker);
                     header(Ui.tr("Appearance"));
                     value(Ui.tr("Theme"), () -> {
                         String theme = Prefs.theme();
@@ -508,13 +526,6 @@ public class SettingsActivity extends Activity {
                         Prefs.setTheme(THEMES[(Arrays.asList(THEMES).indexOf(Prefs.theme()) + 1) % THEMES.length]);
                         HomeData.get(c).settingsChanged();
                         updateTheme();
-                    });
-                    value(Ui.tr("Time format"), () -> {
-                        String f = Prefs.clockFormat();
-                        return f.equals("12") ? Ui.tr("12 hours") : f.equals("24") ? Ui.tr("24 hours") : Ui.tr("Automatic");
-                    }, () -> {
-                        String f = Prefs.clockFormat();
-                        Prefs.setClockFormat(f.equals("auto") ? "24" : f.equals("24") ? "12" : "auto");
                     });
                     value(Ui.tr("Glass: clear to frosted"), () -> (Prefs.glass() + 1) + " / 5", () -> {
                         Prefs.setGlass((Prefs.glass() + 1) % 5);
@@ -529,17 +540,6 @@ public class SettingsActivity extends Activity {
                         Prefs.setBackdrop((Prefs.backdrop() + 1) % 5);
                         HomeData.get(c).settingsChanged();
                     });
-                    toggle(Ui.tr("Navigation sounds"), Prefs::sounds, () -> Prefs.setSounds(!Prefs.sounds()));
-                    header(Ui.tr("System"));
-                    link(Ui.tr("TV Settings"), () -> "", () ->
-                            activity.startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
-                    break;
-                }
-                case P_HOME: {
-                    header(Ui.tr("Layout"));
-                    link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
-                    link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
-                    link(Ui.tr("Live TV shortcut"), this::liveTvSummary, this::openLiveTvPicker);
                     header(Ui.tr("Content"));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
                     toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
