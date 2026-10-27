@@ -122,7 +122,7 @@ final class Scene {
             aurora.setFloatUniform("res", w, h);
             aurora.setFloatUniform("layer", lw, lh);
             setFrostScale();
-            if (imageGlass) liquid.setFloatUniform("imageScale", (float) Backdrop.GW / w, (float) Backdrop.GH / h);
+            if (imageGlass) liquid.setFloatUniform("imageScale", (float) glassW / w, (float) glassH / h);
         }
         push();
     }
@@ -167,7 +167,9 @@ final class Scene {
         auroraDirty = true;
     }
 
-    /** The liquid glass now shows this photo (Backdrop.GW × GH, slightly blurred). */
+    private int glassW = Backdrop.GW, glassH = Backdrop.GH;   // the size of the glass's picture (Backdrop.SW × SH in the photo layout)
+
+    /** The liquid glass now shows this photo (Backdrop.GW × GH, slightly blurred; or SW × SH, sharp). */
     void setGlassImage(int[] pixels) {
         setGlassImages(pixels, null);
     }
@@ -176,22 +178,29 @@ final class Scene {
     void setGlassImages(int[] from, int[] to) {
         imageGlass = true;
         if (liquid == null) return;     // no AGSL (Android 8 to 12): the glass is a flat fill, nothing reads the images
+        if (to != null && to.length != from.length) from = to;   // the layout changed in the middle of a transition
+        int gw = Math.round((float) Math.sqrt(from.length * 16 / 9f));
+        if (gw != glassW) {
+            glassW = gw;
+            glassH = from.length / gw;
+            glassA = glassB = null;
+        }
         glassA = fill(glassA, from);
         if (to != null) glassB = fill(glassB, to);
         glassShaderA = linear(glassA);
         liquid.setInputShader("imageA", glassShaderA);
         liquid.setInputShader("imageB", to != null ? linear(glassB) : glassShaderA);
         liquid.setFloatUniform("mixB", 0);
-        liquid.setFloatUniform("imageScale", (float) Backdrop.GW / w, (float) Backdrop.GH / h);
+        liquid.setFloatUniform("imageScale", (float) glassW / w, (float) glassH / h);
     }
 
     void setGlassMix(float t) {
         if (liquid != null) liquid.setFloatUniform("mixB", Math.max(0, Math.min(1, t)));
     }
 
-    private static Bitmap fill(Bitmap b, int[] pixels) {
-        if (b == null) b = Bitmap.createBitmap(Backdrop.GW, Backdrop.GH, Bitmap.Config.ARGB_8888);
-        b.setPixels(pixels, 0, Backdrop.GW, 0, 0, Backdrop.GW, Backdrop.GH);
+    private Bitmap fill(Bitmap b, int[] pixels) {
+        if (b == null) b = Bitmap.createBitmap(glassW, glassH, Bitmap.Config.ARGB_8888);
+        b.setPixels(pixels, 0, glassW, 0, 0, glassW, glassH);
         return b;
     }
 

@@ -26,6 +26,8 @@ final class Backdrop {
     /** The UI's size against 1920×1080 (at most 1): nothing is built bigger than the screen can show. */
     private static final float UI_SCALE = uiScale();
     static final int W = ui(1920), H = ui(1080), FW = 192, FH = 108, GW = 480, GH = 270;
+    /** The glass's picture in the photo layout: the photo itself, sharp enough for the lens to bend real detail. */
+    static final int SW = 960, SH = 540;
     /** The cards at their focused size (1.05×): the wide one and the two tall ones. */
     static final int WIDE_W = ui(1092), WIDE_H = ui(464), TALL_W = ui(336), TALL_H = ui(464);
 
@@ -72,6 +74,11 @@ final class Backdrop {
     }
 
     static Backdrop make(Bitmap src, boolean forLight) {
+        return make(src, forLight, false);
+    }
+
+    /** `sharp` (light only): keeps the photo itself for the background, and gives the glass an unfaded, sharper copy. */
+    static Backdrop make(Bitmap src, boolean forLight, boolean sharp) {
         Bitmap out = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(out);
         Paint photo = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
@@ -81,14 +88,15 @@ final class Backdrop {
         src.recycle();
         if (forLight) {
             // Light design: everything comes from the photo without scrims.
-            Bitmap wide = card(out, WIDE_W, WIDE_H), tall = card(out, TALL_W, TALL_H);
+            Bitmap wide = sharp ? null : card(out, WIDE_W, WIDE_H), tall = sharp ? null : card(out, TALL_W, TALL_H);
             int[] frost = reduce(out, FW, FH, 3, 3);
             int[] light = whiten(frost.clone(), 0.82f);
-            int[] glass = reduce(out, GW, GH, 2, 2);
-            int[] lightGlass = whiten(glass.clone(), 0.74f);
+            int[] glass = sharp ? reduce(out, SW, SH, 1, 1) : reduce(out, GW, GH, 2, 2);
+            int[] lightGlass = sharp ? glass : whiten(glass.clone(), 0.74f);
             // At night the photo is pushed well toward black, so a bright cover can't light the whole screen up.
             int[] night = darken(frost.clone(), 0.89f);
-            int[] nightGlass = darken(glass, 0.72f);
+            int[] nightGlass = sharp ? darken(glass.clone(), 0.45f) : darken(glass, 0.72f);
+            if (sharp) return new Backdrop(gpu(out), frost, null, null, null, light, lightGlass, night, nightGlass);
             out.recycle();
             return new Backdrop(null, frost, null, wide, tall, light, lightGlass, night, nightGlass);
         }

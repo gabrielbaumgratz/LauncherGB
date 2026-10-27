@@ -515,6 +515,14 @@ public class SettingsActivity extends Activity {
                 }
                 case P_HOME: {
                     header(Ui.tr("Layout"));
+                    value(Ui.tr("Style"), () -> {
+                        int layout = Prefs.layout();
+                        return layout == 0 ? Ui.tr("Classic") : layout == 1 ? Ui.tr("Photo") : Ui.tr("Photo with sidebar");
+                    }, () -> {
+                        Prefs.setLayout((Prefs.layout() + 1) % 3);
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     link(Ui.tr("Shelf"), () -> "", () -> openShelfEditor(false));
                     link(Ui.tr("Top Buttons"), () -> "", () -> openShelfEditor(true));
                     link(Ui.tr("Live TV shortcut"), this::liveTvSummary, this::openLiveTvPicker);

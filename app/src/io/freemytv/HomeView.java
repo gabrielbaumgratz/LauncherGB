@@ -135,7 +135,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private boolean nightTarget;
     private float night, nightFrom;     // 0 = day, 1 = night
     private long nightAt;
-    private final int[] glassNight = new int[Backdrop.GW * Backdrop.GH], frostNight = new int[Backdrop.FW * Backdrop.FH];
+    private int[] glassNight = new int[Backdrop.GW * Backdrop.GH];
+    private final int[] frostNight = new int[Backdrop.FW * Backdrop.FH];
     private final int[] neutralGlassPx = new int[Backdrop.GW * Backdrop.GH], neutralFrostPx = new int[Backdrop.FW * Backdrop.FH];
     private boolean nightPair;          // the glass holds both photos (day and night), blended by `night`
     private Shader nightGradient;
@@ -513,7 +514,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean contentOn() {
-        return picksOn() || Prefs.sportsOn();
+        return !Prefs.photoLayout() && (picksOn() || Prefs.sportsOn());
     }
 
     private boolean sportsFirst() {
@@ -602,8 +603,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         measure(status, Math.round(1160 * kk), Math.round(240 * kk));
         // Sized to what they draw (the glass and its shadow; the grown tiles and their shadows): smaller layers are
         // cheaper for the GPU to composite on every frame of the drawer animation.
-        measure(platter, width, Math.round(320 * kk));
-        measure(tiles, width, Math.round(270 * kk));
+        if (Prefs.sidebar()) {   // the shelf is a column at the left: layers as tall as the screen, as wide as it needs
+            measure(platter, Math.round(460 * kk), height);
+            measure(tiles, Math.round(560 * kk), height);
+        } else {
+            measure(platter, width, Math.round(320 * kk));
+            measure(tiles, width, Math.round(270 * kk));
+        }
         measure(drawerLayer, width, Math.round(600 * kk));
         measure(sheetLayer, width, height);
         measure(toastLayer, Math.round(1000 * kk), Math.round(220 * kk));
@@ -620,8 +626,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         sky.layout(0, 0, width, height);
         place(heroLayer, 0, 0);
         place(status, width - status.getMeasuredWidth(), 0);
-        place(platter, 0, Math.round(750 * kk));
-        place(tiles, 0, Math.round(790 * kk));
+        place(platter, 0, Prefs.sidebar() ? 0 : Math.round(750 * kk));
+        place(tiles, 0, Prefs.sidebar() ? 0 : Math.round(790 * kk));
         place(drawerLayer, 0, Math.round(470 * kk));
         sheetLayer.layout(0, 0, width, height);
         sheetLayer.setPivotX(width / 2f);
@@ -937,6 +943,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (night >= 0.999f) return b.nightGlass;
         // During the transition, the blend (only for the current background; a photo fading in uses the nearer side).
         if (b != bgTo) return night < 0.5f ? b.lightGlass : b.nightGlass;
+        if (glassNight.length != b.lightGlass.length) glassNight = new int[b.lightGlass.length];
         for (int i = 0; i < glassNight.length; i++) glassNight[i] = mix(b.lightGlass[i], b.nightGlass[i], night);
         return glassNight;
     }
@@ -1215,6 +1222,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void layoutShelf() {
         int n = shelf.size();
+        if (Prefs.sidebar()) {
+            layoutSidebar(n);
+            return;
+        }
         float pad = SHELF_PAD * k, gap = TILE_GAP * k;
         float full = (CONTENT_R - MARGIN) * k;
         // Tiles in the TV banners' own 16:9, so an app's art is never stretched; never taller than L_TILE_H. The glass
@@ -1234,6 +1245,23 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
+    /** The photo layout's sidebar: the apps in a column at the left, all of them on screen (they shrink with their number). */
+    private void layoutSidebar(int n) {
+        float pad = 26 * k, gap = 18 * k, side = 34 * k;
+        float avail = h - 2 * 90 * k - 2 * pad;
+        float th = Math.min(112 * k, (avail - Math.max(0, n - 1) * gap) / Math.max(1, n));
+        float tw = th * 16f / 9;
+        float total = n * th + Math.max(0, n - 1) * gap, top = (h - total) / 2f;
+        platterRect.set(side, top - pad, side + tw + 2 * pad, top + total + pad);
+        for (int i = 0; i < n; i++) {
+            float y = top + i * (th + gap);
+            tileRects[i].set(side + pad, y, side + pad + tw, y + th);
+        }
+        synchronized (crispLogos) {
+            crispLogos.clear();   // not recycled: a recorded layer may still draw them
+        }
+    }
+
     /** Shelf layer: the glass bar and its shadow (it only changes with the background). */
     private void drawPlatter(Canvas c) {
         if (shelf.isEmpty()) return;
@@ -1244,6 +1272,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         shadows.draw(c, tmp, radius, SHADOW_BLUR * k, shadow);
         // White glass by day; smoked glass at night.
         // The shelf glass is matte: a fixed picture (not the background), frosted as much as Home Settings say.
+        if (Prefs.photoLayout() && bgTo != null && bgTo.image != null) {
+            // Over the sharp photo, the real liquid glass: it bends what is behind it (the photo itself).
+            scene.liquid(c, platterRect, radius, tone(0xFFFFFFFF, 0xFF1C1C1E), Prefs.frost(tone(0.12f, 0.10f)), tone(0.02f, 0.01f),
+                    tone(40, 36) * k, tone(30, 27) * k, tone(0.5f, 0.4f), 1);
+            return;
+        }
         scene.liquidSteady(c, platterRect, radius, tone(0xFFFFFFFF, SMOKE), Prefs.frost(tone(0.42f, 0.30f)), tone(0.03f, 0.06f),
                 tone(14, 16) * k, tone(6, 8) * k, tone(0.1f, 0.12f), night);   // a thin, matte edge: almost no lens, no bright rim
     }
@@ -2133,6 +2167,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             moveGrid(dx, dy);
             return;
         }
+        if (Prefs.sidebar() && zone == Z_SHELF && !shelf.isEmpty()) {
+            if (dx != 0) return;   // the apps are a column: only up and down
+            int next = shelfIndex + dy;
+            if (next >= 0 && next < shelf.size()) {
+                shelfIndex = next;
+                retarget(false);
+                click.move();
+                return;
+            }
+        }
         if (moveLight(dx, dy)) return;
         switch (zone) {
             case Z_SHELF:
@@ -2898,17 +2942,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The photo from the phone picked as the background (while there are no recommendations to show), or null. */
     private Backdrop wallpaperBackdrop() {
         String chosen = Prefs.wallpaper();
-        if (chosen.isEmpty() && Prefs.photoBackground()) chosen = "*";
+        if (chosen.isEmpty() && (Prefs.photoBackground() || Prefs.photoLayout())) chosen = "*";
         if (chosen.equals("*")) {   // rotate through all the photos, one every Prefs.photoSeconds()
             List<String> all = Photos.list(getContext());
             chosen = all.isEmpty() ? "" : all.get((int) ((System.currentTimeMillis() / 1000 / Prefs.photoSeconds()) % all.size()));
         }
         final String name = chosen;
         if (name.isEmpty()) return null;
-        if (name.equals(wallpaperKey)) return wallpaper;
+        final boolean sharp = Prefs.photoLayout();
+        final String key = name + (sharp ? "|sharp" : "");
+        if (key.equals(wallpaperKey)) return wallpaper;
         final java.io.File file = Photos.file(getContext(), name);
         if (file == null) return null;
-        wallpaperKey = name;
+        wallpaperKey = key;
         wallpaper = null;
         new Thread(new Runnable() {
             @Override public void run() {
@@ -2921,10 +2967,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     while (bounds.outWidth / (opts.inSampleSize * 2) >= Backdrop.W) opts.inSampleSize *= 2;
                     Bitmap src = android.graphics.BitmapFactory.decodeFile(file.getPath(), opts);
                     if (src == null) return;
-                    final Backdrop made = Backdrop.make(src, true);
+                    final Backdrop made = Backdrop.make(src, true, sharp);
                     post(new Runnable() {
                         @Override public void run() {
-                            if (!name.equals(wallpaperKey)) return;
+                            if (!key.equals(wallpaperKey)) return;
                             wallpaper = made;
                             updateCards();
                         }
@@ -2944,6 +2990,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (tab >= tc) selectTab(Math.max(0, tc - 1));
         if (!contentOn() && zone == Z_TOP && topIndex < tc) topIndex = tc;
         if (!contentOn() && zone == Z_CARDS) zone = Z_SHELF;
+        requestLayout();   // the shelf's layers are placed by the layout
+        layoutShelf();
+        tilesDirty = true;
+        platter.invalidate();
         updateCards();
         refreshHero(false);
         layoutLight();
@@ -2960,7 +3010,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Whether the background is the person's photos (and not a recommendation's picture): turned on, or nothing to follow. */
     private boolean photosBehind() {
-        return cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground();
+        return cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground() || Prefs.photoLayout();
     }
 
     private void updateCards() {
@@ -3034,6 +3084,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void drawLightImage(Canvas c, Backdrop b, float alpha) {
+        if (b.image != null) {   // the photo layout: the photo itself, darker at night
+            drawImage(c, b.image, alpha);
+            if (night > 0.001f) {
+                fill.setShader(null);
+                fill.setColor(Ui.alpha(0xFF000000, 0.35f * night * alpha));
+                c.drawRect(screen, fill);
+            }
+            return;
+        }
         b.background(Prefs.backdrop());
         if (night < 0.999f || b.nightImage == null) drawImage(c, b.lightImage, alpha);
         if (night > 0.001f) drawImage(c, b.nightImage, alpha * night);
@@ -3042,7 +3101,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void drawLightTop(Canvas c) {
         applyTone();
         if (!contentOn()) {
-            drawClock(c);
+            if (Prefs.sidebar()) {   // the sidebar takes the clock's corner: the time sits by the top buttons
+                float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[tabsCount()].left - 36 * k;
+                lMini.setShadowLayer(8 * k, 0, 2 * k, 0x80000000);
+                int ink = lMini.getColor();
+                lMini.setColor(0xF2FFFFFF);
+                c.drawText(miniText, edge, L_BUTTON_CY * k + Ui.halfCap(lMini), lMini);
+                lMini.clearShadowLayer();
+                lMini.setColor(ink);
+            } else if (Prefs.photoLayout()) {
+                drawPhotoClock(c);
+            } else {
+                drawClock(c);
+            }
             return;
         }
         String hello = !Prefs.greeting() ? Ui.tr("For You") : greetingText.isEmpty() ? Ui.greeting() : greetingText;
@@ -3230,6 +3301,29 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         fitPaint.setTextAlign(Paint.Align.LEFT);
     }
 
+    /** The photo layout's clock: the big one, small (top left), in white with a soft shadow so it reads on any photo. */
+    private void drawPhotoClock(Canvas c) {
+        int date = lDate.getColor(), clock = lClock.getColor(), weather = lWeather.getColor();
+        lDate.setColor(0xF2FFFFFF);
+        lClock.setColor(0xFFFFFFFF);
+        lWeather.setColor(0xF2FFFFFF);
+        lDate.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
+        lClock.setShadowLayer(12 * k, 0, 3 * k, 0x80000000);
+        lWeather.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
+        float s = 0.36f;
+        c.save();
+        c.translate(MARGIN * k * (1 - s), 70 * k - 300 * k * s);
+        c.scale(s, s);
+        drawClock(c);
+        c.restore();
+        lDate.clearShadowLayer();
+        lClock.clearShadowLayer();
+        lWeather.clearShadowLayer();
+        lDate.setColor(date);
+        lClock.setColor(clock);
+        lWeather.setColor(weather);
+    }
+
     private void drawClock(Canvas c) {
         float x = MARGIN * k;
         c.drawText(dateText, x - Ui.leftBearing(lDate, dateText), L_DATE_BASE * k, lDate);
@@ -3355,7 +3449,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** No cards on screen: none loaded, or the recommendations are off (then they are loaded but hidden). */
     private boolean noCards() {
         if (isSportsTab()) return false;
-        if (!picksOn()) return true;
+        if (Prefs.photoLayout() || !picksOn()) return true;
         return cards.isEmpty();
     }
 

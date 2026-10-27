@@ -180,6 +180,15 @@ final class Prefs {
     static int glass() { return Math.max(0, Math.min(4, sp().getInt("glass", 2))); }
     static void setGlass(int level) { sp().edit().putInt("glass", Math.max(0, Math.min(4, level))).apply(); version++; }
 
+    /**
+     * The home screen's layout: 0 classic (tabs and cards, the shelf at the bottom), 1 photo (your photos, sharp and
+     * full screen, with the shelf at the bottom) and 2 photo with the shelf as a sidebar.
+     */
+    static int layout() { return Math.max(0, Math.min(2, sp().getInt("layout", 0))); }
+    static void setLayout(int v) { sp().edit().putInt("layout", Math.max(0, Math.min(2, v))).apply(); version++; }
+    static boolean photoLayout() { return layout() != 0; }
+    static boolean sidebar() { return layout() == 2; }
+
     /** How frosted the home screen's background is: 0 (clear, the photo most visible) to 4 (most frosted); 2 is the usual look. */
     static int backdrop() { return Math.max(0, Math.min(4, sp().getInt("backdrop", 2))); }
     static void setBackdrop(int level) { sp().edit().putInt("backdrop", Math.max(0, Math.min(4, level))).apply(); version++; }
