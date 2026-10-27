@@ -583,49 +583,14 @@ public class SettingsActivity extends Activity {
                     });
                     header(Ui.tr("Content"));
                     toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
-                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
-                        Prefs.setRecommendations(!Prefs.recommendations());
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    toggle(Ui.tr("Sports tab"), () -> Prefs.sportsOn() && Prefs.sportsTab(), () -> {
-                        boolean on = !(Prefs.sportsOn() && Prefs.sportsTab());
-                        Prefs.setSportsTab(on);
-                        if (on) {
-                            Prefs.setSportsOn(true);
-                            Sports.get(c).refresh();
-                        }
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
-                    value(Ui.tr("Tab order"), () -> {
-                        boolean home = !(Recs.hasKey(c) && Prefs.recommendations());   // then the other tab is the home with the photos
-                        return Prefs.sportsFirst() ? (home ? Ui.tr("Sports → Home") : Ui.tr("Sports → Recommendations"))
-                                : (home ? Ui.tr("Home → Sports") : Ui.tr("Recommendations → Sports"));
-                    }, () -> {
-                        Prefs.setSportsFirst(!Prefs.sportsFirst());
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    header(Ui.tr("Widgets in the drawer"));
-                    toggle(Ui.tr("Weather"), () -> Prefs.weather() && Prefs.weatherDrawer(), () -> {
-                        boolean on = !(Prefs.weather() && Prefs.weatherDrawer());
-                        Prefs.setWeatherDrawer(on);
-                        if (on) Prefs.setWeather(true);
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    toggle(Ui.tr("Sports"), () -> Prefs.sportsOn() && Prefs.sportsDrawer(), () -> {
-                        boolean on = !(Prefs.sportsOn() && Prefs.sportsDrawer());
-                        Prefs.setSportsDrawer(on);
-                        if (on) {
-                            Prefs.setSportsOn(true);
-                            Sports.get(c).refresh();
-                        }
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
+                    if (Prefs.layout() == 0) {
+                        toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
+                            Prefs.setRecommendations(!Prefs.recommendations());
+                            HomeData.get(c).settingsChanged();
+                            HomeActivity.refreshNow();
+                        });
+                        note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
+                    }
                     List<HomeApps.Item> inputs = inputChoices();
                     if (!inputs.isEmpty()) {
                         header(Ui.tr("Inputs on the home screen"));
@@ -661,6 +626,11 @@ public class SettingsActivity extends Activity {
                         Prefs.setWeather(!Prefs.weather());
                         HomeData.get(c).settingsChanged();
                     });
+                    toggle(Ui.tr("Card in the drawer"), Prefs::weatherDrawer, () -> {
+                        Prefs.setWeatherDrawer(!Prefs.weatherDrawer());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
                     value(Ui.tr("Temperature"), () -> {
                         String unit = Prefs.temperature();
                         return unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("unit|Automatic");
@@ -678,7 +648,40 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    note(Ui.tr("The next games, from ESPN, with no account. Where they show (the tab, the drawer) is in Home."));
+                    note(Ui.tr("The next games, from ESPN, with no account."));
+                    header(Ui.tr("Where it shows"));
+                    toggle(Ui.tr("Sports tab"), () -> Prefs.sportsOn() && Prefs.sportsTab(), () -> {
+                        boolean on = !(Prefs.sportsOn() && Prefs.sportsTab());
+                        Prefs.setSportsTab(on);
+                        if (on) {
+                            Prefs.setSportsOn(true);
+                            Sports.get(c).refresh();
+                        }
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    toggle(Ui.tr("Card in the drawer"), () -> Prefs.sportsOn() && Prefs.sportsDrawer(), () -> {
+                        boolean on = !(Prefs.sportsOn() && Prefs.sportsDrawer());
+                        Prefs.setSportsDrawer(on);
+                        if (on) {
+                            Prefs.setSportsOn(true);
+                            Sports.get(c).refresh();
+                        }
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    if (Prefs.sportsOn() && Prefs.sportsTab() && Prefs.layout() != 2) {
+                        value(Ui.tr("Tab order"), () -> {
+                            boolean home = !(Recs.hasKey(c) && Prefs.recommendations());   // then the other tab is the home with the photos
+                            return Prefs.sportsFirst() ? (home ? Ui.tr("Sports → Home") : Ui.tr("Sports → Recommendations"))
+                                    : (home ? Ui.tr("Home → Sports") : Ui.tr("Recommendations → Sports"));
+                        }, () -> {
+                            Prefs.setSportsFirst(!Prefs.sportsFirst());
+                            HomeData.get(c).settingsChanged();
+                            HomeActivity.refreshNow();
+                        });
+                    }
+                    if (Prefs.layout() == 2) note(Ui.tr("The sidebar has no tabs: the games show in the drawer."));
 
                     header(Ui.tr("Display priority"));
                     value(Ui.tr("Priority"), () -> {

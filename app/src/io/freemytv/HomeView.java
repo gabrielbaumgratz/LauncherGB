@@ -101,7 +101,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
     private static String[] tabs;
     private static int tabsGeneration = -1;
-    private static boolean lastSportsOn, lastPicksOn, lastSportsFirst;
+    private static boolean lastSportsOn, lastPicksOn, lastSportsFirst, lastContentOn;
     private static final int MAX_TABS = 4;
     private static final int TAB_EXPLORE = 0, TAB_MOVIES = 1, TAB_SHOWS = 2, TAB_SPORTS = 3;
     private static final String[] TAB_KIND = {null, "movie", "tv", "sports"};
@@ -517,11 +517,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean picksOn() {
-        return Recs.hasKey(getContext()) && Prefs.recommendations();
+        return !Prefs.photoLayout() && Recs.hasKey(getContext()) && Prefs.recommendations();   // the photo styles have no cards
     }
 
     private boolean contentOn() {
-        return !Prefs.photoLayout() && (picksOn() || sportsTabOn());
+        return !Prefs.sidebar() && (picksOn() || sportsTabOn());
     }
 
     private boolean sportsFirst() {
@@ -572,7 +572,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         boolean sports = sportsTabOn();
         boolean picks = picksOn();
         boolean first = sportsFirst();
-        if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks || lastSportsFirst != first) {
+        boolean content = contentOn();
+        if (tabsGeneration != Ui.generation || lastSportsOn != sports || lastPicksOn != picks || lastSportsFirst != first || lastContentOn != content) {
             if (!contentOn()) {
                 tabs = new String[0];
             } else if (!picks) {
@@ -588,6 +589,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             lastSportsOn = sports;
             lastPicksOn = picks;
             lastSportsFirst = first;
+            lastContentOn = content;
         }
         return tabs;
     }
@@ -3136,24 +3138,42 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
+        if (!Prefs.photoLayout()) {
+            drawLightTopInk(c);
+            return;
+        }
+        // Over a photo the ink is white with a soft shadow, whatever the theme.
+        Paint[] ps = {lTitle, lTab, lTabOn, lMini, lDate, lClock, lWeather};
+        int[] white = {0xFFFFFFFF, 0xC8FFFFFF, 0xFFFFFFFF, 0xF2FFFFFF, 0xF2FFFFFF, 0xFFFFFFFF, 0xF2FFFFFF};
+        int[] saved = new int[ps.length];
+        for (int i = 0; i < ps.length; i++) {
+            saved[i] = ps[i].getColor();
+            ps[i].setColor(white[i]);
+            ps[i].setShadowLayer(12 * k, 0, 2 * k, 0x80000000);
+        }
+        drawLightTopInk(c);
+        for (int i = 0; i < ps.length; i++) {
+            ps[i].clearShadowLayer();
+            ps[i].setColor(saved[i]);
+        }
+    }
+
+    private void drawLightTopInk(Canvas c) {
         if (!contentOn()) {
             if (Prefs.sidebar()) {   // the sidebar takes the clock's corner: the time sits by the top buttons
                 float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[tabsCount()].left - 36 * k;
-                lMini.setShadowLayer(8 * k, 0, 2 * k, 0x80000000);
-                int ink = lMini.getColor();
-                lMini.setColor(0xF2FFFFFF);
                 c.drawText(miniText, edge, L_BUTTON_CY * k + Ui.halfCap(lMini), lMini);
-                lMini.clearShadowLayer();
-                lMini.setColor(ink);
-            } else if (Prefs.photoLayout()) {
-                drawPhotoClock(c);
             } else {
+                if (Prefs.photoLayout() && Prefs.greeting()) {
+                    String hello = greetingText.isEmpty() ? Ui.greeting() : greetingText;
+                    c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
+                }
                 drawClock(c);
             }
             return;
         }
         String hello = !Prefs.greeting() ? Ui.tr("For You") : greetingText.isEmpty() ? Ui.greeting() : greetingText;
-        c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
+        if (Prefs.greeting() || !Prefs.photoLayout()) c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // The time and date stay on screen, small, left of the buttons.
         int tc = tabsCount();
         float edge = lightButtons.isEmpty() ? CONTENT_R * k : topRects[tc].left - 36 * k;
@@ -3179,7 +3199,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 c.drawRoundRect(cell, rr, rr, fill);
             }
             Paint p = i == tab ? lTabOn : lTab;
-            if (i == tab) lTabOn.setColor(blend(tone(L_INK, WHITE), L_INK, focus));   // always dark on the white pill
+            if (i == tab) lTabOn.setColor(blend(Prefs.photoLayout() ? WHITE : tone(L_INK, WHITE), L_INK, focus));   // always dark on the white pill
             c.drawText(tabs()[i], r.centerX() - p.measureText(tabs()[i]) / 2, r.centerY() + Ui.halfCap(p), p);
         }
         if (isSportsTab()) {
@@ -3335,32 +3355,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         String letter = name.isEmpty() ? "?" : name.substring(0, name.offsetByCodePoints(0, 1)).toUpperCase(Ui.locale());
         c.drawText(letter, cx, cy + Ui.halfCap(fitPaint), fitPaint);
         fitPaint.setTextAlign(Paint.Align.LEFT);
-    }
-
-    /** The photo layout's clock: the usual one with the greeting above it, in white with a soft shadow so it reads on any photo. */
-    private void drawPhotoClock(Canvas c) {
-        int date = lDate.getColor(), clock = lClock.getColor(), weather = lWeather.getColor(), title = lTitle.getColor();
-        lDate.setColor(0xF2FFFFFF);
-        lClock.setColor(0xFFFFFFFF);
-        lWeather.setColor(0xF2FFFFFF);
-        lTitle.setColor(0xFFFFFFFF);
-        lDate.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
-        lClock.setShadowLayer(14 * k, 0, 3 * k, 0x80000000);
-        lWeather.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
-        lTitle.setShadowLayer(14 * k, 0, 3 * k, 0x80000000);
-        if (Prefs.greeting()) {
-            String hello = greetingText.isEmpty() ? Ui.greeting() : greetingText;
-            c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
-        }
-        drawClock(c);
-        lDate.clearShadowLayer();
-        lClock.clearShadowLayer();
-        lWeather.clearShadowLayer();
-        lTitle.clearShadowLayer();
-        lDate.setColor(date);
-        lClock.setColor(clock);
-        lWeather.setColor(weather);
-        lTitle.setColor(title);
     }
 
     private void drawClock(Canvas c) {
