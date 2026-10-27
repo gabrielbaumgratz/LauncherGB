@@ -773,8 +773,7 @@ public class SettingsActivity extends Activity {
                     JSONObject metrics = state.optJSONObject("metrics");
                     JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
                     JSONObject b = metrics == null ? null : metrics.optJSONObject(HomeMode.FREE);
-                    String[][] cmp = {{Ui.tr("Home button"), "homeMs"}, {Ui.tr("Free memory"), "memAvailableMB"},
-                            {Ui.tr("Home screen memory"), "homePssMB"}};
+                    String[][] cmp = {{Ui.tr("Home button"), "homeMs"}, {Ui.tr("Free memory"), "memAvailableMB"}};
                     for (String[] m : cmp) info(m[0], () -> metric(a, m[1]) + "  →  " + metric(b, m[1]));
                     note(Ui.tr("Original") + "  →  GB Home TV");
                     header(Ui.tr("Recommendations"));

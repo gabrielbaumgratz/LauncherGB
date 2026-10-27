@@ -66,6 +66,7 @@ public class HomeActivity extends Activity {
 
     android.graphics.Bitmap snapshot() {
         if (home == null || home.getWidth() <= 0 || home.getHeight() <= 0) return null;
+        home.hideTop(true);
         try {
             android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(320, 180, android.graphics.Bitmap.Config.ARGB_8888);
             android.graphics.Canvas c = new android.graphics.Canvas(b);

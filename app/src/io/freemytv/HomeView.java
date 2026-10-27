@@ -216,7 +216,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private RectF[] drawerRects = new RectF[0];
     private final RectF weatherCard = new RectF(), sportsCard = new RectF();
     private final Spring drawer = new Spring(0.46f, 0.92f, 0);
-    private boolean drawerOpen;
+    private boolean drawerOpen, topHidden;
     private int drawerIndex;
 
     // "All Apps" sheet
@@ -412,7 +412,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     // MARK: - Lifecycle (called by HomeActivity)
 
+    /** The Control Center is over the home screen: the round top buttons go away (they can't be reached there) until it closes. */
+    void hideTop(boolean hidden) {
+        topHidden = hidden;
+        updateMotion();
+    }
+
     void resume() {
+        topHidden = false;
         if (running) return;
         running = true;
         checkNight(false);
@@ -814,7 +821,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float shift = SHIFT * k;
         float lift = -d * shift;
         show(heroLayer, top, lift);
-        show(status, top, lift);
+        show(status, topHidden ? 0 : top, lift);
         if (Prefs.sidebar()) {   // the column stays where it is and fades while the drawer comes up, instead of riding up out of the screen
             show(platter, home * (1 - dc), 0);
             show(tiles, home * (1 - dc), 0);

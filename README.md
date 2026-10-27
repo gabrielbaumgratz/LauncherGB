@@ -24,8 +24,8 @@ English · [Português](README.pt.md) · [Español](README.es.md)
 |---|---|
 | **No ads** | Eliminates sponsored rows, intrusive banners, and autoplaying promotional videos that stock home screens force on you. |
 | **Spyware and telemetry blocked** | Disables background ad tracking, Automatic Content Recognition (ACR), and factory analytics that monitor viewing habits. |
-| **Faster and responsive** | Just 154 ms to display the home screen (compared to 217 ms on the stock launcher). Rendered directly on the GPU at 60 fps. |
-| **More free RAM** | Shuts down background factory bloatware and resident services, freeing critical memory on 1 GB and 1.5 GB TVs. |
+| **Faster and responsive** | The Home button shows the home screen in 133 ms, against 328 ms on the stock launcher (measured on a 1 GB TCL TV). Drawn directly on the GPU. |
+| **More free RAM** | Shuts down background factory bloatware and resident services: 206 MB free instead of 179 MB on the same 1 GB TCL TV, where every MB counts. |
 | **Complete privacy** | No account, login, or registration required. No personal information is gathered, stored, or sent to external servers. |
 | **Fully reversible and safe** | Uninstalls nothing from the system. One click in *Launcher → Original* brings back stock settings, and an automated watchdog restores original mode if crashes occur. |
 | **Free and open source** | No subscriptions, paywalls, or hidden limitations. |
@@ -67,7 +67,7 @@ On entry-level Smart TVs with 1 GB or 1.5 GB of RAM (many TCL, Xiaomi, and Redmi
 2. **Performance Mode:** In *Settings → Performance → Mode*, switch to *Performance* to turn off heavy recommendation queries and slow zoom animations, saving additional RAM.
 3. **AirPlay management:** AirPlay receiver apps consume considerable RAM while active (~40 MB measured). On low-RAM hardware, exit the receiver when not actively casting.
 
-Real performance without inflated claims: GB Home TV opens faster and animates cleanly at 60 fps because its UI is drawn directly on the canvas without heavy, embedded web frameworks. *Settings → About* displays real-time benchmarks measured on your own TV.
+Real performance without inflated claims: GB Home TV opens faster and animates smoothly because its UI is drawn directly on the canvas without heavy, embedded web frameworks. *Settings → About* displays real-time benchmarks measured on your own TV.
 
 ## Screenshots
 
