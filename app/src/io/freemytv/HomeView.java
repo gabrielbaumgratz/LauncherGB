@@ -74,7 +74,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     // padding (the focused icon grows 20% without touching its edge). The icons are 16:9, the shape of the apps' TV
     // banners, so those are never stretched: up to 224 × 126, 178 × 100 with eight apps.
     private static final float SHELF_PAD = 40, TILE_GAP = 48;
-    private static final float TILE_RADIUS = 22;
+    private static final float TILE_RADIUS = 34;
     // Tile focus (Apple TV style): it grows from the center and its shadow drops (it "rises" toward the viewer).
     private static final float FOCUS_GROW = 0.2f;
     // Corner capsule.
