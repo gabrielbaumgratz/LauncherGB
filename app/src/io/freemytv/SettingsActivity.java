@@ -1189,14 +1189,29 @@ public class SettingsActivity extends Activity {
             }, 600);
         }
 
+        private final java.util.Map<String, List<String>> teamComps = new java.util.HashMap<>();
+        private final java.util.Set<String> loadingComps = new java.util.HashSet<>();
+
         private void openTeam(String[] team) {
             openDetail(team[3], () -> {
                 info(Ui.tr("Sport"), () -> Sports.sportName(team[0]));
                 if (team[0].equals("soccer")) {
                     header(Ui.tr("Competitions"));
-                    List<String> comps = new ArrayList<>();
-                    comps.add(team[1]);
-                    for (String cup : Sports.SOCCER_CUPS) if (!cup.equals(team[1])) comps.add(cup);
+                    List<String> comps = teamComps.get(team[2]);
+                    if (comps == null) {   // ESPN says which cups the team plays: ask, and show the league meanwhile
+                        comps = java.util.Collections.singletonList(team[1]);
+                        if (loadingComps.add(team[2])) {
+                            new Thread(() -> {
+                                List<String> found = Sports.get(getContext()).competitionsOf(team[2], team[1]);
+                                handler.post(() -> {
+                                    teamComps.put(team[2], found);
+                                    loadingComps.remove(team[2]);
+                                    if (screen == PAGE) rebuild();
+                                    invalidate();
+                                });
+                            }, "competitions").start();
+                        }
+                    }
                     for (String comp : comps) {
                         toggle(Sports.leagueName("soccer/" + comp), () -> !Prefs.teamOff(team[2]).contains(comp), () -> {
                             Prefs.setTeamOff(team[2], comp, !Prefs.teamOff(team[2]).contains(comp));
@@ -1204,7 +1219,7 @@ public class SettingsActivity extends Activity {
                             HomeData.get(getContext()).settingsChanged();
                         });
                     }
-                    note(Ui.tr("The games of the competitions that are on."));
+                    note(teamComps.containsKey(team[2]) ? Ui.tr("The games of the competitions that are on.") : Ui.tr("Looking for the competitions…"));
                 } else if (Sports.individual(team[0])) {
                     info(Ui.tr("Circuit"), () -> Sports.leagueName(team[0] + "/" + team[1]));
                 }

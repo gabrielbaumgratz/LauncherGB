@@ -335,6 +335,22 @@ final class Sports {
         return 999;
     }
 
+    /**
+     * The competitions a soccer team plays this season: its own league and the cups where ESPN has games for it (it gives
+     * an empty schedule for the others). Goes to the network: not on the UI thread.
+     */
+    List<String> competitionsOf(String id, String league) {
+        List<String> out = new ArrayList<>();
+        out.add(league);
+        for (String cup : SOCCER_CUPS) {
+            if (cup.equals(league)) continue;
+            JSONObject json = get(API + "soccer/" + cup + "/teams/" + id + "/schedule");
+            JSONArray events = json == null ? null : json.optJSONArray("events");
+            if (events != null && events.length() > 0) out.add(cup);
+        }
+        return out;
+    }
+
     private void team(List<Game> out, Set<String> seen, String sport, String league, String id, String name) {
         JSONObject json = get(API + sport + "/" + league + "/teams/" + id + "/schedule?fixture=true");
         JSONArray events = json == null ? null : json.optJSONArray("events");
