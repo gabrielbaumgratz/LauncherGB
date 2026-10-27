@@ -517,18 +517,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean sportsFirst() {
-        return Prefs.sportsFirst() && Prefs.sportsOn() && picksOn();
+        return Prefs.sportsFirst() && Prefs.sportsOn();
     }
 
     private boolean isSportsTab() {
         if (!Prefs.sportsOn()) return false;
-        if (!picksOn()) return true;
         return tab == (sportsFirst() ? 0 : tabsCount() - 1);
     }
 
     private int tabsCount() {
         if (!contentOn()) return 0;
-        if (!picksOn()) return 1;
+        if (!picksOn()) return 2;   // Home (the clock over the photos) and Sports
         return Prefs.sportsOn() ? 4 : 3;
     }
 
@@ -556,7 +555,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (!contentOn()) {
                 tabs = new String[0];
             } else if (!picks) {
-                tabs = new String[] {Ui.tr("Sports")};
+                tabs = first ? new String[] {Ui.tr("Sports"), Ui.tr("Home")} : new String[] {Ui.tr("Home"), Ui.tr("Sports")};
             } else if (first) {
                 tabs = new String[] {Ui.tr("Sports"), Ui.tr("Explore"), Ui.tr("Movies"), Ui.tr("Shows")};
             } else if (sports) {
@@ -2966,7 +2965,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void updateCards() {
         int kind = tab - (sportsFirst() ? 1 : 0);
-        if (!isSportsTab() && kind < TAB_KIND.length) {
+        if (picksOn() && !isSportsTab() && kind < TAB_KIND.length) {
             List<Recs.Pick> list = recs.now(TAB_KIND[kind]);
             if (!samePicks(list, cards)) {
                 cards = list;
@@ -3078,6 +3077,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (isSportsTab()) {
             drawGiantSportsCard(c);
+        } else if (!picksOn()) {
+            drawClock(c);   // the Home tab without recommendations: the clock and the weather over the photos
         } else {
             int top = -1;
             for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;

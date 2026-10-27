@@ -554,7 +554,11 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     });
                     note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
-                    value(Ui.tr("Tab order"), () -> Prefs.sportsFirst() ? Ui.tr("Sports → Recommendations") : Ui.tr("Recommendations → Sports"), () -> {
+                    value(Ui.tr("Tab order"), () -> {
+                        boolean home = !(Recs.hasKey(c) && Prefs.recommendations());   // then the other tab is the home with the photos
+                        return Prefs.sportsFirst() ? (home ? Ui.tr("Sports → Home") : Ui.tr("Sports → Recommendations"))
+                                : (home ? Ui.tr("Home → Sports") : Ui.tr("Recommendations → Sports"));
+                    }, () -> {
                         Prefs.setSportsFirst(!Prefs.sportsFirst());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
