@@ -228,6 +228,10 @@ final class Scene {
             glass(c, r, radius, tint, Math.max(0.5f, tintAlpha), 0, 0, lift, 1, alpha);
             return;
         }
+        if (!Prefs.glassLens()) {   // no lens: the frosted glass, a lighter shader
+            glass(c, r, radius, tint, Math.max(0.3f, tintAlpha), 0, 0, lift, 1, alpha);
+            return;
+        }
         liquid.setFloatUniform("center", r.centerX(), r.centerY());
         liquid.setFloatUniform("halfSize", r.width() / 2, r.height() / 2);
         liquid.setFloatUniform("radius", Math.min(radius, Math.min(r.width(), r.height()) / 2));

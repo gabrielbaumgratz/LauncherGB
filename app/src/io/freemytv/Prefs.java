@@ -221,6 +221,10 @@ final class Prefs {
 
     private static final float[] REFRACTION = {0f, 0.5f, 1f, 1.6f, 2.4f};
 
+    /** The glass bends what is behind it (its lens). Off: plain frosted glass, which costs the GPU less (Performance mode). */
+    static boolean glassLens() { return sp().getBoolean("glassLens", true); }
+    static void setGlassLens(boolean on) { put("glassLens", on); }
+
     /** The multiplier of a piece of glass's lens (1 at the usual level). */
     static float lens(int element) { return REFRACTION[glassRefraction(element)]; }
 

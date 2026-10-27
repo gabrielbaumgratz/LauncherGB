@@ -102,6 +102,7 @@ public class SettingsActivity extends Activity {
                     case "layout": Prefs.setLayout(Integer.parseInt(kv[1])); break;
                     case "shelfFrost": Prefs.setGlassFrost(Prefs.G_SHELF, Integer.parseInt(kv[1])); break;
                     case "allPhotos": Prefs.setWallpaper("*"); break;   // the background photo: all of them in turn
+                    case "glassLens": Prefs.setGlassLens(on); break;
                     case "theme": Prefs.setTheme(kv[1]); break;   // auto, light or dark
                     default:
                 }
@@ -729,11 +730,18 @@ public class SettingsActivity extends Activity {
                     }, () -> setPerfMode(perfMode() == 0 ? 1 : 0));
                     header(Ui.tr("What each mode does"));
                     info(Ui.tr("Full → Performance"), () -> "");
-                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather"), Ui.tr("Sports"), Ui.tr("Slow zoom of the photos")}) {
+                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather"), Ui.tr("Sports"), Ui.tr("Slow zoom of the photos"), Ui.tr("Glass lens (refraction)")}) {
                         info(feature, () -> Ui.tr("On") + "  →  " + Ui.tr("Off"));
                     }
                     note(Ui.tr("Both modes keep your apps, the inputs, the clock, the Control Center and the settings."));
                     note(Ui.tr("To change them one by one, use each one's own page."));
+                    header(Ui.tr("Liquid glass"));
+                    toggle(Ui.tr("Glass lens (refraction)"), Prefs::glassLens, () -> {
+                        Prefs.setGlassLens(!Prefs.glassLens());
+                        HomeData.get(c).settingsChanged();
+                        HomeActivity.refreshNow();
+                    });
+                    note(Ui.tr("Off: plain frosted glass, lighter on the TV. Frost levels stay as you set them."));
                     break;
                 }
                 case P_REMOTE: {
@@ -1254,11 +1262,19 @@ public class SettingsActivity extends Activity {
             openDetail(Ui.tr("Championships"), () -> {
                 note(Ui.tr("Follow championships to see all upcoming games, races and fight cards on the home screen."));
                 String lastSport = "";
+                String shownCircuitSport = "";
                 for (String[] league : Sports.LEAGUES) {
                     String sport = Sports.sportOf(league[0]);
                     if (!sport.equals(lastSport)) {
                         header(Sports.sportName(sport));
                         lastSport = sport;
+                    }
+                    String leagueSport = Sports.sportOf(league[0]);
+                    if (Sports.individual(leagueSport) && !leagueSport.equals("tennis")) {   // golf, motorsport, MMA: the circuits on a page of their own
+                        if (leagueSport.equals(shownCircuitSport)) continue;
+                        shownCircuitSport = leagueSport;
+                        link(Ui.tr("Circuits"), () -> Ui.trf("{n} followed", "n", followedIn(leagueSport)), () -> openCircuits(leagueSport));
+                        continue;
                     }
                     if (league[0].startsWith("tennis/")) {
                         link(league[1], () -> Prefs.sportsLeagues().contains(league[0]) ? Ui.tr("Yes") : Ui.tr("No"), () -> openTennis(league));
@@ -1271,6 +1287,27 @@ public class SettingsActivity extends Activity {
                     });
                     r.value = () -> Prefs.sportsLeagues().contains(league[0]) ? Ui.tr("Yes") : Ui.tr("No");
                 }
+            });
+        }
+
+        private static int followedIn(String sport) {
+            int n = 0;
+            for (String path : Prefs.sportsLeagues()) if (Sports.sportOf(path).equals(sport)) n++;
+            return n;
+        }
+
+        /** Golf, motorsport or MMA: which circuits to follow. */
+        private void openCircuits(String sport) {
+            openDetail(Sports.sportName(sport), () -> {
+                for (String[] league : Sports.LEAGUES) {
+                    if (!Sports.sportOf(league[0]).equals(sport)) continue;
+                    toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
+                        List<String> paths = Prefs.sportsLeagues();
+                        if (!paths.remove(league[0])) paths.add(league[0]);
+                        Prefs.setSportsLeagues(paths);
+                    });
+                }
+                note(Ui.tr("All their races, tournaments and fight cards. The athletes you follow always show."));
             });
         }
 
@@ -2070,10 +2107,10 @@ public class SettingsActivity extends Activity {
 
         /** 0 full (everything on), 1 performance (the four that cost the most off), 2 custom (anything else). */
         private static int perfMode() {
-            boolean[] on = {Prefs.recommendations(), Prefs.weather(), Prefs.sportsOn(), Prefs.dreamMotion()};
+            boolean[] on = {Prefs.recommendations(), Prefs.weather(), Prefs.sportsOn(), Prefs.dreamMotion(), Prefs.glassLens()};
             int count = 0;
             for (boolean b : on) if (b) count++;
-            return count == 4 ? 0 : count == 0 ? 1 : 2;
+            return count == 5 ? 0 : count == 0 ? 1 : 2;
         }
 
         private void setPerfMode(int mode) {
@@ -2082,6 +2119,7 @@ public class SettingsActivity extends Activity {
             Prefs.setWeather(full);
             Prefs.setSportsOn(full);
             Prefs.setDreamMotion(full);
+            Prefs.setGlassLens(full);
             HomeData.get(getContext()).settingsChanged();
             HomeActivity.refreshNow();
         }

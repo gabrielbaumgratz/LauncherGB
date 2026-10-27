@@ -76,7 +76,10 @@ final class Sports {
             {"soccer/uefa.champions", "Champions League"}, {"soccer/uefa.europa", "Europa League"}, {"soccer/usa.1", "MLS"},
             {"basketball/nba", "NBA"}, {"basketball/wnba", "WNBA"}, {"football/nfl", "NFL"}, {"baseball/mlb", "MLB"},
             {"hockey/nhl", "NHL"}, {"tennis/atp", "ATP"}, {"tennis/wta", "WTA"},
-            {"racing/f1", "Formula 1"}, {"golf/pga", "PGA Tour"}, {"mma/ufc", "UFC"}};
+            {"racing/f1", "Formula 1"}, {"racing/irl", "IndyCar"}, {"racing/nascar-premier", "NASCAR Cup"},
+            {"golf/pga", "PGA Tour"}, {"golf/lpga", "LPGA"}, {"golf/eur", "DP World Tour"}, {"golf/liv", "LIV Golf"},
+            {"golf/champions-tour", "PGA Tour Champions"},
+            {"mma/ufc", "UFC"}, {"mma/pfl", "PFL"}, {"mma/bellator", "Bellator"}};
 
     /** Sports of competitors, not teams: followed by name (a player, a driver, a fighter). */
     static boolean individual(String sport) {

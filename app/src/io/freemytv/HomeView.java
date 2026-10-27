@@ -311,7 +311,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             // The layer may be shifted (bottom drawer): the glass reads the background from where it really is. The
             // drawer and the top buttons are always drawn as if resting in place (they are only visible there and are
             // not redrawn while they move).
-            scene.setOffset(0, kind == STATUS || (kind == DRAWER && !Prefs.photoLayout()) ? 0 : getTranslationY());
+            scene.setOffset(0, kind == STATUS || (kind == DRAWER && !(Prefs.photoLayout() && Prefs.glassLens())) ? 0 : getTranslationY());
             shadows.dither = dark() > 0.5f;
             switch (kind) {
                 case SKY: drawSky(c); break;
@@ -765,10 +765,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (tilesMoving || tilesDirty) tiles.invalidate();
         if (statusMoving || statusDirty || bgFading) status.invalidate();
         if (heroMoving || heroDirty || heroFading) heroLayer.invalidate();
-        if (drawerItemsMoving || drawerDirty || bgFading || (drawerMoving && Prefs.photoLayout())) drawerLayer.invalidate();
+        // Over a photo the lens follows it while the drawer moves: those two layers are drawn again on every frame (twice the
+        // CPU time on a 1 GB TV). Without the lens, the frosted glass is drawn once, as in the classic style.
+        boolean lensFollows = Prefs.photoLayout() && Prefs.glassLens();
+        if (drawerItemsMoving || drawerDirty || bgFading || (drawerMoving && lensFollows)) drawerLayer.invalidate();
         if (gridMoving || gridDirty) sheetLayer.invalidate();
         if (drawerMoving || bgFading) sky.invalidate();
-        if (bgFading || (drawerWasMoving && !drawerMoving) || (drawerMoving && Prefs.photoLayout())) platter.invalidate();   // the lens follows the picture
+        if (bgFading || (drawerWasMoving && !drawerMoving) || (drawerMoving && lensFollows)) platter.invalidate();   // the lens follows the picture
         drawerWasMoving = drawerMoving;
         tilesDirty = statusDirty = heroDirty = drawerDirty = gridDirty = motionDirty = false;
         if (updateClock()) {
