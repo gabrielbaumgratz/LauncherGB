@@ -249,6 +249,10 @@ final class Prefs {
 
     /** Seconds between photos: the screensaver, and the background when it rotates through all the photos. */
     static final int[] PHOTO_SECONDS = {30, 60, 300, 900, 1800, 3600};
+
+    /** Seconds between the photos behind the home screen when it shows all of them (its own, apart from the screensaver's). */
+    static int backgroundSeconds() { return sp().getInt("backgroundSeconds", 900); }
+    static void setBackgroundSeconds(int s) { sp().edit().putInt("backgroundSeconds", s).apply(); version++; }
     static int photoSeconds() { return sp().getInt("photoSeconds", 30); }
     static void setPhotoSeconds(int s) { sp().edit().putInt("photoSeconds", s).apply(); version++; }
 

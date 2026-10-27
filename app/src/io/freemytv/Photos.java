@@ -113,7 +113,13 @@ final class Photos {
         }
     }
 
-    /** The photo as a small picture (about 160 px wide) for a list on the TV, or null. */
+    /** The photo it is the turn of behind the home screen (all of them in turn), or "" when there are none. */
+    static String backgroundNow(Context c) {
+        List<String> all = list(c);
+        return all.isEmpty() ? "" : all.get((int) ((System.currentTimeMillis() / 1000 / Prefs.backgroundSeconds()) % all.size()));
+    }
+
+    /** The photo as a small picture (about 128 px wide) for a list on the TV, or null. */
     static Bitmap small(Context c, String name) {
         File f = file(c, name);
         if (f == null) return null;
@@ -122,7 +128,8 @@ final class Photos {
         BitmapFactory.decodeFile(f.getPath(), bounds);
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inSampleSize = 1;
-        while (bounds.outWidth / (opts.inSampleSize * 2) >= 160) opts.inSampleSize *= 2;
+        while (bounds.outWidth / (opts.inSampleSize * 2) >= 128) opts.inSampleSize *= 2;
+        opts.inPreferredConfig = Bitmap.Config.RGB_565;   // half the memory; it is drawn ~60 px wide
         return BitmapFactory.decodeFile(f.getPath(), opts);
     }
 

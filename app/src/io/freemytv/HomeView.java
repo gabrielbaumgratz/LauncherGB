@@ -2977,10 +2977,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private Backdrop wallpaperBackdrop() {
         String chosen = Prefs.wallpaper();
         if (chosen.isEmpty() && (Prefs.photoBackground() || Prefs.photoLayout())) chosen = "*";
-        if (chosen.equals("*")) {   // rotate through all the photos, one every Prefs.photoSeconds()
-            List<String> all = Photos.list(getContext());
-            chosen = all.isEmpty() ? "" : all.get((int) ((System.currentTimeMillis() / 1000 / Prefs.photoSeconds()) % all.size()));
-        }
+        if (chosen.equals("*")) chosen = Photos.backgroundNow(getContext());   // all the photos in turn
         final String name = chosen;
         if (name.isEmpty()) return null;
         final boolean sharp = Prefs.photoLayout();

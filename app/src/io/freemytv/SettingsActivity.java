@@ -462,6 +462,7 @@ public class SettingsActivity extends Activity {
         private final java.util.Map<String, Bitmap> thumbs = new java.util.concurrent.ConcurrentHashMap<>();
         private final java.util.Map<String, BitmapShader> thumbShaders = new java.util.HashMap<>();
         private final java.util.Map<String, Bitmap> thumbShaderOf = new java.util.HashMap<>();
+        private final java.util.concurrent.atomic.AtomicBoolean loadingThumbs = new java.util.concurrent.atomic.AtomicBoolean();
         private final Matrix thumbMatrix = new Matrix();
 
         private Row link(String label, Supplier<String> value, Runnable act) {
@@ -1050,7 +1051,7 @@ public class SettingsActivity extends Activity {
             return chosen.isEmpty() || chosen.equals("*") || !Photos.list(getContext()).contains(chosen) ? Ui.tr("All photos") : photoLabel(chosen);
         }
 
-        /** How long each photo stays: the screensaver's and the home screen's when it shows all of them. */
+        /** How long each photo of the screensaver stays. */
         private void photoInterval() {
             value(Ui.tr("Photo interval"), () -> {
                 int s = Prefs.photoSeconds();
@@ -1080,8 +1081,24 @@ public class SettingsActivity extends Activity {
                     Prefs.setWallpaper("*");
                     HomeActivity.refreshNow();
                 });
-                photoInterval();
-                note(Ui.tr("They change on their own, like the screensaver's. Or choose one to keep."));
+                value(Ui.tr("Change the photo"), () -> {
+                    int s = Prefs.backgroundSeconds();
+                    return !Prefs.wallpaper().isEmpty() && !Prefs.wallpaper().equals("*") ? Ui.tr("Never") : s < 60 ? Ui.trf("{n} s", "n", s) : s < 3600 ? Ui.trf("{n} min", "n", s / 60) : Ui.trf("{n} h", "n", s / 3600);
+                }, () -> {
+                    int[] options = {0, 30, 60, 300, 900, 1800, 3600};   // 0: keep the photo showing now
+                    boolean fixed = !Prefs.wallpaper().isEmpty() && !Prefs.wallpaper().equals("*");
+                    int at = 0;
+                    if (!fixed) for (int i = 1; i < options.length; i++) if (options[i] == Prefs.backgroundSeconds()) at = i;
+                    int next = options[(at + 1) % options.length];
+                    if (next == 0) {
+                        Prefs.setWallpaper(Photos.backgroundNow(c));
+                    } else {
+                        Prefs.setWallpaper("*");
+                        Prefs.setBackgroundSeconds(next);
+                    }
+                    HomeActivity.refreshNow();
+                });
+                note(Ui.tr("They change on their own, apart from the screensaver. Choose \"Never\", or one photo below, to keep one still."));
                 header(Ui.tr("Photos"));
                 int n = 0;
                 for (String name : Photos.list(c)) {
@@ -1091,15 +1108,21 @@ public class SettingsActivity extends Activity {
                         HomeActivity.refreshNow();
                     }).photo = photo;
                 }
-                new Thread(() -> {
-                    for (String name : Photos.list(c)) {
-                        if (detail == null) return;
-                        if (thumbs.containsKey(name)) continue;
-                        Bitmap b = Photos.small(c, name);
-                        if (b != null) thumbs.put(name, b);
-                        postInvalidate();
-                    }
-                }, "photo-thumbs").start();
+                if (loadingThumbs.compareAndSet(false, true)) {   // the rows are built again at every move: one loader
+                    new Thread(() -> {
+                        try {
+                            for (String name : Photos.list(c)) {
+                                if (detail == null) return;
+                                if (thumbs.containsKey(name)) continue;
+                                Bitmap b = Photos.small(c, name);
+                                if (b != null) thumbs.put(name, b);
+                                postInvalidate();
+                            }
+                        } finally {
+                            loadingThumbs.set(false);
+                        }
+                    }, "photo-thumbs").start();
+                }
             });
         }
 
