@@ -83,6 +83,31 @@ public class SettingsActivity extends Activity {
         // From ADB: --ei tennisAtp 5 --ei tennisWta 3 (how many of each ranking the tennis shows; ten by default, no menu).
         if (getIntent().hasExtra("tennisAtp")) Prefs.setTennisTop("atp", getIntent().getIntExtra("tennisAtp", 10));
         if (getIntent().hasExtra("tennisWta")) Prefs.setTennisTop("wta", getIntent().getIntExtra("tennisWta", 10));
+        // --es set "recommendations=0,sportsTab=1,layout=1": switches for tests (the ones named here, 0 or 1; layout 0 to 2).
+        if (getIntent().hasExtra("set")) {
+            for (String pair : getIntent().getStringExtra("set").split(",")) {
+                String[] kv = pair.split("=");
+                if (kv.length != 2) continue;
+                boolean on = kv[1].equals("1");
+                switch (kv[0]) {
+                    case "recommendations": Prefs.setRecommendations(on); break;
+                    case "sportsOn": Prefs.setSportsOn(on); break;
+                    case "sportsTab": Prefs.setSportsTab(on); break;
+                    case "sportsDrawer": Prefs.setSportsDrawer(on); break;
+                    case "weather": Prefs.setWeather(on); break;
+                    case "weatherDrawer": Prefs.setWeatherDrawer(on); break;
+                    case "greeting": Prefs.setGreeting(on); break;
+                    case "photoBackground": Prefs.setPhotoBackground(on); break;
+                    case "darkTiles": Prefs.setDarkTiles(on); break;
+                    case "sportsFirst": Prefs.setSportsFirst(on); break;
+                    case "layout": Prefs.setLayout(Integer.parseInt(kv[1])); break;
+                    default:
+                }
+            }
+            getIntent().removeExtra("set");
+            HomeData.get(this).settingsChanged();
+            HomeActivity.refreshNow();
+        }
         if (getIntent().hasExtra("layout")) {   // --ei layout 0|1|2: classic, photo, photo with sidebar
             Prefs.setLayout(getIntent().getIntExtra("layout", 0));
             getIntent().removeExtra("layout");

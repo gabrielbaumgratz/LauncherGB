@@ -3332,27 +3332,30 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         fitPaint.setTextAlign(Paint.Align.LEFT);
     }
 
-    /** The photo layout's clock: the big one, small (top left), in white with a soft shadow so it reads on any photo. */
+    /** The photo layout's clock: the usual one with the greeting above it, in white with a soft shadow so it reads on any photo. */
     private void drawPhotoClock(Canvas c) {
-        int date = lDate.getColor(), clock = lClock.getColor(), weather = lWeather.getColor();
+        int date = lDate.getColor(), clock = lClock.getColor(), weather = lWeather.getColor(), title = lTitle.getColor();
         lDate.setColor(0xF2FFFFFF);
         lClock.setColor(0xFFFFFFFF);
         lWeather.setColor(0xF2FFFFFF);
+        lTitle.setColor(0xFFFFFFFF);
         lDate.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
-        lClock.setShadowLayer(12 * k, 0, 3 * k, 0x80000000);
+        lClock.setShadowLayer(14 * k, 0, 3 * k, 0x80000000);
         lWeather.setShadowLayer(10 * k, 0, 2 * k, 0x80000000);
-        float s = 0.36f;
-        c.save();
-        c.translate(MARGIN * k * (1 - s), 70 * k - 300 * k * s);
-        c.scale(s, s);
+        lTitle.setShadowLayer(14 * k, 0, 3 * k, 0x80000000);
+        if (Prefs.greeting()) {
+            String hello = greetingText.isEmpty() ? Ui.greeting() : greetingText;
+            c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
+        }
         drawClock(c);
-        c.restore();
         lDate.clearShadowLayer();
         lClock.clearShadowLayer();
         lWeather.clearShadowLayer();
+        lTitle.clearShadowLayer();
         lDate.setColor(date);
         lClock.setColor(clock);
         lWeather.setColor(weather);
+        lTitle.setColor(title);
     }
 
     private void drawClock(Canvas c) {
