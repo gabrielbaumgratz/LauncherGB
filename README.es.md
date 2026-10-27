@@ -8,7 +8,7 @@
 # GB Home TV
 
 **Una pantalla de inicio inspirada en Apple TV para Google TV y Android TV: más rápida, ligera y sin anuncios ni spyware.**<br>
-Pestañas de películas, series y deportes, Centro de control y salvapantallas con fotos en lugar de la pantalla de inicio de fábrica. Un clic apaga anuncios y rastreadores, y otro lo devuelve todo.
+Todos tus deportes en una pestaña, una pantalla de inicio hecha con tus fotos y un salvapantallas con fotos en lugar de la pantalla de inicio de fábrica. El Centro de control y las pestañas opcionales de películas y series vienen incluidos (desactivados por defecto). Un clic apaga anuncios y rastreadores, y otro lo devuelve todo.
 
 [English](README.md) · [Português](README.pt.md) · Español
 
@@ -35,11 +35,11 @@ Pestañas de películas, series y deportes, Centro de control y salvapantallas c
 | Característica | Descripción |
 |---|---|
 | **Centro de control** | Panel lateral instantáneo para alternar salidas de audio Bluetooth (auriculares y barras de sonido), volumen, modo de imagen (en televisores compatibles), tema visual y acceso directo al receptor AirPlay. |
-| **Deportes, equipos y deportistas** | Sigue a tus clubes (fútbol, baloncesto, fútbol americano) en ligas y copas (Champions League, Copa Libertadores, ligas locales), además de deportistas individuales (tenistas en rankings ATP/WTA, pilotos de Fórmula 1, luchadores de UFC y golfistas de la PGA). Información pública en tiempo real de ESPN sin necesidad de cuenta. Elige si la pestaña Deportes va primero o última en *Ajustes → Pantalla de inicio → Orden de las pestañas*. |
+| **Deportes, equipos y deportistas** | Todos los deportes en una pestaña: tus clubes (fútbol, baloncesto, fútbol americano, béisbol, hockey) en ligas y copas, eligiendo qué competiciones de cada equipo se ven (el Real Madrid solo en LaLiga, por ejemplo); tenis por torneo (Grand Slams, Masters 1000, 500) y por jugador; Fórmula 1, UFC y PGA Tour por deportista o por circuito completo. Información pública en tiempo real de ESPN sin necesidad de cuenta. Elige si la pestaña Deportes va primero o última en *Ajustes → Pantalla de inicio → Orden de las pestañas*. |
 | **Protector de pantalla personalizado** | Galería fotográfica a pantalla completa con reloj, fecha y clima local. Cinco niveles de brillo adaptados (incluyendo opciones mate y ultra-oscura para dormitorios y paneles OLED). |
 | **Envío de fotos desde el móvil** | Transfiere fotografías de tu teléfono al televisor por Wi-Fi local mediante código QR, protegido con servidor temporal y validación por PIN. |
 | **Mapeo de botones del mando** | Asigna cualquier botón del mando a distancia para abrir una app específica, desplegar el Centro de control o entrar a los ajustes del televisor. Reconocimiento nativo de teclas de acceso rápido en mandos TCL, Sony, Vestel, KTC y Formovie. |
-| **Destacados de tus plataformas** | Catálogo con títulos en tendencia exclusivamente de los servicios de streaming que tienes instalados en el televisor (a través de la API gratuita de TMDB). |
+| **Destacados de tus plataformas (opcional)** | Desactivado por defecto. Pestañas de películas y series en tendencia; catálogo con títulos en tendencia exclusivamente de los servicios de streaming que tienes instalados en el televisor (a través de la API gratuita de TMDB). |
 | **Temas adaptativos** | Modos claro, oscuro o sincronización automática con la puesta y salida del sol según tu ubicación. |
 | **Modo Rendimiento** | Perfil de configuración optimizado para minimizar el consumo de recursos en hardware modesto. |
 | **Compatibilidad multilingüe** | Interfaz adaptada íntegramente al español, portugués e inglés. |
@@ -83,6 +83,7 @@ Rendimiento transparente: GB Home TV inicia más rápido y ofrece una respuesta 
 | **Rendimiento** | <img src="docs/assets/es/settings-performance.png" width="440"> |
 | **Botones del control** | <img src="docs/assets/es/settings-remote.png" width="440"> |
 | **Fotos desde el celular** | <img src="docs/assets/es/photos.png" width="440"> |
+| **Página en el móvil** | <img src="docs/assets/es/phone.png" width="220"> |
 
 En movimiento: [Centro de control](docs/assets/es/control-center.webp) · [Ajustes](docs/assets/es/settings.webp) · [Protector de pantalla](docs/assets/es/screensaver.mp4)
 
@@ -175,7 +176,7 @@ Accede a *Ajustes → Protector de pantalla → Fotos de tu celular*. Escanea el
 
 **¿Cómo regreso al launcher de fábrica?** Dirígete a *Ajustes → General → Launcher → Original*. Todos los servicios del fabricante que estaban desactivados volverán a funcionar inmediatamente.
 
-**¿Qué dispositivos son compatibles?** Cualquier televisor, TV Box o reproductor con Google TV o Android TV (versión 8 en adelante): TCL, Sony, Xiaomi, Philips y otros smart TV, además de cajas y sticks como Mi Box, onn., Chromecast con Google TV y NVIDIA Shield. Los televisores de marcas como LG (webOS) o Samsung (Tizen) no utilizan Android; en ellos se aconseja conectar un reproductor Google TV por HDMI.
+**¿Qué dispositivos son compatibles?** Cualquier televisor, TV Box o reproductor con Google TV o Android TV (versión 8 en adelante): TCL, Sony, Xiaomi y Redmi, Philips y otros smart TV, además de cajas y sticks como Mi Box, onn., Chromecast con Google TV y NVIDIA Shield. Los televisores de marcas como LG (webOS) o Samsung (Tizen) no utilizan Android; en ellos se aconseja conectar un reproductor Google TV por HDMI.
 
 **¿El software recopila datos de los usuarios?** En absoluto. Las únicas conexiones de red que realiza corresponden exclusivamente a los servicios que decidas habilitar: pronóstico meteorológico (Open-Meteo), recomendaciones de streaming (TMDB, utilizando tu propia clave) e información deportiva pública (ESPN).
 

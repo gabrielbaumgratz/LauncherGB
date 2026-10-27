@@ -8,7 +8,7 @@
 # GB Home TV
 
 **Uma tela inicial inspirada na Apple TV para Google TV e Android TV: mais rápida, leve e sem anúncios nem spyware.**<br>
-Abas de filmes, séries e esportes, Central de Controle e protetor de tela com fotos no lugar da tela inicial de fábrica. Um clique desliga anúncios e rastreadores, e outro traz tudo de volta.
+Todos os seus esportes em uma aba, uma tela inicial feita com as suas fotos e a tela de descanso com fotos no lugar da tela inicial de fábrica. A Central de Controle e as abas opcionais de filmes e séries vêm junto (desligadas por padrão). Um clique desliga anúncios e rastreadores, e outro traz tudo de volta.
 
 [English](README.md) · Português · [Español](README.es.md)
 
@@ -35,11 +35,11 @@ Abas de filmes, séries e esportes, Central de Controle e protetor de tela com f
 | Recurso | Descrição |
 |---|---|
 | **Central de Controle** | Painel lateral instantâneo para alternar saídas de áudio Bluetooth (fones e caixas), volume, modo de imagem (em TVs suportadas), tema e atalho para receptor AirPlay. |
-| **Esportes, times e atletas** | Acompanhe seus clubes (futebol, basquete, futebol americano) em ligas e copas (Brasileirão, Libertadores, Copa do Brasil, etc.), além de atletas individuais (tenistas no ranking ATP/WTA, pilotos de Fórmula 1, lutadores do UFC e golfistas). Dados públicos direto da ESPN, sem precisar de conta. Escolha se a aba Esportes vem primeiro ou por último em *Configurações → Início → Ordem das abas*. |
+| **Esportes, times e atletas** | Todos os esportes em uma aba: seus clubes (futebol, basquete, futebol americano, beisebol, hóquei) em ligas e copas, escolhendo quais competições de cada time aparecem (o Real Madrid só na LaLiga, por exemplo); tênis por torneio (Grand Slams, Masters 1000, 500) e por jogador; Fórmula 1, UFC e PGA Tour por atleta ou pelo circuito inteiro. Dados públicos direto da ESPN, sem precisar de conta. Escolha se a aba Esportes vem primeiro ou por último em *Configurações → Início → Ordem das abas*. |
 | **Tela de descanso personalizada** | Fotos em tela cheia com relógio, data e previsão do tempo local. Cinco níveis de brilho (incluindo nível fosco e ultra-escuro para quartos e painéis OLED). |
 | **Fotos direto do celular** | Envie fotos do celular para a tela de descanso da TV via Wi-Fi local através de QR code, com servidor temporário e autenticação por PIN. |
 | **Mapeamento do controle remoto** | Configure qualquer botão do controle remoto para abrir o app desejado, a Central de Controle ou os ajustes da TV. Compatibilidade nativa com botões dedicados de marcas como TCL, Sony, Vestel, KTC e Formovie. |
-| **Destaques dos seus streamings** | Vitrine com os títulos em alta exclusivamente dos serviços de streaming que você possui instalados na TV (via API gratuita do TMDB). |
+| **Destaques dos seus streamings (opcional)** | Desligado por padrão. Abas de filmes e séries em alta; vitrine com os títulos em alta exclusivamente dos serviços de streaming que você possui instalados na TV (via API gratuita do TMDB). |
 | **Temas adaptativos** | Tema claro, escuro ou automático sincronizado com o horário do nascer e pôr do sol da sua cidade. |
 | **Modo Desempenho** | Configuração especial para otimizar ao máximo o uso de memória em TVs com hardware mais modesto. |
 | **Internacionalização completa** | Interface adaptada para Português, Inglês e Espanhol. |
@@ -83,6 +83,7 @@ Sem números maquiados: o GB Home TV abre mais rápido e responde instantaneamen
 | **Desempenho** | <img src="docs/assets/pt/settings-performance.png" width="440"> |
 | **Botões do controle** | <img src="docs/assets/pt/settings-remote.png" width="440"> |
 | **Fotos do celular** | <img src="docs/assets/pt/photos.png" width="440"> |
+| **Página no celular** | <img src="docs/assets/pt/phone.png" width="220"> |
 
 Em movimento: [Central de Controle](docs/assets/pt/control-center.webp) · [Configurações](docs/assets/pt/settings.webp) · [Tela de descanso](docs/assets/pt/screensaver.mp4)
 
@@ -175,7 +176,7 @@ Acesse *Configurações → Tela de Descanso → Fotos do seu celular*. Aponte a
 
 **Como volto para a tela de fábrica?** Abra *Configurações → Geral → Launcher → Original*. Todos os serviços do fabricante desligados são religados instantaneamente.
 
-**Quais aparelhos são compatíveis?** Qualquer TV, TV Box ou streamer com Google TV ou Android TV (Android 8 em diante): TCL, Sony, Xiaomi, Philips e outras smart TVs, além de boxes e sticks como Mi Box, onn., Chromecast com Google TV e NVIDIA Shield. Aparelhos LG (webOS) e Samsung (Tizen) não utilizam Android, recomendando-se o uso de um reprodutor Google TV conectado via HDMI.
+**Quais aparelhos são compatíveis?** Qualquer TV, TV Box ou streamer com Google TV ou Android TV (Android 8 em diante): TCL, Sony, Xiaomi e Redmi, Philips e outras smart TVs, além de boxes e sticks como Mi Box, onn., Chromecast com Google TV e NVIDIA Shield. Aparelhos LG (webOS) e Samsung (Tizen) não utilizam Android, recomendando-se o uso de um reprodutor Google TV conectado via HDMI.
 
 **O aplicativo coleta dados pessoais?** Absolutamente não. As únicas requisições de rede feitas são para os serviços que você optar por utilizar: previsão do tempo (Open-Meteo), destaques de streaming (TMDB, mediante sua chave pessoal) e placares de esportes (ESPN pública).
 

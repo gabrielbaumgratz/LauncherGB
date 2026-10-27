@@ -249,7 +249,7 @@ final class HomeData {
         String unit = Prefs.temperature();
         if (unit.equals("F")) return true;
         if (unit.equals("C")) return false;
-        return "US".equals(Locale.getDefault().getCountry());
+        return Prefs.demo() ? Ui.language.startsWith("en") : "US".equals(Locale.getDefault().getCountry());
     }
 
     static String hour(long at) {

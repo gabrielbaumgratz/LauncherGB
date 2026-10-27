@@ -8,7 +8,7 @@
 # GB Home TV
 
 **An Apple TV-inspired home screen for Google TV and Android TV: faster, lighter, with no ads and no spyware.**<br>
-Tabs for movies, shows and sports, a Control Center and a photo screensaver replace your TV's stock home screen. One click turns off factory ads and telemetry, and one click brings it all back.
+All your sports in one tab, a home screen built from your photos and a photo screensaver replace your TV's stock home screen. A Control Center and optional tabs for movies and shows come along (off by default). One click turns off factory ads and telemetry, and one click brings it all back.
 
 English · [Português](README.pt.md) · [Español](README.es.md)
 
@@ -35,11 +35,11 @@ English · [Português](README.pt.md) · [Español](README.es.md)
 | Feature | Description |
 |---|---|
 | **Control Center** | Quick-access side panel to switch Bluetooth audio devices (headphones and soundbars), adjust volume, toggle picture modes (on supported TVs), change themes, and launch AirPlay. |
-| **Sports, teams, and athletes** | Track your clubs (soccer, basketball, football) across leagues and cups (Champions League, Premier League, Libertadores, etc.), plus individual athletes (ATP/WTA tennis players, Formula 1 drivers, UFC fighters, and PGA golfers). Public real-time data from ESPN with no account needed. Show the Sports tab first or last in *Settings → Home Screen → Tab order*. |
+| **Sports, teams, and athletes** | Every sport in one tab: your clubs (soccer, basketball, American football, baseball, hockey) across leagues and cups, choosing which competitions of each team show (Real Madrid in LaLiga only, say); tennis by tournament (Grand Slams, Masters 1000, 500) and by player; Formula 1, UFC and PGA Tour by athlete or whole circuit. Public real-time data from ESPN with no account needed. Show the Sports tab first or last in *Settings → Home Screen → Tab order*. |
 | **Custom screensaver** | Full-screen photo showcase with live clock, date, and local weather. Five brightness settings including matte and ultra-dark levels optimized for bedrooms and OLED panels. |
 | **Phone photo uploads** | Send photos straight from your phone to the TV screensaver over local Wi-Fi via QR code, protected by a temporary server and PIN security. |
 | **Remote button remapping** | Assign any button on your remote to launch a chosen app, open the Control Center, or bring up TV settings. Native detection for dedicated factory buttons on TCL, Sony, Vestel, KTC, and Formovie remotes. |
-| **Streaming highlights** | Curated trending picks drawn exclusively from streaming services installed on your TV (powered by the free TMDB API). |
+| **Streaming highlights (optional)** | Off by default. Tabs with trending picks for movies and shows, drawn only from the streaming services installed on your TV (powered by the free TMDB API). |
 | **Adaptive themes** | Light, dark, or automatic theme synchronized with sunrise and sunset times for your location. |
 | **Performance mode** | Dedicated low-overhead mode designed to minimize memory consumption on entry-level hardware. |
 | **Full multilingual support** | Available in English, Portuguese, and Spanish. |
@@ -83,6 +83,7 @@ Real performance without inflated claims: GB Home TV opens faster and animates c
 | **Performance** | <img src="docs/assets/en/settings-performance.png" width="440"> |
 | **Remote buttons** | <img src="docs/assets/en/settings-remote.png" width="440"> |
 | **Phone photo upload** | <img src="docs/assets/en/photos.png" width="440"> |
+| **Phone page** | <img src="docs/assets/en/phone.png" width="220"> |
 
 In motion: [Control Center](docs/assets/en/control-center.webp) · [Settings](docs/assets/en/settings.webp) · [Screensaver](docs/assets/en/screensaver.mp4)
 
@@ -175,7 +176,7 @@ Go to *Settings → Screensaver → Photos from your phone*. Scan the QR code di
 
 **How do I return to the stock launcher?** Open *Settings → General → Launcher → Original*. All disabled manufacturer services are immediately re-enabled.
 
-**Which devices are supported?** Any TV, TV box or streamer running Google TV or Android TV (Android 8 and up): TCL, Sony, Xiaomi, Philips and other smart TVs, plus boxes and sticks such as the Mi Box, onn., Chromecast with Google TV and NVIDIA Shield. LG (webOS) and Samsung (Tizen) devices do not run Android; connecting a Google TV streaming device via HDMI is recommended.
+**Which devices are supported?** Any TV, TV box or streamer running Google TV or Android TV (Android 8 and up): TCL, Sony, Xiaomi and Redmi, Philips and other smart TVs, plus boxes and sticks such as the Mi Box, onn., Chromecast with Google TV and NVIDIA Shield. LG (webOS) and Samsung (Tizen) devices do not run Android; connecting a Google TV streaming device via HDMI is recommended.
 
 **Does it collect data?** No. Network access is strictly limited to services you enable: weather data (Open-Meteo), streaming highlights (TMDB, via your private key), and sports fixtures (public ESPN).
 

@@ -125,7 +125,9 @@ final class Sports {
     private static final long EVERY = 3 * 3600_000L, DAY = 24 * 3600_000L;
     private static final int MAX_BODY = 4_000_000, KEEP = 12;
     /** Where a soccer team can also play besides its own league: the continental and the national cups. */
-    private static final String[] SOCCER_CUPS = {"conmebol.libertadores", "conmebol.sudamericana", "uefa.champions", "uefa.europa",
+    private static final String[][] CUP_NAMES = {{"esp.copa_del_rey", "Copa del Rey"}, {"eng.fa", "FA Cup"}, {"eng.league_cup", "League Cup"},
+            {"ger.dfb_pokal", "DFB-Pokal"}, {"ita.coppa_italia", "Coppa Italia"}, {"fra.coupe_de_france", "Coupe de France"}};
+    static final String[] SOCCER_CUPS = {"conmebol.libertadores", "conmebol.sudamericana", "uefa.champions", "uefa.europa",
             "bra.copa_do_brazil", "esp.copa_del_rey", "eng.fa", "eng.league_cup", "ger.dfb_pokal", "ita.coppa_italia", "fra.coupe_de_france"};
 
     private static Sports instance;
@@ -248,7 +250,9 @@ final class Sports {
 
     static String leagueName(String path) {
         for (String[] l : LEAGUES) if (l[0].equals(path)) return l[1];
-        return path.substring(path.indexOf('/') + 1);
+        String slug = path.substring(path.indexOf('/') + 1);
+        for (String[] cup : CUP_NAMES) if (cup[0].equals(slug)) return cup[1];
+        return slug;
     }
 
     // MARK: - Fetching
@@ -275,8 +279,9 @@ final class Sports {
                 circuits.add(team[0] + "/" + team[1]);
                 continue;
             }
-            team(out, seen, team[0], team[1], team[2], team[3]);
-            if (team[0].equals("soccer")) for (String cup : SOCCER_CUPS) if (!cup.equals(team[1])) team(out, seen, team[0], cup, team[2], team[3]);
+            Set<String> off = Prefs.teamOff(team[2]);
+            if (!off.contains(team[1])) team(out, seen, team[0], team[1], team[2], team[3]);
+            if (team[0].equals("soccer")) for (String cup : SOCCER_CUPS) if (!cup.equals(team[1]) && !off.contains(cup)) team(out, seen, team[0], cup, team[2], team[3]);
         }
         for (String path : Prefs.sportsLeagues()) {
             if (path.equals("tennis/atp") || path.equals("tennis/wta")) tours.add(path.substring(7));
@@ -503,7 +508,7 @@ final class Sports {
                 JSONObject event = events.optJSONObject(i);
                 if (event == null) continue;
                 String level = tournaments ? tennisLevel(tour, event.optString("id")) : null;
-                boolean all = level != null && Prefs.tennisLevel(level);
+                boolean all = level != null && Prefs.tennisLevel(tour, level);
                 if (!all && players.isEmpty()) continue;
                 String name = event.optString("shortName", event.optString("name"));
                 JSONArray groups = event.optJSONArray("groupings");

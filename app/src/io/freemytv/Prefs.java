@@ -11,8 +11,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Settings changed on the TV itself (GB Home TV > Settings). config.properties only gives the first
@@ -379,9 +381,25 @@ final class Prefs {
     static boolean weatherDrawer() { return sp().getBoolean("weatherDrawer", true); }
     static void setWeatherDrawer(boolean on) { put("weatherDrawer", on); }
 
-    /** The tennis tournaments followed, by level ("slam", "1000", "500"): every match of them shows. The Slams and the 1000s unless set. */
-    static boolean tennisLevel(String level) { return sp().getBoolean("tennis_" + level, !level.equals("500")); }
-    static void setTennisLevel(String level, boolean on) { put("tennis_" + level, on); version++; }
+    /** The tennis tournaments followed in a tour ("atp", "wta"), by level ("slam", "1000", "500"): every match of them shows. The Slams and the 1000s unless set. */
+    static boolean tennisLevel(String tour, String level) { return sp().getBoolean("tennis_" + tour + "_" + level, !level.equals("500")); }
+    static void setTennisLevel(String tour, String level, boolean on) { put("tennis_" + tour + "_" + level, on); version++; }
+
+    /** The competitions of a team that are left out (ESPN's league names, like "uefa.champions"): Real Madrid, only the league. */
+    static Set<String> teamOff(String teamId) {
+        Set<String> out = new HashSet<>();
+        for (String p : sp().getString("teamOff_" + teamId, "").split(",")) if (!p.isEmpty()) out.add(p);
+        return out;
+    }
+
+    static void setTeamOff(String teamId, String league, boolean off) {
+        Set<String> set = teamOff(teamId);
+        if (off) set.add(league); else set.remove(league);
+        StringBuilder sb = new StringBuilder();
+        for (String l : set) sb.append(sb.length() == 0 ? "" : ",").append(l);
+        put("teamOff_" + teamId, sb.toString());
+        version++;
+    }
     static void setSportsOn(boolean on) { put("sportsOn", on); }
 
     /** The followed teams, as {sport, league, id, name}. */
@@ -436,8 +454,10 @@ final class Prefs {
     /** Changes when what the widget follows does (the list is fetched again). */
     static String sportsKey() {
         StringBuilder sb = new StringBuilder();
-        for (String[] t : sportsTeams()) sb.append(t[0]).append(t[2]).append(',');
-        return sb.append('#').append(sportsLeagues()).append('#').append(tennisLevel("slam")).append(tennisLevel("1000")).append(tennisLevel("500")).toString();
+        for (String[] t : sportsTeams()) sb.append(t[0]).append(t[2]).append(teamOff(t[2])).append(',');
+        sb.append('#').append(sportsLeagues()).append('#');
+        for (String tour : new String[] {"atp", "wta"}) for (String level : new String[] {"slam", "1000", "500"}) sb.append(tennisLevel(tour, level) ? 1 : 0);
+        return sb.toString();
     }
 
     /** The name the person gave a Bluetooth device (empty: the device's own). */

@@ -101,6 +101,7 @@ public class SettingsActivity extends Activity {
                     case "sportsFirst": Prefs.setSportsFirst(on); break;
                     case "layout": Prefs.setLayout(Integer.parseInt(kv[1])); break;
                     case "shelfFrost": Prefs.setGlassFrost(Prefs.G_SHELF, Integer.parseInt(kv[1])); break;
+                    case "allPhotos": Prefs.setWallpaper("*"); break;   // the background photo: all of them in turn
                     case "theme": Prefs.setTheme(kv[1]); break;   // auto, light or dark
                     default:
                 }
@@ -706,13 +707,6 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Championships"));
                     link(Ui.tr("Choose championships"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openLeagues);
                     note(Ui.tr("Choose the leagues, tours and circuits you want to follow."));
-                    if (Prefs.sportsLeagues().contains("tennis/atp") || Prefs.sportsLeagues().contains("tennis/wta")) {
-                        header(Ui.tr("Tennis tournaments"));
-                        tennisToggle("slam", Ui.tr("Grand Slams"));
-                        tennisToggle("1000", Ui.tr("Masters 1000"));
-                        tennisToggle("500", Ui.tr("500 tournaments"));
-                        note(Ui.tr("All their matches, for the ATP and the WTA you follow. The players you follow always show."));
-                    }
                     break;
                 }
                 case P_SAVER: {
@@ -1036,19 +1030,10 @@ public class SettingsActivity extends Activity {
 
         // MARK: - Background photo: which of the phone's photos sits behind the home screen
 
-        /** The photos are named after the moment they arrived: that is how they are told apart here. */
-        private String photoLabel(String name) {
-            try {
-                long at = Long.parseLong(name.substring(1, name.indexOf('.')));
-                return java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Ui.locale()).format(new java.util.Date(at));
-            } catch (RuntimeException e) {
-                return name;
-            }
-        }
-
         private String backgroundPhotoName() {
             String chosen = Prefs.wallpaper();
-            return chosen.isEmpty() || chosen.equals("*") || !Photos.list(getContext()).contains(chosen) ? Ui.tr("All photos") : photoLabel(chosen);
+            int at = Photos.list(getContext()).indexOf(chosen);
+            return chosen.isEmpty() || chosen.equals("*") || at < 0 ? Ui.tr("All photos") : Ui.trf("Photo {n}", "n", at + 1);
         }
 
         /** How long each photo of the screensaver stays. */
@@ -1064,9 +1049,9 @@ public class SettingsActivity extends Activity {
             });
         }
 
-        private void tennisToggle(String level, String label) {
-            toggle(label, () -> Prefs.tennisLevel(level), () -> {
-                Prefs.setTennisLevel(level, !Prefs.tennisLevel(level));
+        private void tennisToggle(String tour, String level, String label) {
+            toggle(label, () -> Prefs.tennisLevel(tour, level), () -> {
+                Prefs.setTennisLevel(tour, level, !Prefs.tennisLevel(tour, level));
                 Sports.get(getContext()).refresh();
                 HomeData.get(getContext()).settingsChanged();
             });
@@ -1221,7 +1206,18 @@ public class SettingsActivity extends Activity {
             openDetail(team[3], () -> {
                 info(Ui.tr("Sport"), () -> Sports.sportName(team[0]));
                 if (team[0].equals("soccer")) {
-                    info(Ui.tr("Competitions"), () -> Ui.tr("League, Libertadores, Copa do Brasil"));
+                    header(Ui.tr("Competitions"));
+                    List<String> comps = new ArrayList<>();
+                    comps.add(team[1]);
+                    for (String cup : Sports.SOCCER_CUPS) if (!cup.equals(team[1])) comps.add(cup);
+                    for (String comp : comps) {
+                        toggle(Sports.leagueName("soccer/" + comp), () -> !Prefs.teamOff(team[2]).contains(comp), () -> {
+                            Prefs.setTeamOff(team[2], comp, !Prefs.teamOff(team[2]).contains(comp));
+                            Sports.get(getContext()).refresh();
+                            HomeData.get(getContext()).settingsChanged();
+                        });
+                    }
+                    note(Ui.tr("The games of the competitions that are on."));
                 } else if (Sports.individual(team[0])) {
                     info(Ui.tr("Circuit"), () -> Sports.leagueName(team[0] + "/" + team[1]));
                 }
@@ -1262,6 +1258,10 @@ public class SettingsActivity extends Activity {
                         header(Sports.sportName(sport));
                         lastSport = sport;
                     }
+                    if (league[0].startsWith("tennis/")) {
+                        link(league[1], () -> Prefs.sportsLeagues().contains(league[0]) ? Ui.tr("Yes") : Ui.tr("No"), () -> openTennis(league));
+                        continue;
+                    }
                     Row r = toggle(league[1], () -> Prefs.sportsLeagues().contains(league[0]), () -> {
                         List<String> paths = Prefs.sportsLeagues();
                         if (!paths.remove(league[0])) paths.add(league[0]);
@@ -1269,6 +1269,23 @@ public class SettingsActivity extends Activity {
                     });
                     r.value = () -> Prefs.sportsLeagues().contains(league[0]) ? Ui.tr("Yes") : Ui.tr("No");
                 }
+            });
+        }
+
+        /** The ATP or the WTA: follow it, and pick which tournaments show all of their matches. */
+        private void openTennis(String[] league) {
+            final String tour = league[0].substring(7);
+            openDetail(league[1], () -> {
+                toggle(Ui.trf("Follow the {tour}", "tour", league[1]), () -> Prefs.sportsLeagues().contains(league[0]), () -> {
+                    List<String> paths = Prefs.sportsLeagues();
+                    if (!paths.remove(league[0])) paths.add(league[0]);
+                    Prefs.setSportsLeagues(paths);
+                });
+                header(Ui.tr("Tournaments"));
+                tennisToggle(tour, "slam", Ui.tr("Grand Slams"));
+                tennisToggle(tour, "1000", Ui.tr("Masters 1000"));
+                tennisToggle(tour, "500", Ui.tr("500 tournaments"));
+                note(Ui.tr("All the matches of the tournaments that are on. The players you follow always show."));
             });
         }
 
