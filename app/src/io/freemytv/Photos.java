@@ -113,6 +113,19 @@ final class Photos {
         }
     }
 
+    /** The photo as a small picture (about 160 px wide) for a list on the TV, or null. */
+    static Bitmap small(Context c, String name) {
+        File f = file(c, name);
+        if (f == null) return null;
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(f.getPath(), bounds);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inSampleSize = 1;
+        while (bounds.outWidth / (opts.inSampleSize * 2) >= 160) opts.inSampleSize *= 2;
+        return BitmapFactory.decodeFile(f.getPath(), opts);
+    }
+
     /** A small JPEG of the photo for the phone's list, or null. */
     static byte[] thumbnail(Context c, String name) {
         File f = file(c, name);

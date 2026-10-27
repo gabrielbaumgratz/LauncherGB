@@ -5,8 +5,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -213,6 +216,7 @@ public class SettingsActivity extends Activity {
             Supplier<String> value;
             BooleanSupplier on, busy;
             Runnable act;
+            String photo;   // a photo of the phone shown small at the end of the row
 
             Row(int kind, String label) {
                 this.kind = kind;
@@ -458,6 +462,11 @@ public class SettingsActivity extends Activity {
             return add(new Row(NOTE, text));
         }
 
+        private final java.util.Map<String, Bitmap> thumbs = new java.util.concurrent.ConcurrentHashMap<>();
+        private final java.util.Map<String, BitmapShader> thumbShaders = new java.util.HashMap<>();
+        private final java.util.Map<String, Bitmap> thumbShaderOf = new java.util.HashMap<>();
+        private final Matrix thumbMatrix = new Matrix();
+
         private Row link(String label, Supplier<String> value, Runnable act) {
             Row r = add(new Row(LINK, label));
             r.value = value;
@@ -499,6 +508,9 @@ public class SettingsActivity extends Activity {
 
         private void closeDetail() {
             detail = null;
+            thumbs.clear();
+            thumbShaders.clear();
+            thumbShaderOf.clear();
             paneFocus = detailFrom;
             rebuild();
             keepVisible();
@@ -567,6 +579,9 @@ public class SettingsActivity extends Activity {
                         updateTheme();
                     });
                     link(Ui.tr("Liquid glass"), () -> "", this::openGlass);
+                    if ((Prefs.photoLayout() || Prefs.photoBackground()) && !Photos.list(c).isEmpty()) {
+                        link(Ui.tr("Background photo"), this::backgroundPhotoName, this::openBackgroundPhoto);
+                    }
                     if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Recs.hasKey(c) && Prefs.recommendations() ? Ui.tr("Recommendations") : Ui.tr("Default"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
                         HomeData.get(c).settingsChanged();
@@ -708,15 +723,7 @@ public class SettingsActivity extends Activity {
                                 () -> Prefs.setOwnPhotos(!Prefs.ownPhotos()));
                     }
                     toggle(Ui.tr("Shuffle photos"), Prefs::shuffle, () -> Prefs.setShuffle(!Prefs.shuffle()));
-                    value(Ui.tr("Photo interval"), () -> {
-                        int s = Prefs.photoSeconds();
-                        return s < 60 ? Ui.trf("{n} s", "n", s) : s < 3600 ? Ui.trf("{n} min", "n", s / 60) : Ui.trf("{n} h", "n", s / 3600);
-                    }, () -> {
-                        int[] options = Prefs.PHOTO_SECONDS;
-                        int at = 0;
-                        for (int i = 0; i < options.length; i++) if (options[i] == Prefs.photoSeconds()) at = i;
-                        Prefs.setPhotoSeconds(options[(at + 1) % options.length]);
-                    });
+                    photoInterval();
                     header(Ui.tr("Display"));
                     toggle(Ui.tr("Clock"), Prefs::dreamClock, () -> Prefs.setDreamClock(!Prefs.dreamClock()));
                     toggle(Ui.tr("Date and weather"), Prefs::dreamDate, () -> Prefs.setDreamDate(!Prefs.dreamDate()));
@@ -1020,6 +1027,68 @@ public class SettingsActivity extends Activity {
             if (tab || drawer) Sports.get(getContext()).refresh();
             HomeData.get(getContext()).settingsChanged();
             HomeActivity.refreshNow();
+        }
+
+        // MARK: - Background photo: which of the phone's photos sits behind the home screen
+
+        /** The photos are named after the moment they arrived: that is how they are told apart here. */
+        private String photoLabel(String name) {
+            try {
+                long at = Long.parseLong(name.substring(1, name.indexOf('.')));
+                return java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Ui.locale()).format(new java.util.Date(at));
+            } catch (RuntimeException e) {
+                return name;
+            }
+        }
+
+        private String backgroundPhotoName() {
+            String chosen = Prefs.wallpaper();
+            return chosen.isEmpty() || chosen.equals("*") || !Photos.list(getContext()).contains(chosen) ? Ui.tr("All photos") : photoLabel(chosen);
+        }
+
+        /** How long each photo stays: the screensaver's and the home screen's when it shows all of them. */
+        private void photoInterval() {
+            value(Ui.tr("Photo interval"), () -> {
+                int s = Prefs.photoSeconds();
+                return s < 60 ? Ui.trf("{n} s", "n", s) : s < 3600 ? Ui.trf("{n} min", "n", s / 60) : Ui.trf("{n} h", "n", s / 3600);
+            }, () -> {
+                int[] options = Prefs.PHOTO_SECONDS;
+                int at = 0;
+                for (int i = 0; i < options.length; i++) if (options[i] == Prefs.photoSeconds()) at = i;
+                Prefs.setPhotoSeconds(options[(at + 1) % options.length]);
+            });
+        }
+
+        private void openBackgroundPhoto() {
+            final Context c = getContext();
+            openDetail(Ui.tr("Background photo"), () -> {
+                String chosen = Prefs.wallpaper();
+                boolean all = chosen.isEmpty() || chosen.equals("*") || !Photos.list(c).contains(chosen);
+                value(Ui.tr("All photos"), () -> Prefs.wallpaper().isEmpty() || Prefs.wallpaper().equals("*") ? Ui.tr("On") : "", () -> {
+                    Prefs.setWallpaper("*");
+                    HomeActivity.refreshNow();
+                });
+                photoInterval();
+                note(Ui.tr("They change on their own, like the screensaver's. Or choose one to keep."));
+                header(Ui.tr("Photos"));
+                int n = 0;
+                for (String name : Photos.list(c)) {
+                    final String photo = name;
+                    link(Ui.trf("Photo {n}", "n", ++n), () -> !all && photo.equals(Prefs.wallpaper()) ? Ui.tr("On") : "", () -> {
+                        Prefs.setWallpaper(photo);
+                        HomeActivity.refreshNow();
+                    }).photo = photo;
+                }
+                new Thread(() -> {
+                    for (String name : Photos.list(c)) {
+                        if (detail == null) return;
+                        if (thumbs.containsKey(name)) continue;
+                        Bitmap b = Photos.small(c, name);
+                        if (b != null) thumbs.put(name, b);
+                        postInvalidate();
+                    }
+                }, "photo-thumbs").start();
+            });
         }
 
         // MARK: - Glass: each piece with its own frost and refraction
@@ -1548,6 +1617,28 @@ public class SettingsActivity extends Activity {
                 }
                 drawSwitch(c, right, rowRect.centerY(), r.on.getAsBoolean(), f);
             } else {
+                if (r.photo != null) {
+                    Bitmap t = thumbs.get(r.photo);
+                    float th = (ROW_H - 22) * k, tw = th * 16 / 9;
+                    float tr = right - (r.value != null && !r.value.get().isEmpty() ? rowValue.measureText(r.value.get()) + 16 * k : 0) - 34 * k;
+                    tmp.set(tr - tw, rowRect.centerY() - th / 2, tr, rowRect.centerY() + th / 2);
+                    if (t != null) {
+                        BitmapShader shader = thumbShaders.get(r.photo);
+                        if (shader == null || thumbShaderOf.get(r.photo) != t) {
+                            shader = new BitmapShader(t, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP);
+                            thumbShaders.put(r.photo, shader);
+                            thumbShaderOf.put(r.photo, t);
+                        }
+                        float s = Math.max(tw / t.getWidth(), th / t.getHeight());
+                        thumbMatrix.setScale(s, s);
+                        thumbMatrix.postTranslate(tmp.centerX() - t.getWidth() * s / 2, tmp.centerY() - t.getHeight() * s / 2);
+                        shader.setLocalMatrix(thumbMatrix);
+                        fill.setColor(0xFFFFFFFF);
+                        fill.setShader(shader);
+                        c.drawRoundRect(tmp, 8 * k, 8 * k, fill);
+                        fill.setShader(null);
+                    }
+                }
                 if (r.kind == LINK) {
                     float cw = Symbols.width(getContext(), "chevron_right", 22 * k);
                     Symbols.draw(getContext(), c, "chevron_right", right - cw / 2, rowRect.centerY(), 22 * k, blend(dimInk(), 0x991C1C1E, f));
