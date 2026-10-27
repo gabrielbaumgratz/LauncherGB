@@ -469,9 +469,8 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         switch (level) {
             case 0: c.drawColor(0xFF3A3A3A, PorterDuff.Mode.SCREEN); break;
             case 1: c.drawColor(0xFF1E1E1E, PorterDuff.Mode.SCREEN); break;
-            case 3: c.drawColor(0x38000000); break;
-            case 4: c.drawColor(0x66000000); break;
-            case 5:
+            case 3: c.drawColor(0x50000000); break;
+            case 4:
                 c.drawColor(0x30808080);
                 c.drawColor(0x8C000000);
                 break;

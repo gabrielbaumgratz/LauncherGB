@@ -161,7 +161,7 @@ HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set
   (both processes read the files; see `Prefs.customKeys`, `RemoteKeys.onKey`).
 - Texts kept for later (the notices in the settings) go through `Ui.trl` (English plus values) and are shown with `Ui.render`,
   so they follow the language when read; the games card makes its dates when drawn (`Sports.Game.day()/time()`), for the same reason.
-- The screensaver's brightness is six levels (`Prefs.dreamLevel`, `DreamView.veil`); Settings → Performance lists what costs
+- The screensaver's brightness is five levels (`Prefs.dreamLevel`, `DreamView.veil`); Settings → Performance lists what costs
   memory (recommendations, widgets, zoom, greeting) with the process's memory now. The heap is ~46 MB with everything on and
   ~41 MB with those off; the rest of what `dumpsys meminfo` shows is shared libraries.
 - After any change, `./build.sh` must end with `Built GBHomeTV.apk`.

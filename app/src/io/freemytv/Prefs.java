@@ -246,18 +246,18 @@ final class Prefs {
     static void setPhotoSeconds(int s) { sp().edit().putInt("photoSeconds", s).apply(); version++; }
 
     /**
-     * How bright the screensaver is: 0 brightest, 1 brighter, 2 standard, 3 dim, 4 dark, 5 darkest and most matte. The
-     * levels around the standard one are a veil over everything (DreamView.veil).
+     * How bright the screensaver is: 0 brightest, 1 bright, 2 standard, 3 dark, 4 darkest and most matte. The levels
+     * around the standard one are a veil over everything (DreamView.veil).
      */
     static int dreamLevel() {
         if (demo()) return 2;   // screenshots and videos at the standard brightness
-        if (!sp().contains("dreamLevel")) {   // from the first version of the setting (none, a little, more)
-            int old = sp().getInt("dreamDim", 0);
-            return old == 0 ? 2 : old == 1 ? 3 : 4;
-        }
-        return Math.max(0, Math.min(5, sp().getInt("dreamLevel", 2)));
+        if (sp().contains("dreamLevel5")) return Math.max(0, Math.min(4, sp().getInt("dreamLevel5", 2)));
+        // From the six levels (or the first version: none, a little, more): the dim and the dark ones became one.
+        int old = sp().contains("dreamLevel") ? sp().getInt("dreamLevel", 2)
+                : sp().getInt("dreamDim", 0) == 0 ? 2 : sp().getInt("dreamDim", 0) == 1 ? 3 : 4;
+        return old <= 2 ? Math.max(0, old) : old <= 4 ? 3 : 4;
     }
-    static void setDreamLevel(int level) { sp().edit().putInt("dreamLevel", level).apply(); version++; }
+    static void setDreamLevel(int level) { sp().edit().putInt("dreamLevel5", Math.max(0, Math.min(4, level))).apply(); version++; }
 
     /** The slow zoom and drift of the photos (off: still photos, less for the GPU to do). */
     static boolean dreamMotion() { return sp().getBoolean("dreamMotion", true); }

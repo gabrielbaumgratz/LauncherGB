@@ -572,12 +572,12 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Ui.tr("Recommendations"), () -> {
+                    if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Ui.tr("Recommendations"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    value(Ui.tr("Background: clear to frosted"), () -> (Prefs.backdrop() + 1) + " / 5", () -> {
+                    if (Prefs.layout() == 0) value(Ui.tr("Background: clear to frosted"), () -> (Prefs.backdrop() + 1) + " / 5", () -> {
                         Prefs.setBackdrop((Prefs.backdrop() + 1) % 5);
                         HomeData.get(c).settingsChanged();
                     });
@@ -733,7 +733,7 @@ public class SettingsActivity extends Activity {
                     header(Ui.tr("Display"));
                     toggle(Ui.tr("Clock"), Prefs::dreamClock, () -> Prefs.setDreamClock(!Prefs.dreamClock()));
                     toggle(Ui.tr("Date and weather"), Prefs::dreamDate, () -> Prefs.setDreamDate(!Prefs.dreamDate()));
-                    value(Ui.tr("Brightness: dark to bright"), () -> (6 - Prefs.dreamLevel()) + " / 6", () -> Prefs.setDreamLevel(6 - (6 - Prefs.dreamLevel()) % 6 - 1));
+                    value(Ui.tr("Brightness: dark to bright"), () -> (5 - Prefs.dreamLevel()) + " / 5", () -> Prefs.setDreamLevel((Prefs.dreamLevel() + 4) % 5));
                     toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
                     break;
                 }
