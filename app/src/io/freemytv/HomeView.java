@@ -1642,7 +1642,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         List<Sports.Game> games = Sports.get(getContext()).games();
         if (games.isEmpty()) {
             boolean chosen = !Prefs.sportsTeams().isEmpty() || !Prefs.sportsLeagues().isEmpty();
-            c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Settings → Sports."), x, r.top + 120 * k, cardDim);
+            c.drawText(chosen ? Ui.tr("No games soon.") : Ui.tr("Pick your team in Home Settings › Sports."), x, r.top + 120 * k, cardDim);
             return;
         }
         // Three games, two lines each: the match, then the day, the time and the championship. Same fonts as the weather card.
@@ -2470,7 +2470,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 text = Ui.trf("Removed from the shelf: {app}", "app", it.label);
             } else {
                 if (shown >= HomeApps.MAX_SHELF) {
-                    handler.post(() -> showToast(Ui.tr("The shelf is full. Make room in GB Home TV › Shelf.")));
+                    handler.post(() -> showToast(Ui.tr("The shelf is full. Take one out in Home Settings › Home › Shelf.")));
                     return;
                 }
                 list.add(it.pkg);
@@ -3268,7 +3268,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             fitPaint.set(lCardMeta);
             fitPaint.setColor(dim);
             fitPaint.setTextAlign(Paint.Align.CENTER);
-            c.drawText(Ui.tr("Pick your team in Settings → Sports."), cell.centerX(), midY + 56 * k, fitPaint);
+            c.drawText(Ui.tr("Pick your team in Home Settings › Sports."), cell.centerX(), midY + 56 * k, fitPaint);
             return;
         }
 

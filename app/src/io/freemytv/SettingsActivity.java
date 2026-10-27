@@ -566,13 +566,13 @@ public class SettingsActivity extends Activity {
                         updateTheme();
                     });
                     link(Ui.tr("Glass"), () -> "", this::openGlass);
-                    toggle(Ui.tr("Dark app tiles"), Prefs::darkTiles, () -> {
+                    toggle(Ui.tr("Dark cards: Prime Video, Disney+, HBO Max"), Prefs::darkTiles, () -> {
                         Prefs.setDarkTiles(!Prefs.darkTiles());
                         HomeApps.clearMemory();
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Ui.tr("Recommendations"), () -> {
+                    if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Recs.hasKey(c) && Prefs.recommendations() ? Ui.tr("Recommendations") : Ui.tr("Default"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
@@ -589,11 +589,11 @@ public class SettingsActivity extends Activity {
                             HomeData.get(c).settingsChanged();
                             HomeActivity.refreshNow();
                         });
-                        note(Ui.tr("The three tabs with picks from your streaming apps, and the screensaver's picks."));
+                        note(Ui.tr("Picks from your streaming apps: the Explore, Movies and Shows tabs, and the screensaver."));
                     }
                     List<HomeApps.Item> inputs = inputChoices();
                     if (!inputs.isEmpty()) {
-                        header(Ui.tr("Inputs on the home screen"));
+                        header(Ui.tr("Inputs in the drawer"));
                         for (HomeApps.Item it : inputs) {
                             toggle(it.label, () -> !Prefs.inputHidden(it.key), () -> Prefs.setInputHidden(it.key, !Prefs.inputHidden(it.key)));
                         }
@@ -604,7 +604,7 @@ public class SettingsActivity extends Activity {
                         for (BluetoothAudio.DeviceInfo d : devices) {
                             link(d.name, () -> Prefs.btShown(d.device.getAddress()) ? Ui.tr("Shown") : Ui.tr("Hidden"), () -> openDevice(d));
                         }
-                        note(Ui.tr("OK on a device: show it on the home screen, rename it or forget it."));
+                        note(Ui.tr("OK on a device: show it in the drawer, rename it or forget it."));
                     }
                     break;
                 }
@@ -622,57 +622,45 @@ public class SettingsActivity extends Activity {
                     break;
                 }
                 case P_WEATHER: {
-                    toggle(Ui.tr("Weather widget"), Prefs::weather, () -> {
+                    toggle(Ui.tr("Show weather"), Prefs::weather, () -> {
                         Prefs.setWeather(!Prefs.weather());
-                        HomeData.get(c).settingsChanged();
-                    });
-                    toggle(Ui.tr("Card in the drawer"), Prefs::weatherDrawer, () -> {
-                        Prefs.setWeatherDrawer(!Prefs.weatherDrawer());
                         HomeData.get(c).settingsChanged();
                         HomeActivity.refreshNow();
                     });
-                    value(Ui.tr("Temperature"), () -> {
-                        String unit = Prefs.temperature();
-                        return unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("unit|Automatic");
-                    }, () -> {
-                        Prefs.setTemperature(UNITS[(Arrays.asList(UNITS).indexOf(Prefs.temperature()) + 1) % UNITS.length]);
-                        HomeData.get(c).settingsChanged();
-                    });
-                    value(Ui.tr("City"), () -> !cityStatus.isEmpty() ? cityStatus : Prefs.city().isEmpty() ? "—" : Prefs.city(), this::askCity);
+                    note(Ui.tr("On the clock, in the drawer and on the screensaver."));
+                    if (Prefs.weather()) {
+                        toggle(Ui.tr("Card in the drawer"), Prefs::weatherDrawer, () -> {
+                            Prefs.setWeatherDrawer(!Prefs.weatherDrawer());
+                            HomeData.get(c).settingsChanged();
+                            HomeActivity.refreshNow();
+                        });
+                        value(Ui.tr("Temperature"), () -> {
+                            String unit = Prefs.temperature();
+                            return unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("unit|Automatic");
+                        }, () -> {
+                            Prefs.setTemperature(UNITS[(Arrays.asList(UNITS).indexOf(Prefs.temperature()) + 1) % UNITS.length]);
+                            HomeData.get(c).settingsChanged();
+                        });
+                        value(Ui.tr("City"), () -> !cityStatus.isEmpty() ? cityStatus : Prefs.city().isEmpty() ? "—" : Prefs.city(), this::askCity);
+                    }
                     break;
                 }
                 case P_GAMES: {
-                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> {
-                        Prefs.setSportsOn(!Prefs.sportsOn());
-                        if (Prefs.sportsOn()) Sports.get(c).refresh();
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
                     note(Ui.tr("The next games, from ESPN, with no account."));
                     header(Ui.tr("Where it shows"));
-                    toggle(Ui.tr("Sports tab"), () -> Prefs.sportsOn() && Prefs.sportsTab(), () -> {
-                        boolean on = !(Prefs.sportsOn() && Prefs.sportsTab());
-                        Prefs.setSportsTab(on);
-                        if (on) {
-                            Prefs.setSportsOn(true);
-                            Sports.get(c).refresh();
-                        }
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
+                    if (Prefs.layout() != 2) {
+                        toggle(Ui.tr("Sports tab"), () -> Prefs.sportsOn() && Prefs.sportsTab(), () -> {
+                            updateSports(!(Prefs.sportsOn() && Prefs.sportsTab()), Prefs.sportsOn() && Prefs.sportsDrawer());
+                        });
+                    }
                     toggle(Ui.tr("Card in the drawer"), () -> Prefs.sportsOn() && Prefs.sportsDrawer(), () -> {
-                        boolean on = !(Prefs.sportsOn() && Prefs.sportsDrawer());
-                        Prefs.setSportsDrawer(on);
-                        if (on) {
-                            Prefs.setSportsOn(true);
-                            Sports.get(c).refresh();
-                        }
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
+                        updateSports(Prefs.sportsOn() && Prefs.sportsTab(), !(Prefs.sportsOn() && Prefs.sportsDrawer()));
                     });
-                    if (Prefs.sportsOn() && Prefs.sportsTab() && Prefs.layout() != 2) {
+                    if (Prefs.layout() == 2) {
+                        note(Ui.tr("The sidebar has no tabs: the games show in the drawer."));
+                    } else if (Prefs.sportsOn() && Prefs.sportsTab()) {
                         value(Ui.tr("Tab order"), () -> {
-                            boolean home = !(Recs.hasKey(c) && Prefs.recommendations());   // then the other tab is the home with the photos
+                            boolean home = !(Recs.hasKey(c) && Prefs.recommendations() && Prefs.layout() == 0);   // then the other tab is the home
                             return Prefs.sportsFirst() ? (home ? Ui.tr("Sports → Home") : Ui.tr("Sports → Recommendations"))
                                     : (home ? Ui.tr("Home → Sports") : Ui.tr("Recommendations → Sports"));
                         }, () -> {
@@ -681,10 +669,9 @@ public class SettingsActivity extends Activity {
                             HomeActivity.refreshNow();
                         });
                     }
-                    if (Prefs.layout() == 2) note(Ui.tr("The sidebar has no tabs: the games show in the drawer."));
 
-                    header(Ui.tr("Display priority"));
-                    value(Ui.tr("Priority"), () -> {
+                    header(Ui.tr("Order of the games"));
+                    value(Ui.tr("Sort games by"), () -> {
                         int p = Prefs.sportsPriority();
                         return p == 0 ? Ui.tr("My teams first") : p == 1 ? Ui.tr("Championships first") : Ui.tr("Chronological");
                     }, () -> {
@@ -699,7 +686,7 @@ public class SettingsActivity extends Activity {
                     for (int i = 0; i < allTeams.size(); i++) {
                         String[] team = allTeams.get(i);
                         final int pos = i;
-                        link(team[3], () -> (pos == 0 && allTeams.size() > 1 ? Ui.tr("Priority") + " · " : "") + Sports.sportName(team[0]), () -> openTeam(team));
+                        link(team[3], () -> (pos == 0 && allTeams.size() > 1 ? Ui.tr("Main") + " · " : "") + Sports.sportName(team[0]), () -> openTeam(team));
                     }
                     link(Ui.tr("Add a team or athlete"), () -> !teamStatus.isEmpty() ? teamStatus : "", () -> askTeam(null));
                     if (allTeams.isEmpty()) {
@@ -707,12 +694,12 @@ public class SettingsActivity extends Activity {
                     }
 
                     header(Ui.tr("Championships"));
-                    link(Ui.tr("Championships"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openLeagues);
+                    link(Ui.tr("Choose championships"), () -> Ui.trf("{n} followed", "n", Prefs.sportsLeagues().size()), this::openLeagues);
                     note(Ui.tr("Choose the leagues, tours and circuits you want to follow."));
                     break;
                 }
                 case P_SAVER: {
-                    link(Ui.tr("Preview"), () -> "", () -> {
+                    link(Ui.tr("Preview the screensaver"), () -> "", () -> {
                         pause();
                         activity.showPreview();
                     });
@@ -750,28 +737,11 @@ public class SettingsActivity extends Activity {
                     }, () -> setPerfMode(perfMode() == 0 ? 1 : 0));
                     header(Ui.tr("What each mode does"));
                     info(Ui.tr("Full → Performance"), () -> "");
-                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather widget"), Ui.tr("Sports widget"), Ui.tr("Slow zoom of the photos")}) {
+                    for (String feature : new String[] {Ui.tr("Recommendations"), Ui.tr("Weather"), Ui.tr("Sports"), Ui.tr("Slow zoom of the photos")}) {
                         info(feature, () -> Ui.tr("On") + "  →  " + Ui.tr("Off"));
                     }
                     note(Ui.tr("Both modes keep your apps, the inputs, the clock, the Control Center and the settings."));
-                    header(Ui.tr("Fine tuning"));
-                    toggle(Ui.tr("Recommendations"), Prefs::recommendations, () -> {
-                        Prefs.setRecommendations(!Prefs.recommendations());
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    toggle(Ui.tr("Weather widget"), Prefs::weather, () -> {
-                        Prefs.setWeather(!Prefs.weather());
-                        HomeData.get(c).settingsChanged();
-                    });
-                    toggle(Ui.tr("Sports widget"), Prefs::sportsOn, () -> {
-                        Prefs.setSportsOn(!Prefs.sportsOn());
-                        if (Prefs.sportsOn()) Sports.get(c).refresh();
-                        HomeData.get(c).settingsChanged();
-                        HomeActivity.refreshNow();
-                    });
-                    toggle(Ui.tr("Slow zoom of the photos"), Prefs::dreamMotion, () -> Prefs.setDreamMotion(!Prefs.dreamMotion()));
-                    toggle(Ui.tr("Greeting"), Prefs::greeting, () -> Prefs.setGreeting(!Prefs.greeting()));
+                    note(Ui.tr("To change them one by one, use each one's own page."));
                     break;
                 }
                 case P_REMOTE: {
@@ -804,7 +774,6 @@ public class SettingsActivity extends Activity {
                 default: {
                     header("GB Home TV");
                     info(Ui.tr("Version"), () -> versionName(c).replace("GB Home TV ", ""));
-                    link(Ui.tr("Update launcher"), () -> updateStatus, this::openUpdate);
                     header(Ui.tr("Comparison"));
                     JSONObject metrics = state.optJSONObject("metrics");
                     JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
@@ -1046,6 +1015,16 @@ public class SettingsActivity extends Activity {
             return fallback;
         }
 
+        /** The Sports tab and the drawer's card are the switches; the games are fetched while either one is on. */
+        private void updateSports(boolean tab, boolean drawer) {
+            Prefs.setSportsTab(tab);
+            Prefs.setSportsDrawer(drawer);
+            Prefs.setSportsOn(tab || drawer);
+            if (tab || drawer) Sports.get(getContext()).refresh();
+            HomeData.get(getContext()).settingsChanged();
+            HomeActivity.refreshNow();
+        }
+
         // MARK: - Glass: each piece with its own frost and refraction
 
         private void openGlass() {
@@ -1063,7 +1042,7 @@ public class SettingsActivity extends Activity {
                         HomeData.get(getContext()).settingsChanged();
                     });
                 }
-                note(Ui.tr("The lens shows most in the Photo styles, over a sharp photo."));
+                note(Ui.tr("The refraction shows most in the Photo styles, over a sharp photo."));
             });
         }
 
@@ -1072,7 +1051,7 @@ public class SettingsActivity extends Activity {
         private void openDevice(BluetoothAudio.DeviceInfo d) {
             final String address = d.device.getAddress();
             openDetail(d.name, () -> {
-                toggle(Ui.tr("Show on the home screen"), () -> Prefs.btShown(address), () -> Prefs.setBtShown(address, !Prefs.btShown(address)));
+                toggle(Ui.tr("Show in the drawer"), () -> Prefs.btShown(address), () -> Prefs.setBtShown(address, !Prefs.btShown(address)));
                 value(Ui.tr("Name"), () -> {
                     String alias = Prefs.btAlias(address);
                     return alias.isEmpty() ? d.device.getName() == null ? "Bluetooth" : d.device.getName() : alias;
