@@ -358,6 +358,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             updatePalette();
             checkNight(true);
             updatePicks();      // three new ones every hour
+            if (photosBehind()) wallpaperBackdrop();   // the next photo when its time comes (it fades in when it's ready)
             handler.postDelayed(this, 15_000);
         }
     };
@@ -2953,9 +2954,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** The background follows the card in focus (the way it follows the first one when nothing is focused). */
     private void followCard() {
-        if (cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground()) return;
+        if (photosBehind()) return;
         Backdrop b = recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (b != null) showBackdrop(b);
+    }
+
+    /** Whether the background is the person's photos (and not a recommendation's picture): turned on, or nothing to follow. */
+    private boolean photosBehind() {
+        return cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground();
     }
 
     private void updateCards() {
@@ -2979,7 +2985,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
         }
         // Without picks on the screen (none, or turned off): the photo from the phone, or the default background.
-        boolean noPicks = cards.isEmpty() || !picksOn() || isSportsTab() || Prefs.photoBackground();
+        boolean noPicks = photosBehind();
         Backdrop b = noPicks ? wallpaperBackdrop() : recs.backdrop(cards.get(Math.min(cardIndex, cards.size() - 1)));
         if (noPicks || b != null) showBackdrop(b);
         heroDirty = true;
