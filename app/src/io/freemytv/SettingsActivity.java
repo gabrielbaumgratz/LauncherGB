@@ -100,6 +100,7 @@ public class SettingsActivity extends Activity {
                     case "photoBackground": Prefs.setPhotoBackground(on); break;
                     case "sportsFirst": Prefs.setSportsFirst(on); break;
                     case "layout": Prefs.setLayout(Integer.parseInt(kv[1])); break;
+                    case "shelfFrost": Prefs.setGlassFrost(Prefs.G_SHELF, Integer.parseInt(kv[1])); break;
                     case "theme": Prefs.setTheme(kv[1]); break;   // auto, light or dark
                     default:
                 }
@@ -565,7 +566,7 @@ public class SettingsActivity extends Activity {
                         HomeData.get(c).settingsChanged();
                         updateTheme();
                     });
-                    link(Ui.tr("Glass"), () -> "", this::openGlass);
+                    link(Ui.tr("Liquid glass"), () -> "", this::openGlass);
                     if (Prefs.layout() == 0) value(Ui.tr("Background picture"), () -> Prefs.photoBackground() ? Ui.tr("My photos") : Recs.hasKey(c) && Prefs.recommendations() ? Ui.tr("Recommendations") : Ui.tr("Default"), () -> {
                         Prefs.setPhotoBackground(!Prefs.photoBackground());
                         HomeData.get(c).settingsChanged();
@@ -1024,9 +1025,10 @@ public class SettingsActivity extends Activity {
         // MARK: - Glass: each piece with its own frost and refraction
 
         private void openGlass() {
-            openDetail(Ui.tr("Glass"), () -> {
+            openDetail(Ui.tr("Liquid glass"), () -> {
+                // in the order they show on the screen: the shelf, the buttons above it, the Control Center, the drawer
                 String[] names = {Ui.tr("Shelf"), Ui.tr("Drawer"), Ui.tr("Top Buttons"), Ui.tr("Control Center")};
-                for (int e = 0; e < names.length; e++) {
+                for (int e : new int[] {Prefs.G_SHELF, Prefs.G_TOP, Prefs.G_CONTROL, Prefs.G_DRAWER}) {
                     final int element = e;
                     header(names[e]);
                     value(Ui.tr("Frost: clear to frosted"), () -> (Prefs.glassFrost(element) + 1) + " / 5", () -> {

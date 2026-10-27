@@ -24,7 +24,7 @@ import android.graphics.Shader;
  */
 final class Backdrop {
     /** The UI's size against 1920×1080 (at most 1): nothing is built bigger than the screen can show. */
-    private static final float UI_SCALE = uiScale();
+    static final float UI_SCALE = uiScale();
     static final int W = ui(1920), H = ui(1080), FW = 192, FH = 108, GW = 480, GH = 270;
     /** The glass's picture in the photo layout: the photo itself, sharp enough for the lens to bend real detail. */
     static final int SW = 960, SH = 540;

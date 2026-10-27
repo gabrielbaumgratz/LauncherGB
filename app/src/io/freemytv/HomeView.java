@@ -262,6 +262,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Shadows shadows = new Shadows();
     private final Map<Bitmap, BitmapShader> imageShaders = new WeakHashMap<>();
     private final Matrix imageMatrix = new Matrix();
+    private final Path clip = new Path();
     private final Paint imageFill = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -269,7 +270,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Paint veil = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint tileFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path clip = new Path();
     private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF();
     private final TextPaint fitPaint = new TextPaint();
     private final RectF gridCell = new RectF();
@@ -1369,9 +1369,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (day && ("netflix".equals(it.key) || "youtube".equals(it.key))) {
             style = new int[] {0xFFFFFFFF, 0xFFE6E6EB, "youtube".equals(it.key) ? 2 : 0};
-        } else if (day && ("prime".equals(it.key) || "disney".equals(it.key) || "max".equals(it.key)) && it.logoDark != null) {
-            style = new int[] {0xFFFFFFFF, 0xFFE6E6EB, 2};   // light cards by day, with the logo in dark: the company's own logo either way
-        }
+        } else if (day && "prime".equals(it.key)) {
+            style = new int[] {0xFF63C4FF, 0xFF1E9BFF, 1};   // their light themes are a lighter shade of the usual one, not white
+        } else if (day && "disney".equals(it.key)) {
+            style = new int[] {0xFF4A74D8, 0xFF2347A8, 0};
+        }   // HBO Max and Apple TV have no light theme: the dark card stays
         if (it.logo != null && style != null) {
             if (tileShaders.length != shelf.size() || tileShaderH != bh) {
                 tileShaders = new LinearGradient[shelf.size()];
@@ -1576,7 +1578,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Glass for a drawer card or button: white by day, smoked at night (both during the transition). */
     private void drawerGlass(Canvas c, RectF r, float radius, float lightTint, int shadowColor, float drop) {
-        float dk = dark(), rel = Prefs.frostRel(Prefs.G_DRAWER);
+        float dk = dark();
         if (dk < 0.999f) {
             tmp.set(r);
             tmp.offset(0, drop);
@@ -1586,13 +1588,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (Prefs.photoLayout() && bgTo != null && bgTo.image != null) {
             // Over the sharp photo: liquid glass with a lens, so the cards bend the photo like the shelf does.
             scene.setDispersion(0.4f);
-            scene.liquid(c, r, radius, tone(0xFFFFFFFF, SMOKE), Math.min(0.94f, tone(lightTint * 0.5f, 0.3f) * rel), tone(0.02f, 0.01f),
+            scene.liquid(c, r, radius, tone(0xFFFFFFFF, SMOKE), Prefs.frostRel(tone(lightTint * 0.5f, 0.3f), Prefs.G_DRAWER), tone(0.02f, 0.01f),
                     16 * k, 14 * k * Prefs.lens(Prefs.G_DRAWER), tone(0.4f, 0.3f), 1);
             scene.setDispersion(0.22f);
             return;
         }
-        if (dk < 0.999f) scene.glass(c, r, radius, 0xFFFFFFFF, Math.min(0.94f, lightTint * rel), 0, 0, 0.02f, 1, 1 - dk);
-        if (dk > 0.001f) scene.glass(c, r, radius, SMOKE, Math.min(0.94f, 0.4f * rel), 0, 0, 0.02f, 1, dk);
+        if (dk < 0.999f) scene.glass(c, r, radius, 0xFFFFFFFF, Prefs.frostRel(lightTint, Prefs.G_DRAWER), 0, 0, 0.02f, 1, 1 - dk);
+        if (dk > 0.001f) scene.glass(c, r, radius, SMOKE, Prefs.frostRel(0.4f, Prefs.G_DRAWER), 0, 0, 0.02f, 1, dk);
     }
 
     private void drawerCard(Canvas c, RectF r) {
@@ -3455,7 +3457,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             tmp.offset(0, (6 + 8 * f) * k);
             shadow.setColor(Ui.alpha(0xFF000000, tone(0.1f, 0.3f) + tone(0.14f, 0.2f) * f));
             shadows.draw(c, tmp, rad, SHADOW_BLUR * k, shadow);
-            scene.liquid(c, cell, rad, tone(0xFFFFFFFF, SMOKE), Math.min(0.94f, tone(0.55f, 0.5f) * Prefs.frostRel(Prefs.G_TOP)),
+            scene.liquid(c, cell, rad, tone(0xFFFFFFFF, SMOKE), Prefs.frostRel(tone(0.55f, 0.5f), Prefs.G_TOP),
                     tone(0.02f, 0.01f), 12 * k, 8 * k * Prefs.lens(Prefs.G_TOP), tone(0.6f, 0.45f), 1 - f);
             if (f > 0.01f) {
                 fill.setShader(null);

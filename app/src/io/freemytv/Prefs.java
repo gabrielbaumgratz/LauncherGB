@@ -176,9 +176,8 @@ final class Prefs {
     static boolean photoBackground() { return sp().getBoolean("photoBackground", false); }
     static void setPhotoBackground(boolean on) { put("photoBackground", on); version++; }
 
-    /** How frosted the glass of the shelf and the Control Center is: 0 (clear) to 4 (very frosted). */
+    /** The old single frost setting (shelf, Control Center): still the default for those two until they get their own. */
     static int glass() { return Math.max(0, Math.min(4, sp().getInt("glass", 2))); }
-    static void setGlass(int level) { sp().edit().putInt("glass", Math.max(0, Math.min(4, level))).apply(); version++; }
 
     /**
      * The home screen's layout: 0 classic (tabs and cards, the shelf at the bottom), 1 photo (your photos, sharp and
@@ -223,12 +222,24 @@ final class Prefs {
     /** The multiplier of a piece of glass's lens (1 at the usual level). */
     static float lens(int element) { return REFRACTION[glassRefraction(element)]; }
 
+    /** How far each level pulls the tint toward a nearly opaque frost: the last one reads as frosted glass, not as clear. */
+    private static final float[] PUSH = {0f, 0f, 0f, 0.3f, 0.92f};
+
+    private static float push(float alpha, int level) {
+        alpha = Math.min(0.94f, alpha);
+        return alpha + (0.94f - alpha) * PUSH[level];
+    }
+
     static float frost(float alpha, int element) {
-        return Math.min(0.94f, alpha * FROST[glassFrost(element)]);
+        int l = glassFrost(element);
+        return push(alpha * FROST[l], l);
     }
 
     /** A tint tuned for the middle frost, scaled to this glass's own. */
-    static float frostRel(int element) { return FROST[glassFrost(element)] / FROST[2]; }
+    static float frostRel(float alpha, int element) {
+        int l = glassFrost(element);
+        return push(alpha * FROST[l] / FROST[2], l);
+    }
 
     // MARK: - Photos from the phone (Photos, UploadServer)
 

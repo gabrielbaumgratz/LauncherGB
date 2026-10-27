@@ -64,7 +64,8 @@ final class HomeApps {
     /** A paired Bluetooth headphone on the shortcuts: OK connects it (or disconnects it); `pkg` holds its address. */
     static final int BT_DEVICE = 9;
     /** Image size of each card (16:9; on screen it shows up to ~330 px wide). */
-    static final int TILE_W = 384, TILE_H = 216;
+    /** The cards are drawn at most ~300 px wide on a 1080p UI: a TV that draws at 720p keeps them smaller (80 apps add up). */
+    static final int TILE_W = Math.round(384 * Backdrop.UI_SCALE), TILE_H = Math.round(216 * Backdrop.UI_SCALE);
 
     static final class Item {
         int kind;
@@ -153,8 +154,8 @@ final class HomeApps {
                 if (it.logo == null) it.tile = appTile(c, d[0], d[2], 0xFF000000 | Integer.parseInt(d[3], 16));
                 if (it.logo != null) it.logoInk = ink(it.logo);
                 it.logoDark = ownLogoCached(c, d[0] + "-dark");
-                if (it.logoDark == null && it.logo != null && (d[0].equals("youtube") || d[0].equals("prime") || d[0].equals("disney") || d[0].equals("max"))) {
-                    it.logoDark = whiteToDark(it.logo);   // the card is light by day: the white logo turns dark
+                if (it.logoDark == null && it.logo != null && d[0].equals("youtube")) {
+                    it.logoDark = whiteToDark(it.logo);   // the card is light by day: the white lettering turns dark
                 }
                 it.logoScale = Float.parseFloat(d[5]);
             }
