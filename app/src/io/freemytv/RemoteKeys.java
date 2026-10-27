@@ -78,7 +78,15 @@ final class RemoteKeys {
                 || pressed >= KeyEvent.KEYCODE_BUTTON_1 && pressed <= KeyEvent.KEYCODE_BUTTON_16;
         if (buttonKey && ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
                 || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) return false;
+        // The Settings button of TCL's remote sends NOTIFICATION; with the stock home screen off nothing answers it:
+        // it opens the TV's settings.
         int raw = e.getKeyCode();
+        if (TCL && (raw == KeyEvent.KEYCODE_NOTIFICATION || raw == KeyEvent.KEYCODE_SETTINGS)) {
+            if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+                c.startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return true;
+        }
         // The INFO ("i") button opens the Control Center, over whatever is on screen; in the live TV app it keeps showing
         // the program's info.
         if (raw == KeyEvent.KEYCODE_INFO) {
@@ -89,10 +97,7 @@ final class RemoteKeys {
             }
             return true;
         }
-        // The Settings button of TCL's remote sends NOTIFICATION or SETTINGS: one button, which opens the TV's settings
-        // unless the person picked something else (or nothing) for it.
-        int keyCode = raw == KEY_YOUTUBE_TCL ? Prefs.KEY_YOUTUBE
-                : raw == KeyEvent.KEYCODE_NOTIFICATION ? Prefs.KEY_TCL_SETTINGS : raw;
+        int keyCode = e.getKeyCode() == KEY_YOUTUBE_TCL ? Prefs.KEY_YOUTUBE : e.getKeyCode();
         // Sony sends BUTTON_9 for five app buttons (BUTTON_4 for Netflix, BUTTON_8 for Google Play): only the scan code
         // tells them apart.
         if (SONY && (keyCode == KeyEvent.KEYCODE_BUTTON_4 || keyCode == KeyEvent.KEYCODE_BUTTON_8
